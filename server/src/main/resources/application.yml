@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/investor}
+    username: ${POSTGRES_USER:investor}
+    password: ${POSTGRES_PASSWORD}
+  flyway:
+    enabled: true
+  jackson:
+    time-zone: UTC
+  task:
+    scheduling:
+      pool:
+        size: 4
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+investor:
+  api-token: ${INVESTOR_API_TOKEN}
+  contact-email: ${CONTACT_EMAIL}
+  anthropic:
+    base-url: https://api.anthropic.com
+    api-key: ${ANTHROPIC_API_KEY}
+  firebase:
+    credentials-path: ${FIREBASE_CREDENTIALS_PATH:}

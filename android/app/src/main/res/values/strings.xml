@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Investor</string>
+    <string name="alerts_channel_id">alerty</string>
+    <string name="alerts_channel_name">Alerty o wynikach</string>
+</resources>

@@ -1,0 +1,3 @@
+package pl.investor.source
+
+enum class Source { GPW_LISTING, NC_LISTING, BANKIER, BIZNESRADAR, GPW_ARCHIVE, INDEX_DAILY, NC_DAILY, CLAUDE }

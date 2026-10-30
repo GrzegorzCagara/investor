@@ -1,0 +1,15 @@
+.superpowers/
+docs/superpowers/
+.env
+**/build/
+**/.gradle/
+android/local.properties
+*.apk
+server/src/test/resources/fixtures/ai/live/
+.claude/settings.local.json
+android/app/google-services.json
+android/.idea/
+secrets/
+.kotlin/
+.idea/
+*.iml
