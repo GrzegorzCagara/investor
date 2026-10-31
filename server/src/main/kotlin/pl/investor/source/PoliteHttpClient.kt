@@ -34,7 +34,9 @@ class PoliteHttpClient(
                 setReadTimeout(timeout)
             }
         )
-        .defaultHeader("User-Agent", "investor-personal/1.0 ($contactEmail)")
+        .defaultHeader("User-Agent", "investor-personal/1.0")
+        .defaultHeader("From", contactEmail)
+        .defaultHeader("Accept-Encoding", "gzip")
         .build()
 
     private val lastRequestByHost = ConcurrentHashMap<String, Instant>()

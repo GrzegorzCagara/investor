@@ -44,13 +44,16 @@ class PoliteHttpClientTest {
     }
 
     @Test
-    fun `sends the contact user agent and decodes utf-8`() {
+    fun `sends the contact headers and decodes utf-8`() {
         server.enqueue(MockResponse.Builder().body("zażółć gęślą jaźń").addHeader("Content-Type", "text/html; charset=utf-8").build())
 
         val body = client.get(Source.GPW_LISTING, url())
 
         assertEquals("zażółć gęślą jaźń", body)
-        assertEquals("investor-personal/1.0 (me@example.com)", server.takeRequest().headers["User-Agent"])
+        val request = server.takeRequest()
+        assertEquals("investor-personal/1.0", request.headers["User-Agent"])
+        assertEquals("me@example.com", request.headers["From"])
+        assertEquals("gzip", request.headers["Accept-Encoding"])
         verify { tracker.recordSuccess(Source.GPW_LISTING, any()) }
     }
 
