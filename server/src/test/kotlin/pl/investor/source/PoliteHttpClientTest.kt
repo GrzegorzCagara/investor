@@ -43,6 +43,29 @@ class PoliteHttpClientTest {
         assertTrue((System.nanoTime() - started) / 1_000_000 >= 1000)
     }
 
+    private fun gzipped(text: String) = okio.Buffer().write(
+        java.io.ByteArrayOutputStream().also { out -> java.util.zip.GZIPOutputStream(out).use { it.write(text.toByteArray()) } }.toByteArray()
+    )
+
+    @Test
+    fun `gzip responses are decompressed for text`() {
+        server.enqueue(
+            MockResponse.Builder().body(gzipped("zażółć gęślą jaźń"))
+                .addHeader("Content-Encoding", "gzip")
+                .addHeader("Content-Type", "text/html; charset=utf-8")
+                .build()
+        )
+
+        assertEquals("zażółć gęślą jaźń", client.get(Source.GPW_LISTING, url()))
+    }
+
+    @Test
+    fun `gzip responses are decompressed for bytes`() {
+        server.enqueue(MockResponse.Builder().body(gzipped("xls-bytes")).addHeader("Content-Encoding", "gzip").build())
+
+        assertEquals("xls-bytes", client.getBytes(Source.GPW_ARCHIVE, url()).toString(Charsets.UTF_8))
+    }
+
     @Test
     fun `sends the contact headers and decodes utf-8`() {
         server.enqueue(MockResponse.Builder().body("zażółć gęślą jaźń").addHeader("Content-Type", "text/html; charset=utf-8").build())
