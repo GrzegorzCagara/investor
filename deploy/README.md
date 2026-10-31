@@ -1,6 +1,6 @@
 # Uruchomienie na mini-PC
 
-Instrukcja krok po kroku. Serwer działa na mini-PC w Dockerze, telefon łączy się z nim przez Tailscale.
+Instrukcja krok po kroku. Serwer działa na mini-PC w Dockerze i jest wystawiony publicznie przez Tailscale Funnel pod adresem HTTPS. Telefon nie potrzebuje Tailscale ani VPN.
 
 ## 1. Docker i Docker Compose na mini-PC
 
@@ -9,13 +9,20 @@ Instrukcja krok po kroku. Serwer działa na mini-PC w Dockerze, telefon łączy 
 3. Na Linuxie dodaj siebie do grupy `docker` (`sudo usermod -aG docker $USER`) i zaloguj się ponownie.
 4. Skopiuj katalog `investor/` na mini-PC. Dalsze komendy wykonuj w jego głównym katalogu.
 
-## 2. Tailscale na mini-PC i telefonie
+## 2. Tailscale Funnel na mini-PC
+
+Tailscale jest potrzebny tylko na mini-PC. Telefon nie potrzebuje aplikacji Tailscale ani włączonego VPN.
 
 1. Zainstaluj Tailscale na mini-PC (https://tailscale.com/download) i zaloguj się: `sudo tailscale up`.
-2. Zainstaluj aplikację Tailscale na telefonie i zaloguj się na to samo konto.
-3. W panelu https://login.tailscale.com/admin/machines odczytaj nazwę mini-PC (np. `minipc`) i jego adres (np. `100.101.102.103`).
-4. Adres Tailscale mini-PC wpisz do `.env` jako `HOST_BIND` (krok 5). Dzięki temu serwer jest dostępny tylko przez Tailscale, nie w sieci domowej. Nie nasłuchuje wtedy na `127.0.0.1`, więc z samego mini-PC łącz się przez ten adres Tailscale. Jeśli wolisz dostęp także przez `127.0.0.1`, ustaw `HOST_BIND=0.0.0.0` (wtedy port jest widoczny też w sieci domowej). Jeśli Tailscale nie wstanie przed Dockerem po restarcie mini-PC, bind na ten adres się nie uda, a kontener podniesie się dopiero przez politykę restartu.
-5. W aplikacji na telefonie wpiszesz `http://<nazwa-mini-PC>:8080` (np. `http://minipc:8080`) albo `http://<adres-Tailscale>:8080`.
+2. Włącz HTTPS i Funnel dla swojego tailnetu. Najprościej uruchom Funnel i otwórz link, który wypisze:
+   ```
+   sudo tailscale funnel --bg 8080
+   ```
+   Przy pierwszym razie Tailscale poprosi w panelu o włączenie certyfikatów HTTPS i Funnel. Funnel działa też w planie darmowym.
+3. Ustaw nazwę maszyny na `minipc` (https://login.tailscale.com/admin/machines), a nazwę tailnetu na `investor` (https://login.tailscale.com/admin/dns → Tailnet name). Jeśli `investor` jest już zajęta, Tailscale doda losowy sufiks i adres będzie inny.
+4. Publiczny adres serwera to `https://minipc.investor.ts.net` — bez `:8080`. Funnel sam łączy się z `127.0.0.1:8080`, dlatego `HOST_BIND` zostaje na `127.0.0.1`.
+5. Sprawdź stan: `tailscale funnel status`. Wyłączenie: `sudo tailscale funnel reset`.
+6. Flaga `--bg` sprawia, że Funnel działa po restarcie mini-PC, o ile Tailscale też startuje z systemem. Port 8080 nie jest wystawiony w sieci domowej.
 
 ## 3. Firebase
 
@@ -39,6 +46,7 @@ Projekt Firebase już istnieje. Potrzebne są dwa pliki.
 2. Utwórz workspace o nazwie `investor`.
 3. W tym workspace utwórz klucz API i skopiuj go (widać go tylko raz).
 4. Serwer ma własny, niższy limit 4,75 USD miesięcznie. Limit 5 USD w Console to twarda ochrona.
+5. Klucz mam już wygenerowany zobacz plik: C:\Users\moler\OneDrive\Dokumenty\klucz-api-claude.txt przekopiuj go do .env
 
 ## 5. Plik `.env`
 
@@ -49,9 +57,9 @@ Projekt Firebase już istnieje. Potrzebne są dwa pliki.
 |---|---|
 | `ANTHROPIC_API_KEY` | klucz z kroku 4 |
 | `INVESTOR_API_TOKEN` | token do API; wymyśl długi losowy ciąg, np. `openssl rand -hex 32`; ten sam wpiszesz w apce |
-| `CONTACT_EMAIL` | twój adres e-mail; trafia do nagłówka User-Agent zapytań do źródeł (GPW, Bankier, BiznesRadar) |
+| `CONTACT_EMAIL` | moler555@gmail.com; trafia do nagłówka `From` zapytań do źródeł (GPW, Bankier, BiznesRadar) |
 | `POSTGRES_PASSWORD` | dowolne hasło do bazy; baza nie jest wystawiona na zewnątrz |
-| `HOST_BIND` | adres, na którym serwer nasłuchuje (krok 2); domyślnie `127.0.0.1` |
+| `HOST_BIND` | adres, na którym serwer nasłuchuje; zostaw `127.0.0.1`, bo Funnel łączy się lokalnie |
 
 3. `docker compose up` odmówi startu, gdy którakolwiek z czterech pierwszych zmiennych jest pusta albo nieustawiona. To celowe.
 4. `.env` nie wchodzi do repozytorium. Nie wysyłaj go nigdzie.
@@ -69,10 +77,10 @@ Wpisz token bez zostawiania go w historii powłoki:
 
 ```
 read -rs T
-curl -H "X-Investor-Token: $T" http://<HOST_BIND>:8080/api/status
+curl -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/status
 ```
 
-Zwykły HTTP jest bezpieczny tylko przez Tailscale (ruch jest tam szyfrowany). Przy `HOST_BIND=0.0.0.0` token idzie po sieci domowej otwartym tekstem.
+Możesz też sprawdzić lokalnie z mini-PC: `curl http://127.0.0.1:8080/api/status` z tym samym nagłówkiem. Publiczny ruch idzie przez HTTPS, więc token jest szyfrowany.
 
 Oczekiwane: kod 200, lista źródeł z `lastSuccessAt` z ostatnich 2 minut (w godzinach publikacji) i `fcmConfigured: true`. `GET /actuator/health` działa bez tokenu.
 
@@ -86,7 +94,7 @@ Bez historii oceny nie mają danych do porównań. Backfill robi trzy rzeczy, w 
 Krok 2 zużywa limit AI (pula GPW/NC, 1,90 USD miesięcznie). Gdy pula się wyczerpie albo Anthropic odrzuci klucz API, cały backfill się zatrzymuje, także dla spółek, które jeszcze czekały. Czas trwania nie był mierzony: od kilku do kilkudziesięciu minut. Postęp widać w logach: `docker compose logs -f server`.
 
 ```
-curl -X POST -H "X-Investor-Token: $T" http://<HOST_BIND>:8080/api/admin/backfill
+curl -X POST -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/admin/backfill
 ```
 
 Odpowiedź 202 oznacza, że ruszył. Odpowiedź 409 oznacza, że już trwa.
@@ -109,10 +117,10 @@ Robisz to na drugim komputerze.
 
 ## 10. Ekran konfiguracji w apce
 
-1. Adres serwera: `http://<nazwa-mini-PC>:8080`, bez żadnej ścieżki po porcie.
+1. Adres serwera: `https://minipc.investor.ts.net`, bez `:8080` i bez ścieżki.
 2. Token: ten sam, co `INVESTOR_API_TOKEN`.
-3. Tailscale na telefonie musi być włączony.
-4. Sprawdź, że `GET /api/status` zwraca dane (z komputera w Tailscale lub z `curl` jak wyżej).
+3. Tailscale ani VPN na telefonie nie są potrzebne. Aplikację Tailscale możesz odinstalować.
+4. Sprawdź, że `GET /api/status` zwraca dane przez `curl` jak wyżej.
 
 Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin) i przychodzą po rejestracji.
 
@@ -132,7 +140,7 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 7. Wynik: `____` (czas od blokady do pushu).
 
 **(b) Opóźnienie: mediana w 7 dni.**
-1. Po 7 dniach pracy: `curl -H "X-Investor-Token: $T" http://<HOST_BIND>:8080/api/status` (zmienna `T` jak w kroku 6).
+1. Po 7 dniach pracy: `curl -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/status` (zmienna `T` jak w kroku 6).
 2. `medianLatencySeconds7d` ma być ≤ 300 (5 minut). Dopóki nie ma żadnych wyników, wartość to `null`.
 3. Wynik: `____`
 

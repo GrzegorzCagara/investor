@@ -34,12 +34,12 @@ fun SetupScreen(onSave: (serverUrl: String, apiToken: String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Połączenie z serwerem", style = MaterialTheme.typography.headlineSmall)
-        Text("Podaj adres serwera w sieci Tailscale i token API.")
+        Text("Podaj publiczny adres serwera (Tailscale Funnel) i token API.")
         OutlinedTextField(
             value = serverUrl,
             onValueChange = { serverUrl = it },
             label = { Text("Adres serwera") },
-            placeholder = { Text("http://minipc.tailnet:8080") },
+            placeholder = { Text("https://minipc.investor.ts.net") },
             isError = showUrlError,
             supportingText = if (showUrlError) ({ Text("Nieprawidłowy adres serwera") }) else null,
             singleLine = true,
