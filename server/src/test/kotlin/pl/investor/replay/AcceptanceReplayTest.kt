@@ -2,7 +2,6 @@ package pl.investor.replay
 
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
@@ -149,10 +148,9 @@ class AcceptanceReplayTest : PostgresTestBase() {
         assertEquals(1, asbisHalfYear.pushes.size)
     }
 
-    @Disabled("see faza-1-wyniki-odtworzen.md")
     @Test
-    fun `2 ASBIS half-year 2026 has a positive outlook`() {
-        assertEquals(OutlookTone.POSITIVE, asbisHalfYear.scoringInput().outlook)
+    fun `2 ASBIS half-year 2026 has no forward-looking statement in the report`() {
+        assertEquals(OutlookTone.NONE, asbisHalfYear.scoringInput().outlook)
     }
 
     @Test
@@ -160,13 +158,11 @@ class AcceptanceReplayTest : PostgresTestBase() {
         asbisHalfYear.assertPushedWithinFiveMinutes()
     }
 
-    @Disabled("see faza-1-wyniki-odtworzen.md")
     @Test
     fun `3 ASBIS July sales scores at least 70`() {
         assertTrue(asbisJulySales.total() >= 70)
     }
 
-    @Disabled("see faza-1-wyniki-odtworzen.md")
     @Test
     fun `3 ASBIS July sales is pushed once`() {
         assertEquals(1, asbisJulySales.pushes.size)
@@ -177,7 +173,6 @@ class AcceptanceReplayTest : PostgresTestBase() {
         assertTrue(asbisJulySales.scoringInput().consecutiveStrongBefore >= 3)
     }
 
-    @Disabled("see faza-1-wyniki-odtworzen.md")
     @Test
     fun `3 ASBIS July sales is pushed within five minutes`() {
         asbisJulySales.assertPushedWithinFiveMinutes()
@@ -201,6 +196,12 @@ class AcceptanceReplayTest : PostgresTestBase() {
     @Test
     fun `5 Creepy Jar preliminary Q1 2026 carries the one-off warning`() {
         assertTrue(Warning.ONE_OFF_QUARTER in checkNotNull(creepyJarPreliminary.score) { "no score, status ${creepyJarPreliminary.status}" }.warnings)
+    }
+
+    @Test
+    fun `5 Creepy Jar preliminary Q1 2026 one-off quarter stays below the threshold`() {
+        assertTrue(creepyJarPreliminary.total() < 70)
+        assertEquals(0, creepyJarPreliminary.pushes.size)
     }
 
     @Test

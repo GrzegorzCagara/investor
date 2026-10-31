@@ -174,4 +174,8 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 - Źródła to scraping stron. Strona może zmienić układ i adapter przestanie działać. Pokaże to alert o awarii źródła.
 - Apkę i serwer aktualizuj razem. Gdy serwer dostanie nowy rynek albo typ zdarzenia (fazy 3 i 5), starsza apka nie odczyta odpowiedzi.
 - Polling sprawdza najpierw GPW, potem NewConnect. W wieczór z dużą liczbą raportów alerty z NewConnect mogą się spóźnić, bo czekają na obsłużenie raportów z GPW.
-- Dwa pytania kalibracyjne czekają na decyzję. Pierwsze: czy zapowiedź zarządu w raporcie półrocznym ASBIS liczyć jako pozytywną. Drugie: czy kara za rajd kursu ma blokować alert o sprzedaży za lipiec (65,83 pkt zamiast ok. 76).
+- Kalibracja (2026-10-31):
+  - Kara za rajd kursu (−10 pkt) nie działa, gdy spółka ma za sobą co najmniej 3 mocne raporty z rzędu i tanią wycenę. Rajd jest wtedy pokazany jako ostrzeżenie. Lipcowa sprzedaż ASBIS ma 75,83 pkt i push.
+  - Raport oznaczony przez AI jako jednorazowy kwartał (np. premiera gry) dostaje za niespodziankę najwyżej połowę punktów. Creepy Jar za I kw. 2026 ma 55 pkt i nie dostaje pushu.
+  - Raport półroczny ASBIS nie zawiera zapowiedzi zarządu, więc ocena „brak zapowiedzi” jest poprawna.
+  - Próg zostaje 70. Po około 3 miesiącach zakładka Skuteczność pokaże, czy oceny 60–69 też dają zysk; wtedy można obniżyć próg.

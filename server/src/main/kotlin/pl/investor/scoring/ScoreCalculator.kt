@@ -5,6 +5,8 @@ import kotlin.math.min
 
 private const val NEUTRAL_QUALITY = 7.5
 private const val NEUTRAL_VALUATION = 7.5
+private const val NEUTRAL_SURPRISE = 15.0
+private const val CONFIRMED_SERIES = 3
 
 private fun unit(value: Double) = value.coerceIn(0.0, 1.0)
 
@@ -52,21 +54,30 @@ fun valuationPoints(pe: Double?, growth: Double?, ps: Double?, psMedian: Double?
     return if (cyclical) min(points, NEUTRAL_VALUATION) else points
 }
 
-fun runUpPenalty(priceChangePct: Double?, indexChangePct: Double?, surprisePoints: Double): Double =
-    if (priceChangePct != null && indexChangePct != null && priceChangePct - indexChangePct >= 15 && surprisePoints < 20) 10.0 else 0.0
+fun hasRunUp(priceChangePct: Double?, indexChangePct: Double?): Boolean =
+    priceChangePct != null && indexChangePct != null && priceChangePct - indexChangePct >= 15
+
+private fun isConfirmedCheapGrowth(consecutiveStrong: Int, valuationPoints: Double) =
+    consecutiveStrong >= CONFIRMED_SERIES && valuationPoints > NEUTRAL_VALUATION
+
+fun runUpPenalty(priceChangePct: Double?, indexChangePct: Double?, surprisePoints: Double, consecutiveStrong: Int, valuationPoints: Double): Double =
+    if (hasRunUp(priceChangePct, indexChangePct) && surprisePoints < 20 && !isConfirmedCheapGrowth(consecutiveStrong, valuationPoints)) 10.0 else 0.0
+
+fun oneOffSurprisePoints(surprisePoints: Double, oneOff: Boolean): Double =
+    if (oneOff) min(surprisePoints, NEUTRAL_SURPRISE) else surprisePoints
 
 object ScoreCalculator {
     fun score(raw: ScoringInput): Score {
         val input = raw.finiteOnly()
         val components = ScoreComponents(
-            surprise = surprisePoints(input.sur),
+            surprise = oneOffSurprisePoints(surprisePoints(input.sur), input.oneOff),
             growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts),
             quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly),
             series = seriesPoints(input.consecutiveStrongBefore),
             outlook = outlookPoints(input.outlook),
             valuation = valuationPoints(input.pe, input.ttmNetProfitGrowthPct, input.ps, input.psMedian20q, input.cyclical),
         )
-        val penalty = runUpPenalty(input.priceChange10Pct, input.indexChange10Pct, components.surprise)
+        val penalty = runUpPenalty(input.priceChange10Pct, input.indexChange10Pct, components.surprise, input.consecutiveStrongBefore, components.valuation)
         return Score((components.sum - penalty).coerceIn(0.0, 100.0), components, penalty, warnings(input))
     }
 
@@ -98,5 +109,6 @@ object ScoreCalculator {
         if (hasMissingData(input)) add(Warning.MISSING_DATA)
         if (!input.aiUsed) add(Warning.NO_AI)
         if (input.uncertainNumbers) add(Warning.UNCERTAIN_NUMBERS)
+        if (hasRunUp(input.priceChange10Pct, input.indexChange10Pct)) add(Warning.RUN_UP)
     }
 }

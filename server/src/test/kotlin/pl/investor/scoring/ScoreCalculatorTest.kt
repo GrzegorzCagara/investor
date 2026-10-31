@@ -30,7 +30,31 @@ class ScoreCalculatorTest {
     }
     @Test fun `cyclical caps valuation at 7,5`() { assertEquals(7.5, valuationPoints(5.0, 200.0, null, null, true), 1e-9) }
     @Test fun `run-up penalty only with a modest surprise`() {
-        assertEquals(10.0, runUpPenalty(25.0, 2.0, 15.0), 1e-9); assertEquals(0.0, runUpPenalty(25.0, 2.0, 24.0), 1e-9)
+        assertEquals(10.0, runUpPenalty(25.0, 2.0, 15.0, 0, 15.0), 1e-9); assertEquals(0.0, runUpPenalty(25.0, 2.0, 24.0, 0, 15.0), 1e-9)
+    }
+    @Test fun `run-up penalty is waived for a confirmed growth series at a cheap valuation`() {
+        assertEquals(0.0, runUpPenalty(15.12, -0.81, 18.33, 3, 15.0), 1e-9)
+        assertEquals(10.0, runUpPenalty(15.12, -0.81, 18.33, 2, 15.0), 1e-9)
+        assertEquals(10.0, runUpPenalty(15.12, -0.81, 18.33, 7, 7.5), 1e-9)
+    }
+    @Test fun `ASBIS July-like input keeps its points and shows the run-up warning`() {
+        val score = ScoreCalculator.score(
+            asbisLike().copy(sur = 1.22, revenueYoyPct = 88.97, consecutiveStrongBefore = 7, outlook = OutlookTone.NONE, pe = 15.94, ttmNetProfitGrowthPct = 115.7, priceChange10Pct = 15.12, indexChange10Pct = -0.81),
+        )
+        assertEquals(0.0, score.penalty, 1e-9)
+        assertTrue(score.total >= 70.0)
+        assertTrue(Warning.RUN_UP in score.warnings)
+    }
+    @Test fun `run-up warning without a run-up is absent`() {
+        assertFalse(Warning.RUN_UP in ScoreCalculator.score(asbisLike().copy(priceChange10Pct = 5.0)).warnings)
+    }
+    @Test fun `one-off quarter caps the surprise at neutral`() {
+        val oneOff = ScoreCalculator.score(asbisLike().copy(sur = 10.27, oneOff = true))
+        val regular = ScoreCalculator.score(asbisLike().copy(sur = 10.27))
+        assertEquals(15.0, oneOff.components.surprise, 1e-9)
+        assertEquals(30.0, regular.components.surprise, 1e-9)
+        assertEquals(15.0, oneOffSurprisePoints(30.0, oneOff = true), 1e-9)
+        assertEquals(10.0, oneOffSurprisePoints(10.0, oneOff = true), 1e-9)
     }
     @Test fun `series and outlook points`() {
         assertEquals(listOf(0.0, 3.0, 6.0, 10.0, 10.0), listOf(0, 1, 2, 3, 6).map { seriesPoints(it) })
