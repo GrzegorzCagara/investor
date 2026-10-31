@@ -13,6 +13,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.io.IOException
@@ -29,12 +30,30 @@ interface InvestorApi {
     @POST("api/devices")
     suspend fun registerDevice(@Body request: DeviceRequest)
 
+    @GET("api/ranking")
+    suspend fun ranking(@Query("market") market: Market? = null): RankingResponse
+
+    @GET("api/effectiveness")
+    suspend fun effectiveness(): EffectivenessResponse
+
+    @GET("api/settings")
+    suspend fun settings(): SettingsView
+
+    @PUT("api/settings")
+    suspend fun updateSettings(@Body settings: SettingsView): SettingsView
+
+    @GET("api/status")
+    suspend fun status(): StatusResponse
+
     companion object {
         const val ALERTS_LIMIT = 100
         const val TOKEN_HEADER = "X-Investor-Token"
         private val PLACEHOLDER_URL = "http://localhost/".toHttpUrl()
 
-        val json = Json { ignoreUnknownKeys = true }
+        val json = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
         fun create(baseUrl: HttpUrl, client: OkHttpClient): InvestorApi =
             Retrofit.Builder()

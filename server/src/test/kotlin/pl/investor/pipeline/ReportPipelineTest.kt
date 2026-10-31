@@ -32,12 +32,14 @@ import pl.investor.notification.PushNotifier
 import pl.investor.notification.ReasonWriter
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
+import pl.investor.report.EventType
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
 import pl.investor.scoring.ScoreRepository
 import pl.investor.scoring.ScoringInputAssembler
+import pl.investor.settings.AlertFilters
 import pl.investor.settings.PushThreshold
 import pl.investor.settings.SettingRepository
 import pl.investor.history.PeriodKind
@@ -120,13 +122,15 @@ class ReportPipelineTest : PostgresTestBase() {
         pipeline = ReportPipeline(
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
-            refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), pushLog, notifier, PushMessageFactory(), clock,
+            refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(), clock,
         )
     }
 
     @AfterEach
     fun tearDown() {
         server.shutdown()
+        jdbc.sql("DELETE FROM setting WHERE key IN ('DISABLED_MARKETS', 'DISABLED_EVENT_TYPES') OR key LIKE 'QUIET_HOURS_%'").update()
+        settings.put("PUSH_THRESHOLD", "70")
     }
 
     private fun fixture(path: String) =
@@ -403,6 +407,48 @@ class ReportPipelineTest : PostgresTestBase() {
         assertEquals(ReportStatus.SCORED, statusOf("497297"))
         assertEquals(1L, pushLogCount())
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `disabled market gets a score but no push`() {
+        AlertFilters(settings).update(listOf(Market.GPW), emptyList())
+        enqueueAsbisRb23()
+
+        pipeline.process(entry())
+
+        assertEquals(ReportStatus.SCORED, statusOf("497297"))
+        assertTrue(scores.find(reportId("497297")) != null)
+        assertEquals(0L, pushLogCount())
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `disabled results event type gets a score but no push`() {
+        AlertFilters(settings).update(emptyList(), listOf(EventType.RESULTS))
+        enqueueAsbisRb23()
+
+        pipeline.process(entry())
+
+        assertEquals(ReportStatus.SCORED, statusOf("497297"))
+        assertTrue(scores.find(reportId("497297")) != null)
+        assertEquals(0L, pushLogCount())
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `retryPush for a market disabled meanwhile ends SCORED without sending`() {
+        every { notifier.send(any()) } throws RuntimeException("fcm down")
+        enqueueAsbisRb23()
+        pipeline.process(entry())
+        assertEquals(ReportStatus.PUSH_PENDING, statusOf("497297"))
+
+        AlertFilters(settings).update(listOf(Market.GPW), emptyList())
+        every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
+        pipeline.retryPush(reportId("497297"))
+
+        assertEquals(ReportStatus.SCORED, statusOf("497297"))
+        assertEquals(0L, pushLogCount())
+        verify(exactly = 1) { notifier.send(any()) }
     }
 
     @Test

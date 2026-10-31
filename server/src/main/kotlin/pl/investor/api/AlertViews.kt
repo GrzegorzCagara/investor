@@ -2,14 +2,14 @@ package pl.investor.api
 
 import pl.investor.extraction.AiPool
 import pl.investor.monitoring.SourceHealth
+import pl.investor.report.EventType
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.report.ReportStatus
 import pl.investor.source.Source
 import java.math.BigDecimal
 import java.time.Instant
-
-enum class EventType { RESULTS }
+import java.time.LocalDate
 
 data class AlertItem(
     val id: Long,
@@ -44,6 +44,49 @@ data class AlertDetail(
     val outlookQuote: String?,
     val revenueHistory: List<RevenuePoint>,
     val sourceUrl: String,
+    val reaction: ReactionView?,
+    val consensus: List<ConsensusRowView>,
+    val companyHistory: List<OutcomeItem>,
+)
+
+enum class Reaction { NEGATIVE, FLAT, POSITIVE }
+
+data class ReactionView(
+    val stockPct: Double,
+    val indexPct: Double?,
+    val indexName: String?,
+    val volumeMultiple: Double?,
+    val category: Reaction,
+)
+
+data class ConsensusRowView(val label: String, val actual: BigDecimal, val consensus: BigDecimal, val differencePct: Double)
+
+data class OutcomeItem(
+    val id: Long,
+    val companyName: String,
+    val market: Market,
+    val eventType: EventType,
+    val publishedAt: Instant,
+    val score: Int,
+    val reactionPct: Double?,
+    val reactionIndexPct: Double?,
+    val excess5Pct: Double?,
+    val excess20Pct: Double?,
+    val excess60Pct: Double?,
+)
+
+data class RankingResponse(val items: List<AlertItem>)
+
+data class HorizonStats(val sessions: Int, val count: Int, val avgExcessPct: Double?)
+
+data class ScoreBucketView(val eventType: EventType, val label: String, val alerts: Int, val horizons: List<HorizonStats>)
+
+data class ReactionBucketView(val reaction: Reaction, val alerts: Int, val horizons: List<HorizonStats>)
+
+data class EffectivenessResponse(
+    val buckets: List<ScoreBucketView>,
+    val byReaction: List<ReactionBucketView>,
+    val items: List<OutcomeItem>,
 )
 
 data class DeviceRequest(val token: String)
@@ -61,6 +104,26 @@ fun SourceHealth.toView() = SourceHealthView(source, lastSuccessAt, lastFailureA
 data class StatusResponse(
     val sources: List<SourceHealthView>,
     val aiSpentUsd: Map<AiPool, BigDecimal>,
+    val aiLimitUsd: Map<AiPool, BigDecimal>,
     val medianLatencySeconds7d: Long?,
     val fcmConfigured: Boolean,
+    val latestQuoteDate: LocalDate?,
+)
+
+data class QuietHoursView(val enabled: Boolean, val from: String, val to: String)
+
+data class SettingsView(
+    val pushThreshold: Int,
+    val disabledMarkets: List<Market>,
+    val disabledEventTypes: List<EventType>,
+    val quietHours: QuietHoursView,
+)
+
+data class QuietHoursRequest(val enabled: Boolean?, val from: String?, val to: String?)
+
+data class SettingsRequest(
+    val pushThreshold: Double?,
+    val disabledMarkets: List<Market?>?,
+    val disabledEventTypes: List<EventType?>?,
+    val quietHours: QuietHoursRequest?,
 )

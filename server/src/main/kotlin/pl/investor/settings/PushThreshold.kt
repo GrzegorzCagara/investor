@@ -7,8 +7,14 @@ class PushThreshold(private val settings: SettingRepository) {
 
     fun current(): Double = settings.find(KEY)?.toDoubleOrNull() ?: DEFAULT
 
-    private companion object {
-        const val KEY = "PUSH_THRESHOLD"
-        const val DEFAULT = 70.0
+    fun update(value: Int) {
+        require(value in RANGE) { "Push threshold must be within $RANGE, got $value" }
+        settings.put(KEY, value.toString())
+    }
+
+    companion object {
+        val RANGE = 0..100
+        private const val KEY = "PUSH_THRESHOLD"
+        private const val DEFAULT = 70.0
     }
 }

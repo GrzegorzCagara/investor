@@ -3,18 +3,26 @@ package pl.investor.api
 import org.springframework.stereotype.Component
 import pl.investor.extraction.ExtractionRepository
 import pl.investor.extraction.OutlookTone
-import pl.investor.notification.firstSentence
 import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResultRepository
 import pl.investor.history.RevenuePeriodRepository
+import pl.investor.history.indexInstrument
+import pl.investor.notification.firstSentence
+import pl.investor.outcome.Outcome
+import pl.investor.outcome.OutcomeRepository
+import pl.investor.report.EventType
+import pl.investor.report.Market
 import pl.investor.report.ReportStatus
+import pl.investor.scoring.ReferenceSession
 import pl.investor.scoring.ScoreComponents
 import pl.investor.scoring.ScoreRepository
 import pl.investor.scoring.WarningLabels
-import pl.investor.scoring.roundedHalfUp
 import pl.investor.scoring.primaryPeriod
+import pl.investor.scoring.roundedHalfUp
 import pl.investor.settings.PushThreshold
+import pl.investor.source.consensus.ConsensusRepository
 import pl.investor.support.toWarsawDate
+import java.time.Clock
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -25,6 +33,10 @@ class AlertAssembler(
     private val extractions: ExtractionRepository,
     private val revenuePeriods: RevenuePeriodRepository,
     private val quarterResults: QuarterResultRepository,
+    private val alerts: AlertRepository,
+    private val outcomes: OutcomeRepository,
+    private val consensusNotes: ConsensusRepository,
+    private val clock: Clock,
 ) {
 
     fun items(rows: List<AlertRow>): List<AlertItem> {
@@ -64,7 +76,25 @@ class AlertAssembler(
             outlookQuote = outlook?.quote?.takeIf { outlook.tone != OutlookTone.NONE },
             revenueHistory = extraction?.primaryPeriod()?.let { revenueHistory(row, it.kind) }.orEmpty(),
             sourceUrl = row.detailUrl,
+            reaction = outcomes.find(row.id)?.reactionView(row.market),
+            consensus = consensusNotes.find(row.id)?.rows.orEmpty().map { ConsensusRowView(it.label, it.actual, it.consensus, it.differencePct) },
+            companyHistory = scoredOutcomes(alerts.scoredBefore(row.companyId, row.publishedAt, COMPANY_HISTORY_SIZE)).map { it.toOutcomeItem() },
         )
+    }
+
+    private fun scoredOutcomes(rows: List<AlertRow>): List<ScoredOutcome> {
+        val byReport = outcomes.findAll(rows.map { it.id })
+        return rows.mapNotNull { row ->
+            row.scoredTotal()?.let { total ->
+                ScoredOutcome(row.id, row.companyName, row.market, EventType.RESULTS, row.publishedAt, total, byReport[row.id])
+            }
+        }
+    }
+
+    private fun Outcome.reactionView(market: Market): ReactionView? {
+        val stockPct = reactionPct ?: return null
+        if (!ReferenceSession.isClosed(baseDate, clock.instant())) return null
+        return ReactionView(stockPct, reactionIndexPct, market.indexInstrument(), volumeMultiple, reactionCategory(stockPct, reactionIndexPct))
     }
 
     private fun revenueHistory(row: AlertRow, kind: PeriodKind): List<RevenuePoint> = when (kind) {
@@ -103,6 +133,7 @@ class AlertAssembler(
 
     private companion object {
         const val HISTORY_SIZE = 8
+        const val COMPANY_HISTORY_SIZE = 5
         const val PLN = "PLN"
         val SCORED_STATUSES = setOf(ReportStatus.SCORED, ReportStatus.PUSH_PENDING)
         val MONTH_LABEL: DateTimeFormatter = DateTimeFormatter.ofPattern("MM.yyyy")

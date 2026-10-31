@@ -1,5 +1,6 @@
 package pl.investor.notification
 
+import com.google.api.client.json.gson.GsonFactory
 import com.google.firebase.messaging.BatchResponse
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingException
@@ -8,13 +9,19 @@ import com.google.firebase.messaging.MessagingErrorCode
 import com.google.firebase.messaging.SendResponse
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.simple.JdbcClient
+import pl.investor.settings.QuietHours
+import pl.investor.settings.QuietHoursConfig
 import pl.investor.support.PostgresTestBase
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneOffset
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,6 +32,7 @@ class PushNotifierTest : PostgresTestBase() {
     @Autowired lateinit var jdbc: JdbcClient
     @Autowired lateinit var devices: DeviceRepository
     @Autowired lateinit var pushLog: PushLogRepository
+    @Autowired lateinit var quietHours: QuietHours
 
     private val clock = Clock.fixed(Instant.parse("2026-09-21T06:10:00Z"), ZoneOffset.UTC)
     private val message = PushMessage("ASBIS (GPW) · WYNIKI · ocena 83", "Przychody +91% r/r.", mapOf("alertId" to "1"), PushKind.AI_BUDGET, null)
@@ -33,6 +41,12 @@ class PushNotifierTest : PostgresTestBase() {
     fun clean() {
         jdbc.sql("DELETE FROM device").update()
         jdbc.sql("DELETE FROM push_log").update()
+        jdbc.sql("DELETE FROM setting WHERE key LIKE 'QUIET_HOURS_%'").update()
+    }
+
+    @AfterEach
+    fun cleanSettings() {
+        jdbc.sql("DELETE FROM setting WHERE key IN ('DISABLED_MARKETS', 'DISABLED_EVENT_TYPES') OR key LIKE 'QUIET_HOURS_%'").update()
     }
 
     private fun response(error: MessagingErrorCode?): SendResponse = mockk {
@@ -51,7 +65,7 @@ class PushNotifierTest : PostgresTestBase() {
             every { sendEach(any<List<Message>>()) } returns batch(response(null), response(MessagingErrorCode.UNREGISTERED))
         }
 
-        PushNotifier(firebase, devices, pushLog, clock).send(message)
+        PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message)
 
         assertEquals(listOf("good"), devices.tokens())
         assertEquals(1L, pushLogCount())
@@ -64,7 +78,7 @@ class PushNotifierTest : PostgresTestBase() {
             every { sendEach(any<List<Message>>()) } returns batch(response(MessagingErrorCode.UNAVAILABLE))
         }
 
-        assertFailsWith<PushDeliveryException> { PushNotifier(firebase, devices, pushLog, clock).send(message) }
+        assertFailsWith<PushDeliveryException> { PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message) }
 
         assertEquals(listOf("flaky"), devices.tokens())
         assertEquals(0L, pushLogCount())
@@ -77,7 +91,7 @@ class PushNotifierTest : PostgresTestBase() {
             every { sendEach(any<List<Message>>()) } returns batch(response(MessagingErrorCode.UNREGISTERED))
         }
 
-        assertFailsWith<PushDeliveryException> { PushNotifier(firebase, devices, pushLog, clock).send(message) }
+        assertFailsWith<PushDeliveryException> { PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message) }
 
         assertEquals(emptyList(), devices.tokens())
         assertEquals(0L, pushLogCount())
@@ -90,7 +104,7 @@ class PushNotifierTest : PostgresTestBase() {
             every { sendEach(any<List<Message>>()) } throws IllegalStateException("fcm down")
         }
 
-        assertFailsWith<IllegalStateException> { PushNotifier(firebase, devices, pushLog, clock).send(message) }
+        assertFailsWith<IllegalStateException> { PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message) }
 
         assertEquals(0L, pushLogCount())
     }
@@ -107,7 +121,7 @@ class PushNotifierTest : PostgresTestBase() {
         val firebase = mockk<FirebaseMessaging> {
             every { sendEach(any<List<Message>>()) } returns batch(response(null))
         }
-        val notifier = PushNotifier(firebase, devices, pushLog, clock)
+        val notifier = PushNotifier(firebase, devices, pushLog, quietHours, clock)
 
         notifier.send(results)
         notifier.send(results)
@@ -123,7 +137,7 @@ class PushNotifierTest : PostgresTestBase() {
             every { sendEach(any<List<Message>>()) } returns batch(response(null), response(null))
         }
 
-        PushNotifier(firebase, devices, pushLog, clock).send(message)
+        PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message)
 
         verify { firebase.sendEach(match<List<Message>> { it.size == 2 }) }
         assertEquals("AI_BUDGET", jdbc.sql("SELECT kind FROM push_log").query(String::class.java).single())
@@ -133,7 +147,7 @@ class PushNotifierTest : PostgresTestBase() {
     fun `without Firebase the push fails and is not logged`() {
         devices.register("a", Instant.parse("2026-09-01T00:00:00Z"))
 
-        assertFailsWith<PushDeliveryException> { PushNotifier(null, devices, pushLog, clock).send(message) }
+        assertFailsWith<PushDeliveryException> { PushNotifier(null, devices, pushLog, quietHours, clock).send(message) }
 
         assertEquals(0L, pushLogCount())
         assertEquals(listOf("a"), devices.tokens())
@@ -143,9 +157,43 @@ class PushNotifierTest : PostgresTestBase() {
     fun `without a registered device the push fails and is not logged`() {
         val firebase = mockk<FirebaseMessaging>()
 
-        assertFailsWith<PushDeliveryException> { PushNotifier(firebase, devices, pushLog, clock).send(message) }
+        assertFailsWith<PushDeliveryException> { PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message) }
 
         assertEquals(0L, pushLogCount())
         verify(exactly = 0) { firebase.sendEach(any<List<Message>>()) }
+    }
+
+    private fun channelOfSentMessage(): String {
+        devices.register("a", Instant.parse("2026-09-01T00:00:00Z"))
+        val sent = slot<List<Message>>()
+        val firebase = mockk<FirebaseMessaging> {
+            every { sendEach(capture(sent)) } returns batch(response(null))
+        }
+
+        PushNotifier(firebase, devices, pushLog, quietHours, clock).send(message)
+
+        val json = jacksonObjectMapper().readTree(GsonFactory.getDefaultInstance().toString(sent.captured.single()))
+        return json.path("android").path("notification").path("channel_id").asString()
+    }
+
+    @Test
+    fun `push goes to the normal channel outside quiet hours`() {
+        quietHours.update(QuietHoursConfig(true, LocalTime.of(22, 0), LocalTime.of(7, 0)))
+
+        assertEquals("alerty", channelOfSentMessage())
+    }
+
+    @Test
+    fun `push goes to the quiet channel inside quiet hours`() {
+        quietHours.update(QuietHoursConfig(true, LocalTime.of(8, 0), LocalTime.of(9, 0)))
+
+        assertEquals("alerty_ciche", channelOfSentMessage())
+    }
+
+    @Test
+    fun `disabled quiet hours keep the normal channel`() {
+        quietHours.update(QuietHoursConfig(false, LocalTime.of(8, 0), LocalTime.of(9, 0)))
+
+        assertEquals("alerty", channelOfSentMessage())
     }
 }

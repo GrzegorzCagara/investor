@@ -36,6 +36,7 @@ import pl.investor.scoring.Score
 import pl.investor.scoring.ScoreRepository
 import pl.investor.scoring.ScoringInput
 import pl.investor.scoring.ScoringInputAssembler
+import pl.investor.settings.QuietHours
 import pl.investor.settings.SettingRepository
 import pl.investor.source.PoliteHttpClient
 import pl.investor.source.Source
@@ -285,8 +286,8 @@ class AnthropicStub {
     }
 }
 
-class RecordingPushNotifier(devices: DeviceRepository, pushLog: PushLogRepository, private val clock: Clock) :
-    PushNotifier(deliveringFirebase(), devices, pushLog, clock) {
+class RecordingPushNotifier(devices: DeviceRepository, pushLog: PushLogRepository, quietHours: QuietHours, private val clock: Clock) :
+    PushNotifier(deliveringFirebase(), devices, pushLog, quietHours, clock) {
 
     data class Sent(val message: PushMessage, val at: Instant)
 
@@ -318,8 +319,8 @@ class ReplayConfig {
 
     @Bean
     @Primary
-    fun replayNotifier(devices: DeviceRepository, pushLog: PushLogRepository, clock: MutableClock): RecordingPushNotifier =
-        RecordingPushNotifier(devices, pushLog, clock)
+    fun replayNotifier(devices: DeviceRepository, pushLog: PushLogRepository, quietHours: QuietHours, clock: MutableClock): RecordingPushNotifier =
+        RecordingPushNotifier(devices, pushLog, quietHours, clock)
 }
 
 class ReplayHarness(

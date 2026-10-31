@@ -10,7 +10,10 @@ import pl.investor.source.Source
 import pl.investor.source.SourceUnavailableException
 import java.math.BigDecimal
 import java.time.Clock
+import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 class DailyQuotesJobTest {
 
@@ -101,5 +104,28 @@ class DailyQuotesJobTest {
         verify(exactly = 8) { repository.save(any()) }
         verify(exactly = 0) { gpw.day(LocalDate.of(2026, 9, 19)) }
         verify(exactly = 0) { gpw.day(LocalDate.of(2026, 9, 20)) }
+    }
+
+    @Test
+    fun `retry run also refetches weekdays of the last 14 days without a WIG quote`() {
+        val today = LocalDate.of(2026, 9, 21)
+        val missing = LocalDate.of(2026, 9, 15)
+        val clock = Clock.fixed(Instant.parse("2026-09-21T19:30:00Z"), ZoneOffset.UTC)
+        val recorded = generateSequence(today.minusDays(14)) { it.plusDays(1) }
+            .takeWhile { it < today }
+            .filterNot { it == missing || it.dayOfWeek == DayOfWeek.SATURDAY || it.dayOfWeek == DayOfWeek.SUNDAY }
+            .map { quote("WIG", it) }
+            .toList()
+        every { repository.between("WIG", today.minusDays(14), today) } returns recorded
+        every { gpw.day(any()) } returns emptyList()
+        every { nc.day(any()) } returns emptyList()
+        every { indices.day(any(), any()) } returns null
+
+        DailyQuotesJob(gpw, nc, indices, repository, clock).retryToday()
+
+        verify(exactly = 1) { gpw.day(today) }
+        verify(exactly = 1) { gpw.day(missing) }
+        verify(exactly = 2) { gpw.day(any()) }
+        verify(exactly = 2) { nc.day(any()) }
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import pl.investor.outcome.OutcomeJob
 import pl.investor.pipeline.MonthlySalesBackfillJob
 import pl.investor.source.quotes.DailyQuotesJob
 import pl.investor.support.toWarsawDate
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class AdminController(
     private val monthlySales: MonthlySalesBackfillJob,
     private val dailyQuotes: DailyQuotesJob,
+    private val outcomes: OutcomeJob,
     private val clock: Clock,
 ) {
 
@@ -34,6 +36,7 @@ class AdminController(
                 runCatching { monthlySales.runAll(MONTHS) }.onFailure { log.error("Monthly sales backfill failed", it) }
                 val today = clock.instant().toWarsawDate()
                 runCatching { dailyQuotes.backfill(today.minusDays(QUOTE_DAYS), today) }.onFailure { log.error("Quotes backfill failed", it) }
+                runCatching { outcomes.refresh(recomputeAll = true) }.onFailure { log.error("Outcomes refresh failed", it) }
             } finally {
                 running.set(false)
             }
@@ -48,6 +51,6 @@ class AdminController(
 
     private companion object {
         const val MONTHS = 13
-        const val QUOTE_DAYS = 60L
+        const val QUOTE_DAYS = 165L
     }
 }

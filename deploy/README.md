@@ -86,18 +86,21 @@ Oczekiwane: kod 200, lista źródeł z `lastSuccessAt` z ostatnich 2 minut (w go
 
 ## 7. Backfill historii
 
-Bez historii oceny nie mają danych do porównań. Backfill robi trzy rzeczy, w tle:
+Bez historii oceny nie mają danych do porównań. Backfill robi cztery rzeczy, w tle:
 1. Przegląda listy komunikatów GPW i NewConnect z ostatnich 13 miesięcy, dzień po dniu, aż do wczoraj, i zbiera z nich raporty ze sprzedażą miesięczną. Dzisiejsze raporty obsługuje bieżący polling.
 2. Grupuje te raporty według spółki (po ISIN) i wyciąga z nich przychody przez Claude. Raporty z NewConnect są zapisywane jako NC.
-3. Pobiera notowania GPW i NewConnect z ostatnich 60 dni.
+3. Pobiera notowania GPW i NewConnect oraz indeksy WIG i NCIndex z ostatnich 165 dni.
+4. Przelicza od nowa wyniki alertów z ostatnich 120 dni: reakcję rynku i zmianę kursu po 5, 20 i 60 sesjach. Dzięki temu backfill naprawia też dni, w których pobranie notowań się nie udało.
 
-Krok 2 zużywa limit AI (pula GPW/NC, 1,90 USD miesięcznie). Gdy pula się wyczerpie albo Anthropic odrzuci klucz API, cały backfill się zatrzymuje, także dla spółek, które jeszcze czekały. Czas trwania nie był mierzony: od kilku do kilkudziesięciu minut. Postęp widać w logach: `docker compose logs -f server`.
+Krok 2 zużywa limit AI (pula GPW/NC, 1,90 USD miesięcznie). Gdy pula się wyczerpie albo Anthropic odrzuci klucz API, krok 2 się zatrzymuje, także dla spółek, które jeszcze czekały. Kroki 3 i 4 wykonują się mimo to. Czas trwania nie był mierzony: od kilku do kilkudziesięciu minut. Postęp widać w logach: `docker compose logs -f server`.
 
 ```
 curl -X POST -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/admin/backfill
 ```
 
 Odpowiedź 202 oznacza, że ruszył. Odpowiedź 409 oznacza, że już trwa.
+
+**Po aktualizacji z fazy 1 do fazy 2** uruchom backfill jeszcze raz. Faza 1 pobierała notowania tylko z 60 dni, a wyniki alertów potrzebują ich ze 165 dni. Raporty sprzedaży miesięcznej zapisane wcześniej są pomijane, więc koszt AI jest minimalny.
 
 ## 8. Budowa APK w Android Studio
 
@@ -123,6 +126,21 @@ Robisz to na drugim komputerze.
 4. Sprawdź, że `GET /api/status` zwraca dane przez `curl` jak wyżej.
 
 Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin) i przychodzą po rejestracji.
+
+## 11. Ustawienia w apce (⚙)
+
+- **Próg alertu:** liczba od 0 do 100, domyślnie 70. Push przychodzi, gdy dokładna ocena jest równa progowi albo wyższa. Apka pokazuje ocenę zaokrągloną, więc raport z oceną 69,6 widać jako 70, ale pushu nie ma.
+- **Rynki i typy zdarzeń:** wyłączony rynek albo typ nadal jest analizowany i widać go w zakładce Alerty, tylko push nie przychodzi. Raporty nadal zużywają limit AI.
+- **Ciche godziny:** domyślnie wyłączone. W tych godzinach (czas warszawski, np. 22:00–07:00) push przychodzi bez dźwięku. Dotyczy wszystkich pushy, także o awarii źródła.
+- **Stan źródeł** i **AI w tym miesiącu** (wydane / limit w USD) są tylko do odczytu.
+
+## 12. Ranking, Skuteczność i dane po raporcie
+
+- **Ranking:** spółki ocenione w ostatnich 30 dniach, od najwyższej oceny. Każda spółka występuje raz, z najnowszym raportem. Filtr rynku: GPW, NC, USA.
+- **Reakcja rynku** (w szczegółach raportu): zmiana kursu na pierwszej sesji zamkniętej po publikacji, obok zmiana indeksu (WIG albo NCIndex) i wolumen (liczba akcji) względem średniej z 20 sesji. Pojawia się po wieczornym przeliczeniu w dniu tej sesji.
+- **Skuteczność:** dla ocen 50–59, 60–69, 70–79 i 80+ średni zwrot ponad indeks po 5, 20 i 60 sesjach. Zwrot liczony jest od zamknięcia pierwszej sesji po raporcie, czyli od ceny, po której dało się kupić po alercie. Osobno wyniki według reakcji rynku w dniu raportu (spadek, płasko, wzrost).
+- Wyniki przelicza serwer w dni robocze o 22:00, po pobraniu notowań. Wynik po 60 sesjach pojawia się po około 3 miesiącach, więc przez pierwsze tygodnie zakładka będzie prawie pusta.
+- **Konsensus PAP** (w szczegółach raportu): dla większych spółek z GPW PAP publikuje kilka godzin po raporcie notkę „wyniki vs konsensus”. Serwer szuka jej na Bankierze co godzinę (o :15, w godz. 6–16 i 19–23, z przerwą na szczyt publikacji) przez 36 godzin po raporcie. Konsensus jest tylko informacją: nie zmienia oceny i nie wysyła pushu. Małe spółki zwykle go nie mają.
 
 ## Pomiary
 
@@ -154,5 +172,6 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 
 - Kopie raportów na Bankierze potrafią się spóźniać. Raporty okresowe są ponawiane do 2 godzin, potem serwer sięga po dane z BiznesRadaru (do 48 godzin).
 - Źródła to scraping stron. Strona może zmienić układ i adapter przestanie działać. Pokaże to alert o awarii źródła.
+- Apkę i serwer aktualizuj razem. Gdy serwer dostanie nowy rynek albo typ zdarzenia (fazy 3 i 5), starsza apka nie odczyta odpowiedzi.
 - Polling sprawdza najpierw GPW, potem NewConnect. W wieczór z dużą liczbą raportów alerty z NewConnect mogą się spóźnić, bo czekają na obsłużenie raportów z GPW.
 - Dwa pytania kalibracyjne czekają na decyzję. Pierwsze: czy zapowiedź zarządu w raporcie półrocznym ASBIS liczyć jako pozytywną. Drugie: czy kara za rajd kursu ma blokować alert o sprzedaży za lipiec (65,83 pkt zamiast ok. 76).

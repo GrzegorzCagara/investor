@@ -24,6 +24,7 @@ import pl.investor.notification.PushNotifier
 import pl.investor.notification.ReasonWriter
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
+import pl.investor.report.EventType
 import pl.investor.report.Report
 import pl.investor.report.ReportKind
 import pl.investor.report.ReportRepository
@@ -33,6 +34,7 @@ import pl.investor.scoring.ScoreCalculator
 import pl.investor.scoring.ScoreRepository
 import pl.investor.scoring.ScoringInputAssembler
 import pl.investor.scoring.primaryPeriod
+import pl.investor.settings.AlertFilters
 import pl.investor.settings.PushThreshold
 import pl.investor.settings.SettingRepository
 import pl.investor.source.SourceUnavailableException
@@ -63,6 +65,7 @@ class ReportPipeline(
     private val scores: ScoreRepository,
     private val settings: SettingRepository,
     private val pushThreshold: PushThreshold,
+    private val alertFilters: AlertFilters,
     private val pushLog: PushLogRepository,
     private val notifier: PushNotifier,
     private val messages: PushMessageFactory,
@@ -111,7 +114,7 @@ class ReportPipeline(
         val company = companies.findById(report.companyId)
         val stored = checkNotNull(scores.find(reportId)) { "Report $reportId has no score to push" }
         val period = pushPeriod(report, company, extractions.find(reportId))
-        if (period != null && pushLog.resultsPushExists(checkNotNull(company.id), period.kind, period.end)) {
+        if (!report.isResultsPushEnabled() || isAlreadyPushed(company, period)) {
             setStatus(report, ReportStatus.SCORED)
         } else {
             deliver(report, company, stored.score, stored.reason, period)
@@ -264,7 +267,7 @@ class ReportPipeline(
         val reason = reasonWriter.write(company, input, score)
         scores.save(checkNotNull(report.id), score, reason, clock.instant())
         val period = pushPeriod(report, company, verified)
-        if (score.total < pushThreshold.current() || isAlreadyPushed(company, period)) {
+        if (score.total < pushThreshold.current() || !report.isResultsPushEnabled() || isAlreadyPushed(company, period)) {
             setStatus(report, ReportStatus.SCORED)
             return
         }
@@ -281,6 +284,8 @@ class ReportPipeline(
             log.error("Sending push for report {} failed, it stays PUSH_PENDING", report.sourceRef, e)
         }
     }
+
+    private fun Report.isResultsPushEnabled(): Boolean = alertFilters.allows(market, EventType.RESULTS)
 
     private fun isAlreadyPushed(company: Company, period: PushPeriod?): Boolean =
         period != null && pushLog.resultsPushExists(checkNotNull(company.id), period.kind, period.end)

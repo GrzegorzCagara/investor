@@ -10,7 +10,7 @@ spring:
   task:
     scheduling:
       pool:
-        size: 4
+        size: 6
 
 management:
   endpoints:

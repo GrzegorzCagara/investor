@@ -3,4 +3,5 @@
     <string name="app_name">Investor</string>
     <string name="alerts_channel_id">alerty</string>
     <string name="alerts_channel_name">Alerty o wynikach</string>
+    <string name="quiet_alerts_channel_name">Alerty (cicho)</string>
 </resources>

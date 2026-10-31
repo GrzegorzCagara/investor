@@ -27,11 +27,10 @@ class InvestorApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
-        getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(
-                getString(R.string.alerts_channel_id),
-                getString(R.string.alerts_channel_name),
-                NotificationManager.IMPORTANCE_HIGH,
+        getSystemService(NotificationManager::class.java).createNotificationChannels(
+            listOf(
+                NotificationChannel(NotificationChannels.ALERTS, getString(R.string.alerts_channel_name), NotificationManager.IMPORTANCE_HIGH),
+                NotificationChannel(NotificationChannels.QUIET, getString(R.string.quiet_alerts_channel_name), NotificationManager.IMPORTANCE_LOW),
             ),
         )
     }

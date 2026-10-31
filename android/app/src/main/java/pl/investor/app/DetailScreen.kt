@@ -93,6 +93,10 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
+        detail.reaction?.let { Text(Formatting.reactionLine(it), fontSize = 13.sp) }
+        if (detail.consensus.isNotEmpty()) {
+            Text(Formatting.consensusLine(detail.consensus), fontSize = 13.sp)
+        }
         detail.components.forEach { ComponentRow(it) }
         if (detail.penalty > 0) {
             Text("Kara: −${Formatting.points(detail.penalty)}", color = WARNING, fontSize = 12.sp)
@@ -105,9 +109,21 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
             Text("„$quote”", fontStyle = FontStyle.Italic, style = MaterialTheme.typography.bodyMedium)
         }
         detail.warnings.forEach { Text("⚠ $it", color = WARNING, fontSize = 12.sp) }
+        if (detail.companyHistory.isNotEmpty()) {
+            Text("Wcześniejsze alerty spółki", fontSize = 11.sp, color = Color(0xFF888888))
+            detail.companyHistory.forEach { HistoryRow(it, now) }
+        }
         Button(onClick = { uriHandler.openUri(detail.sourceUrl) }, modifier = Modifier.fillMaxWidth()) {
             Text("Otwórz raport")
         }
+    }
+}
+
+@Composable
+private fun HistoryRow(item: OutcomeItem, now: Instant) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(Formatting.historyLine(item, now), fontSize = 13.sp, modifier = Modifier.weight(1f))
+        ScoreBadge(item.score)
     }
 }
 

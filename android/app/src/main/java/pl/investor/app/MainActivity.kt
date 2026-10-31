@@ -101,12 +101,9 @@ class MainActivity : ComponentActivity() {
 
         NavHost(navController = navController, startDestination = ALERTS_ROUTE) {
             composable(ALERTS_ROUTE) {
-                val alertsViewModel = viewModel<AlertsViewModel>(
-                    factory = viewModelFactory { initializer { AlertsViewModel(container.api, container.clock) } },
-                )
-                AlertsScreen(
-                    viewModel = alertsViewModel,
-                    now = container.clock::instant,
+                MainScreen(
+                    api = container.api,
+                    clock = container.clock,
                     onOpen = { navController.navigate("$DETAIL_ROUTE/$it") },
                 )
             }

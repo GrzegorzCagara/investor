@@ -1,5 +1,6 @@
 package pl.investor.api
 
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.server.LocalServerPort
@@ -22,9 +23,11 @@ import pl.investor.extraction.Outlook
 import pl.investor.extraction.OutlookTone
 import pl.investor.extraction.ReportCategory
 import pl.investor.extraction.VerifiedExtraction
+import pl.investor.history.DailyQuote
 import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResult
 import pl.investor.history.QuarterResultRepository
+import pl.investor.history.QuoteRepository
 import pl.investor.history.RevenuePeriod
 import pl.investor.history.RevenuePeriodRepository
 import pl.investor.notification.DeviceRepository
@@ -69,6 +72,7 @@ class ApiTest : PostgresTestBase() {
     @Autowired lateinit var extractions: ExtractionRepository
     @Autowired lateinit var revenuePeriods: RevenuePeriodRepository
     @Autowired lateinit var quarterResults: QuarterResultRepository
+    @Autowired lateinit var quotes: QuoteRepository
     @LocalServerPort var port: Int = 0
 
     private lateinit var mvc: MockMvc
@@ -205,8 +209,21 @@ class ApiTest : PostgresTestBase() {
             .andExpect(jsonPath("\$.medianLatencySeconds7d").value(210))
             .andExpect(jsonPath("\$.aiSpentUsd.${AiPool.GPW.name}").exists())
             .andExpect(jsonPath("\$.aiSpentUsd.${AiPool.US.name}").exists())
+            .andExpect(jsonPath("\$.aiLimitUsd.${AiPool.GPW.name}").value(1.90))
+            .andExpect(jsonPath("\$.aiLimitUsd.${AiPool.US.name}").value(2.85))
             .andExpect(jsonPath("\$.sources").isArray)
             .andExpect(jsonPath("\$.fcmConfigured").value(false))
+    }
+
+    @Test
+    fun `status reports the newest WIG quote date`() {
+        jdbc.sql("DELETE FROM daily_quote WHERE instrument = 'WIG'").update()
+        mvc.perform(authorized("/api/status")).andExpect(jsonPath("\$.latestQuoteDate").value(nullValue()))
+
+        listOf(LocalDate.of(2026, 10, 28), LocalDate.of(2026, 10, 29)).forEach { quotes.save(DailyQuote("WIG", it, BigDecimal.TEN, 1, null)) }
+        quotes.save(DailyQuote("NCINDEX", LocalDate.of(2026, 10, 30), BigDecimal.TEN, 1, null))
+
+        mvc.perform(authorized("/api/status")).andExpect(jsonPath("\$.latestQuoteDate").value("2026-10-29"))
     }
 
     private fun extraction(reportId: Long, kind: PeriodKind, tone: OutlookTone = OutlookTone.NONE, quote: String? = null) {

@@ -32,7 +32,7 @@ class InvestorMessagingService : FirebaseMessagingService() {
             tap,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val built = NotificationCompat.Builder(this, getString(R.string.alerts_channel_id))
+        val built = NotificationCompat.Builder(this, NotificationChannels.resolve(notification.channelId))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(notification.title)
             .setContentText(notification.body)

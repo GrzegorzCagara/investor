@@ -12,6 +12,7 @@ import pl.investor.history.QuoteRepository
 import pl.investor.history.RevenuePeriod
 import pl.investor.history.RevenuePeriodRepository
 import pl.investor.history.ValuationRepository
+import pl.investor.history.indexInstrument
 import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.report.Report
@@ -193,7 +194,7 @@ class ScoringInputAssembler(
     }
 
     private fun indexChangePct(market: Market, reference: LocalDate, from: LocalDate): Double? {
-        val instrument = INDEX_BY_MARKET[market] ?: return null
+        val instrument = market.indexInstrument() ?: return null
         val closes = quotes.closesUpTo(instrument, reference, QUOTE_WINDOW).associate { it.date to it.close }
         val end = closes[reference] ?: return null
         val start = closes[from] ?: return null
@@ -247,7 +248,6 @@ class ScoringInputAssembler(
         const val PRICE_CHANGE_SESSIONS = 10
         const val LIQUIDITY_SESSIONS = 20
         const val LOW_LIQUIDITY_TURNOVER_PLN = 100_000.0
-        val INDEX_BY_MARKET = mapOf(Market.GPW to "WIG", Market.NC to "NCINDEX")
     }
 }
 

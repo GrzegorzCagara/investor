@@ -2,9 +2,11 @@ package pl.investor.api
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verifyOrder
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import pl.investor.outcome.OutcomeJob
 import pl.investor.pipeline.MonthlySalesBackfillJob
 import pl.investor.source.quotes.DailyQuotesJob
 import java.time.Clock
@@ -22,7 +24,8 @@ class AdminControllerTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-30T10:00:00Z"), ZoneOffset.UTC)
     private val monthlySales = mockk<MonthlySalesBackfillJob>()
     private val dailyQuotes = mockk<DailyQuotesJob>()
-    private val controller = AdminController(monthlySales, dailyQuotes, clock)
+    private val outcomes = mockk<OutcomeJob>(relaxed = true)
+    private val controller = AdminController(monthlySales, dailyQuotes, outcomes, clock)
     private val mvc = MockMvcBuilders.standaloneSetup(controller).build()
 
     private fun awaitAccepted() {
@@ -46,7 +49,7 @@ class AdminControllerTest {
         mvc.perform(post("/api/admin/backfill")).andExpect(status().isAccepted)
 
         assertTrue(done.await(5, TimeUnit.SECONDS))
-        assertEquals(listOf(LocalDate.of(2026, 8, 31) to LocalDate.of(2026, 10, 30)), quotesRange)
+        assertEquals(listOf(LocalDate.of(2026, 5, 18) to LocalDate.of(2026, 10, 30)), quotesRange)
     }
 
     @Test
@@ -74,6 +77,23 @@ class AdminControllerTest {
         mvc.perform(post("/api/admin/backfill")).andExpect(status().isAccepted)
 
         assertTrue(quotesRan.await(5, TimeUnit.SECONDS))
+        awaitAccepted()
+    }
+
+    @Test
+    fun `backfill recomputes all outcomes after the quotes even when quotes fail`() {
+        val refreshed = CountDownLatch(1)
+        every { monthlySales.runAll(13) } returns 0
+        every { dailyQuotes.backfill(any(), any()) } throws IllegalStateException("boom")
+        every { outcomes.refresh(recomputeAll = true) } answers { refreshed.countDown() }
+
+        mvc.perform(post("/api/admin/backfill")).andExpect(status().isAccepted)
+
+        assertTrue(refreshed.await(5, TimeUnit.SECONDS))
+        verifyOrder {
+            dailyQuotes.backfill(any(), any())
+            outcomes.refresh(recomputeAll = true)
+        }
         awaitAccepted()
     }
 }

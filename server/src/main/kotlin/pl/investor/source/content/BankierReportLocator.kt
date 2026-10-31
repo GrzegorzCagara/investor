@@ -3,6 +3,7 @@ package pl.investor.source.content
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.source.PoliteHttpClient
@@ -43,6 +44,12 @@ class BankierReportLocator(
         val resolved = resolve(entry.companyName) ?: return null
         return match(resolved.announcements, entry)?.also { slugsByCompany[key] = resolved.slug }
     }
+
+    fun confirmedSlug(company: Company): String? =
+        if (company.market == Market.US) null else slugsByCompany[company.isin ?: company.name]
+
+    fun hasAnnouncements(slug: String, source: Source): Boolean =
+        http.probe(source, listUrl(slug))?.let { parseAnnouncements(it).isNotEmpty() } ?: false
 
     private fun knownAnnouncements(key: String, slug: String): List<Announcement>? {
         val announcements = try {

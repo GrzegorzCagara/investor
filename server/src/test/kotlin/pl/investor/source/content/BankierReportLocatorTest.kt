@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import pl.investor.monitoring.SourceHealthTracker
+import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.source.PoliteHttpClient
@@ -20,7 +21,9 @@ import pl.investor.source.gpw.ListingEntry
 import java.time.Clock
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BankierReportLocatorTest {
 
@@ -230,6 +233,45 @@ class BankierReportLocatorTest {
     @Test
     fun `unknown company returns null`() {
         assertNull(locator.find(xtbPrelim.copy(companyName = "NIEZNANA SPOLKA SA", isin = "PL0000000000")))
+    }
+
+    private val asbisCompany = Company(1, "ASBISC ENTERPRISES PLC", "CY1000031710", Market.GPW, null, null, true)
+
+    @Test
+    fun `confirmed slug is known only after a matched report and needs no request`() {
+        assertNull(locator.confirmedSlug(asbisCompany))
+        locator.find(asbisH1)
+        requestedPaths.clear()
+
+        assertEquals("ASBIS", locator.confirmedSlug(asbisCompany))
+        assertEquals(emptyList<String>(), requestedPaths)
+    }
+
+    @Test
+    fun `US company has no confirmed slug`() {
+        locator.find(asbisH1)
+
+        assertNull(locator.confirmedSlug(asbisCompany.copy(market = Market.US)))
+    }
+
+    @Test
+    fun `announcements check probes komunikaty under the given source`() {
+        assertTrue(locator.hasAnnouncements("ASBIS", Source.BANKIER_NEWS))
+        assertFalse(locator.hasAnnouncements("NIEZNANA", Source.BANKIER_NEWS))
+
+        verify { tracker.recordSuccess(Source.BANKIER_NEWS, any()) }
+        verify(exactly = 0) { tracker.recordSuccess(Source.BANKIER, any()) }
+        verify(exactly = 0) { tracker.recordFailure(any(), any(), any()) }
+    }
+
+    @Test
+    fun `consensus lookups do not change how reports are located`() {
+        locator.confirmedSlug(asbisCompany)
+        locator.hasAnnouncements("ASBIS", Source.BANKIER_NEWS)
+        requestedPaths.clear()
+
+        assertEquals("https://www.bankier.pl/wiadomosc/ASBISc-Wyniki-finansowe-PS-2026-9178519.html", locator.find(asbisH1))
+        assertEquals(listOf("/gielda/notowania/akcje/ASBISC/komunikaty", "/gielda/notowania/akcje/ASBIS/komunikaty"), requestedPaths)
     }
 
     @Test
