@@ -12,6 +12,7 @@ import pl.investor.pipeline.MonthlySalesBackfillJob
 import pl.investor.source.quotes.DailyQuotesJob
 import pl.investor.support.toWarsawDate
 import java.time.Clock
+import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -32,6 +33,8 @@ class AdminController(
     fun backfill(): ResponseEntity<Void> {
         if (!running.compareAndSet(false, true)) return ResponseEntity.status(HttpStatus.CONFLICT).build()
         executor.execute {
+            val started = clock.instant()
+            log.info("Backfill started")
             try {
                 runCatching { monthlySales.runAll(MONTHS) }.onFailure { log.error("Monthly sales backfill failed", it) }
                 val today = clock.instant().toWarsawDate()
@@ -39,6 +42,7 @@ class AdminController(
                 runCatching { outcomes.refresh(recomputeAll = true) }.onFailure { log.error("Outcomes refresh failed", it) }
             } finally {
                 running.set(false)
+                log.info("Backfill finished in {} min", Duration.between(started, clock.instant()).toMinutes())
             }
         }
         return ResponseEntity.accepted().build()

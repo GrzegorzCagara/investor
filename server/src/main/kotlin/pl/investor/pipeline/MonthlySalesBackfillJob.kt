@@ -56,10 +56,11 @@ class MonthlySalesBackfillJob(
             }
         }
         val groups = entries.groupBy { it.isin ?: it.companyName }.values
-        log.info("Monthly sales backfill scan finished, {} companies found", groups.size)
+        log.info("Monthly sales backfill scan finished, {} reports of {} companies found", entries.size, groups.size)
+        var saved = 0
         for (group in groups) {
             try {
-                backfill(group)
+                saved += backfill(group)
             } catch (e: AiBudgetExhaustedException) {
                 log.warn("AI budget exhausted, monthly sales backfill stopped")
                 break
@@ -70,6 +71,7 @@ class MonthlySalesBackfillJob(
                 log.error("Backfill of {} failed", group.first().companyName, e)
             }
         }
+        log.info("Monthly sales backfill finished, {} monthly revenues saved", saved)
         return groups.size
     }
 
@@ -89,8 +91,10 @@ class MonthlySalesBackfillJob(
         val company = sorted.firstOrNull()?.let(resolver::resolve) ?: return 0
         val companyId = checkNotNull(company.id)
         companies.markPublishesMonthlySales(companyId)
+        val unread = sorted.filterNot { reports.existsBySourceRef(it.market, it.sourceRef) }
+        log.info("Monthly sales backfill of {}: {} of {} reports to read", company.name, unread.size, sorted.size)
         var stored = 0
-        sorted.filterNot { reports.existsBySourceRef(it.market, it.sourceRef) }.forEach { entry ->
+        unread.forEach { entry ->
             try {
                 stored += store(entry, companyId, company.name)
             } catch (e: AiBudgetExhaustedException) {
@@ -155,11 +159,22 @@ class MonthlySalesBackfillJob(
 }
 
 private val COMBINING_MARKS = Regex("\\p{M}+")
+private val MONTH_PERIOD = Regex(
+    "\\b(za|w|we)\\s+(miesiac\\w*\\s+)?(styczen|stycznia|styczniu|luty|lutego|lutym|marzec|marca|marcu|kwiecien|kwietnia|kwietniu|" +
+        "maj|maja|maju|czerwiec|czerwca|czerwcu|lipiec|lipca|lipcu|sierpien|sierpnia|sierpniu|wrzesien|wrzesnia|wrzesniu|" +
+        "pazdziernik|pazdziernika|pazdzierniku|listopad|listopada|listopadzie|grudzien|grudnia|grudniu)\\b"
+)
+private val ASSET_SALE = Regex("akcj|udzial|obligacj|nieruchomosc|wierzytelnosc|zorganizowanej")
 
 fun ListingEntry.isMonthlySales(): Boolean {
     val normalized = title?.withoutPolishMarks() ?: return false
-    return kind == ReportKind.CURRENT && "miesieczn" in normalized && ("przychod" in normalized || "sprzedaz" in normalized)
+    return kind == ReportKind.CURRENT && normalized.isAboutRevenue() && normalized.coversOneMonth()
 }
+
+private fun String.isAboutRevenue(): Boolean =
+    ("przychod" in this || "sprzedaz" in this) && !ASSET_SALE.containsMatchIn(this)
+
+private fun String.coversOneMonth(): Boolean = "miesieczn" in this || MONTH_PERIOD.containsMatchIn(this)
 
 private fun String.withoutPolishMarks(): String =
     Normalizer.normalize(lowercase().replace('ł', 'l'), Normalizer.Form.NFD).replace(COMBINING_MARKS, "")

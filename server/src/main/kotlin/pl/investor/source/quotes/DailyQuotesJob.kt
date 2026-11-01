@@ -39,7 +39,10 @@ class DailyQuotesJob(
     }
 
     fun backfill(from: LocalDate, to: LocalDate) {
-        weekdays(from, to).forEach(::run)
+        val days = weekdays(from, to).toList()
+        log.info("Quotes backfill of {} weekdays from {} to {} started", days.size, from, to)
+        days.forEach(::run)
+        log.info("Quotes backfill finished, latest session {}", quotes.latestDate(SESSION_CALENDAR))
     }
 
     private fun today(): LocalDate = LocalDate.now(clock.withZone(WARSAW))

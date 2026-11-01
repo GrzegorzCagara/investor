@@ -35,6 +35,7 @@ class OutcomeJob(
             runCatching { refresh(report, today, ::instrument) }
                 .onFailure { log.error("Outcome of report {} failed", report.reportId, it) }
         }
+        log.info("Outcomes refreshed for {} reports", pending.size)
     }
 
     private fun refresh(report: PendingOutcome, today: LocalDate, instrument: (String) -> List<DailyQuote>) {

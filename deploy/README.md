@@ -7,7 +7,7 @@ Instrukcja krok po kroku. Serwer działa na mini-PC w Dockerze i jest wystawiony
 1. Zainstaluj Docker Engine razem z wtyczką Compose: https://docs.docker.com/engine/install/
 2. Sprawdź: `docker --version` i `docker compose version`.
 3. Na Linuxie dodaj siebie do grupy `docker` (`sudo usermod -aG docker $USER`) i zaloguj się ponownie.
-4. Skopiuj katalog `investor/` na mini-PC. Dalsze komendy wykonuj w jego głównym katalogu.
+4. Pobierz kod na mini-PC do `/home/grzegorz/investor` (rozdział 13, „Pierwszy raz”). Dalsze komendy wykonuj w tym katalogu.
 
 ## 2. Tailscale Funnel na mini-PC
 
@@ -82,6 +82,14 @@ curl -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/status
 
 Możesz też sprawdzić lokalnie z mini-PC: `curl http://127.0.0.1:8080/api/status` z tym samym nagłówkiem. Publiczny ruch idzie przez HTTPS, więc token jest szyfrowany.
 
+Na mini-PC token możesz też pobrać prosto z działającego serwera, bez wpisywania. Komendę wykonaj w `/home/grzegorz/investor`:
+
+```
+T=$(docker compose exec -T server printenv INVESTOR_API_TOKEN)
+```
+
+Odpowiedź 401 oznacza zły albo pusty token, np. gdy w nowym terminalu zmienna `T` nie jest ustawiona. Dodaj `-i` do `curl`, żeby widzieć kod odpowiedzi.
+
 Oczekiwane: kod 200, lista źródeł z `lastSuccessAt` z ostatnich 2 minut (w godzinach publikacji) i `fcmConfigured: true`. `GET /actuator/health` działa bez tokenu.
 
 ## 7. Backfill historii
@@ -92,15 +100,35 @@ Bez historii oceny nie mają danych do porównań. Backfill robi cztery rzeczy, 
 3. Pobiera notowania GPW i NewConnect oraz indeksy WIG i NCIndex z ostatnich 165 dni.
 4. Przelicza od nowa wyniki alertów z ostatnich 120 dni: reakcję rynku i zmianę kursu po 5, 20 i 60 sesjach. Dzięki temu backfill naprawia też dni, w których pobranie notowań się nie udało.
 
-Krok 2 zużywa limit AI (pula GPW/NC, 1,90 USD miesięcznie). Gdy pula się wyczerpie albo Anthropic odrzuci klucz API, krok 2 się zatrzymuje, także dla spółek, które jeszcze czekały. Kroki 3 i 4 wykonują się mimo to. Czas trwania nie był mierzony: od kilku do kilkudziesięciu minut. Postęp widać w logach: `docker compose logs -f server`.
+Krok 2 zużywa limit AI (pula GPW/NC, 1,90 USD miesięcznie). Gdy pula się wyczerpie albo Anthropic odrzuci klucz API, krok 2 się zatrzymuje, także dla spółek, które jeszcze czekały. Kroki 3 i 4 wykonują się mimo to. Całość trwa od kilku do kilkudziesięciu minut.
 
 ```
-curl -X POST -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/admin/backfill
+curl -i -X POST -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/admin/backfill
 ```
 
-Odpowiedź 202 oznacza, że ruszył. Odpowiedź 409 oznacza, że już trwa.
+Odpowiedź 202 oznacza, że ruszył. Odpowiedź 409 oznacza, że już trwa. Odpowiedź 401 oznacza zły token (rozdział 6). Odpowiedź nie ma treści, dlatego bez `-i` curl nic nie wypisuje.
+
+Postęp śledź w logach: `docker compose logs -f server | grep -iE 'backfill|outcomes'`. Kolejne linie wyglądają tak:
+
+```
+Backfill started
+Monthly sales backfill scan at 2025-10-01, 0 reports found so far        (co 30 przejrzanych dni)
+Monthly sales backfill scan finished, 66 reports of 5 companies found
+Monthly sales backfill of ASBIS: 13 of 13 reports to read                (dla każdej spółki)
+Monthly sales backfill finished, 60 monthly revenues saved
+Quotes backfill of 118 weekdays from 2026-05-20 to 2026-11-01 started
+Quotes backfill finished, latest session 2026-10-30
+Outcomes refreshed for 0 reports
+Backfill finished in 25 min
+```
+
+Ostatnia linia oznacza koniec. Linie z `ERROR` lub `WARN` pokazują dni albo raporty, których nie udało się odczytać. Pojedyncze takie linie nie są problemem.
+
+Backfill nie dodaje niczego do zakładki Alerty. Zapisuje tylko historię, z którą serwer porównuje nowe raporty. Efekt widać w ⚙ → Stan źródeł: pole „Notowania (ostatnia sesja)” pokazuje datę ostatniej sesji.
 
 **Po aktualizacji z fazy 1 do fazy 2** uruchom backfill jeszcze raz. Faza 1 pobierała notowania tylko z 60 dni, a wyniki alertów potrzebują ich ze 165 dni. Raporty sprzedaży miesięcznej zapisane wcześniej są pomijane, więc koszt AI jest minimalny.
+
+**Po aktualizacji z 1.11.2026** też uruchom backfill jeszcze raz. Serwer rozpoznaje teraz więcej tytułów raportów ze sprzedażą miesięczną, np. „Przychody ze sprzedaży za wrzesień” albo „Szacunkowe przychody w lipcu”, więc znajdzie więcej spółek.
 
 ## 8. Budowa APK w Android Studio
 
@@ -141,6 +169,80 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
 - **Skuteczność:** dla ocen 50–59, 60–69, 70–79 i 80+ średni zwrot ponad indeks po 5, 20 i 60 sesjach. Zwrot liczony jest od zamknięcia pierwszej sesji po raporcie, czyli od ceny, po której dało się kupić po alercie. Osobno wyniki według reakcji rynku w dniu raportu (spadek, płasko, wzrost).
 - Wyniki przelicza serwer w dni robocze o 22:00, po pobraniu notowań. Wynik po 60 sesjach pojawia się po około 3 miesiącach, więc przez pierwsze tygodnie zakładka będzie prawie pusta.
 - **Konsensus PAP** (w szczegółach raportu): dla większych spółek z GPW PAP publikuje kilka godzin po raporcie notkę „wyniki vs konsensus”. Serwer szuka jej na Bankierze co godzinę (o :15, w godz. 6–16 i 19–23, z przerwą na szczyt publikacji) przez 36 godzin po raporcie. Konsensus jest tylko informacją: nie zmienia oceny i nie wysyła pushu. Małe spółki zwykle go nie mają.
+
+## 13. Deploy na mini-PC
+
+Serwer działa na mini-PC z katalogu `/home/grzegorz/investor`. Ten katalog to klon repozytorium z GitHuba, więc nowa wersja to `git pull` i przebudowanie kontenera.
+
+### Połączenie przez SSH
+
+Na drugim komputerze otwórz terminal (w Windows PowerShell, `ssh` jest wbudowany):
+
+```
+ssh grzegorz@minipc
+```
+
+- Nazwa `minipc` działa, gdy drugi komputer też jest zalogowany do Tailscale. W sieci domowej możesz zamiast niej podać adres IP, np. `ssh grzegorz@192.168.1.50`. Adres sprawdzisz na mini-PC komendą `hostname -I`.
+- Publiczny adres `https://minipc.investor.ts.net` wystawia tylko serwer apki. SSH przez niego nie działa.
+- Gdy połączenie jest odrzucane, zainstaluj na mini-PC serwer SSH (Ubuntu/Debian): `sudo apt install openssh-server`.
+- Żeby nie wpisywać hasła przy każdym logowaniu, utwórz klucz na drugim komputerze i skopiuj go na mini-PC (PowerShell):
+  ```
+  ssh-keygen -t ed25519
+  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh grzegorz@minipc "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+  ```
+  Przy `ssh-keygen` wciśnij Enter na wszystkie pytania. Hasło do mini-PC wpiszesz ostatni raz przy kopiowaniu klucza.
+
+### Pierwszy raz
+
+Jeśli na mini-PC nie ma jeszcze `/home/grzegorz/investor`:
+
+```
+git clone https://github.com/GrzegorzCagara/investor.git /home/grzegorz/investor
+```
+
+Potem wykonaj rozdziały 3 (`secrets/firebase.json`), 5 (`.env`), 6 (start) i 7 (backfill). Gdy brakuje gita: `sudo apt install git`.
+
+Jeśli katalog już jest, ale został skopiowany ręcznie, zamień go na klon. Rozpoznasz to po tym, że `git -C /home/grzegorz/investor status` wypisuje „not a git repository”. `.env`, `secrets/` i baza zostają:
+
+```
+cd /home/grzegorz/investor
+docker compose down
+cd /home/grzegorz
+mv investor investor-stary
+git clone https://github.com/GrzegorzCagara/investor.git investor
+cp investor-stary/.env investor/
+sudo cp -a investor-stary/secrets investor/
+cd investor
+docker compose up -d --build
+```
+
+- Katalog musi nazywać się `investor`, bo od tej nazwy zależy wolumen z bazą (`investor_pgdata`). W katalogu o innej nazwie serwer wystartuje z pustą bazą.
+- `docker compose down` zatrzymuje kontenery, ale nie usuwa bazy. Nigdy nie używaj `docker compose down -v`, bo ta komenda usuwa bazę.
+- Gdy wszystko działa, usuń starą kopię: `sudo rm -rf /home/grzegorz/investor-stary`.
+
+### Aktualizacja do nowej wersji
+
+```
+ssh grzegorz@minipc
+cd /home/grzegorz/investor
+git pull
+docker compose up -d --build
+docker compose logs -f server
+```
+
+1. `git pull` pobiera nową wersję z GitHuba. Repozytorium jest publiczne, więc token nie jest potrzebny. `.env`, `secrets/` i baza nie są w repozytorium, więc zostają bez zmian.
+2. `docker compose up -d --build` buduje nowy obraz (kilka minut) i podmienia kontener serwera. Zmiany w bazie (migracje) wykonują się same przy starcie.
+3. W logach poczekaj na linię `Started InvestorApplication`. Ctrl+C zamyka podgląd logów, serwer działa dalej.
+4. Sprawdź API:
+   ```
+   T=$(docker compose exec -T server printenv INVESTOR_API_TOKEN)
+   curl -i -H "X-Investor-Token: $T" http://127.0.0.1:8080/api/status
+   ```
+   Oczekiwane: `HTTP/1.1 200`.
+5. Jeśli w rozdziale 7 jest akapit „Po aktualizacji z …” dla tej wersji, uruchom backfill.
+6. Raz na jakiś czas usuń stare obrazy, które zajmują miejsce na dysku: `docker image prune -f`.
+
+Gdy `git pull` odmawia, bo plik z repozytorium był zmieniony na mini-PC, `git status` pokaże, który to plik. Cofnij zmianę przez `git checkout -- <plik>` i powtórz `git pull`.
 
 ## Pomiary
 
