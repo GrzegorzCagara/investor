@@ -216,6 +216,56 @@ Przy pierwszej instalacji przed `docker compose up` wykonaj jeszcze rozdziały 3
 - Katalog musi nazywać się `investor`, bo od tej nazwy zależy wolumen z bazą (`investor_pgdata`). W katalogu o innej nazwie serwer wystartuje z pustą bazą.
 - Nigdy nie używaj `docker compose down -v`, bo ta komenda usuwa bazę. Samo `docker compose down` zatrzymuje kontenery i bazę zostawia.
 
+## 14. Sprawdzanie, czy wszystko działa
+
+Komendy wykonuj na mini-PC w `/home/grzegorz/investor`.
+
+**Połączenie apki z serwerem.** W apce ⚙ → Stan źródeł pokazuje dane z serwera. Jeśli je widać, adres i token są dobre.
+
+**Czy telefon jest zarejestrowany do powiadomień:**
+
+```
+docker compose exec db psql -U investor -d investor -c "SELECT count(*) FROM device;"
+```
+
+- Wynik 1 oznacza, że telefon jest zapisany i push dotrze.
+- Wynik 0 oznacza, że powiadomienia nie przyjdą. Apka rejestruje telefon przy każdym uruchomieniu, więc otwórz ją i sprawdź jeszcze raz. Powiadomienia muszą też być dozwolone w ustawieniach telefonu.
+
+**Raporty z ostatniej doby według statusu:**
+
+```
+docker compose exec db psql -U investor -d investor -c "SELECT status, count(*) FROM report WHERE detected_at > now() - interval '1 day' GROUP BY status;"
+```
+
+| Status | Znaczenie |
+|---|---|
+| `IRRELEVANT` | komunikat niezwiązany z wynikami, np. zwołanie walnego zgromadzenia; serwer go pomija; tych jest najwięcej |
+| `CORRECTION_SKIPPED` | korekta wcześniejszego raportu; pomijana |
+| `SCORED` | raport oceniony; widać go w zakładce Alerty |
+| `PUSH_PENDING` | ocena gotowa, push czeka na wysłanie (np. telefon jeszcze niezarejestrowany) |
+| `PENDING_ATTACHMENTS`, `PENDING_DATA`, `PENDING_AI` | serwer czeka na pliki raportu, dane albo AI i ponowi próbę; raport widać w Alertach jako „czeka” |
+| `UNSCORED_NO_AI`, `UNSCORED_NO_DATA` | raport bez oceny, bo zabrakło limitu AI albo danych; widać go w Alertach bez oceny |
+| `NEW`, `EXTRACTED` | raport w trakcie obsługi |
+| `FAILED` | raport nie dał się obsłużyć; szczegóły w `docker compose logs server` |
+
+Pusta lista w zakładce Alerty jest normalna, dopóki nie przyjdą nowe raporty. Spółki publikują je zwykle rano przed sesją albo wieczorem po 17:00. Backfill niczego do tej listy nie dodaje.
+
+**Ostatnie wysłane pushe:**
+
+```
+docker compose exec db psql -U investor -d investor -c "SELECT sent_at, title FROM push_log ORDER BY sent_at DESC LIMIT 10;"
+```
+
+Push przychodzi tylko przy ocenie równej progowi albo wyższej (domyślnie 70) i przy alertach o awarii źródła.
+
+**Historia z backfillu według spółek:**
+
+```
+docker compose exec db psql -U investor -d investor -c "SELECT c.name, count(DISTINCT r.id) AS raporty, count(rp.report_id) AS miesiace FROM report r JOIN company c ON c.id = r.company_id LEFT JOIN revenue_period rp ON rp.report_id = r.id WHERE r.status = 'BACKFILLED' GROUP BY c.name ORDER BY 1;"
+```
+
+Kolumna `miesiace` to liczba miesięcy z zapisanymi przychodami. Wartość 0 oznacza, że raporty spółki nie podają przychodów w pieniądzach, np. podają tylko produkcję w tonach.
+
 ## Pomiary
 
 Trzy ręczne sprawdziany po uruchomieniu. Wyniki wpisz poniżej.
@@ -246,6 +296,7 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 
 - Kopie raportów na Bankierze potrafią się spóźniać. Raporty okresowe są ponawiane do 2 godzin, potem serwer sięga po dane z BiznesRadaru (do 48 godzin).
 - Źródła to scraping stron. Strona może zmienić układ i adapter przestanie działać. Pokaże to alert o awarii źródła.
+- Apka łączy się z głównym adresem `https://debian-server.tail8124e8.ts.net`, bez `/investor`. Działa, bo Funnel wystawia serwer także pod głównym adresem. Jeśli przypiszesz główny adres innej usłudze, apka straci połączenie z serwerem i trzeba ją poprawić.
 - Apkę i serwer aktualizuj razem. Gdy serwer dostanie nowy rynek albo typ zdarzenia (fazy 3 i 5), starsza apka nie odczyta odpowiedzi.
 - Polling sprawdza najpierw GPW, potem NewConnect. W wieczór z dużą liczbą raportów alerty z NewConnect mogą się spóźnić, bo czekają na obsłużenie raportów z GPW.
 - Kalibracja (2026-10-31):
