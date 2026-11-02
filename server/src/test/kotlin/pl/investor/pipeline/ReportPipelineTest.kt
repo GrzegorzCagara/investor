@@ -1112,4 +1112,77 @@ class ReportPipelineTest : PostgresTestBase() {
         verify(exactly = 1) { notifier.send(match { it.title == "ASBIS (GPW) · WYDARZENIE · ocena 75" }) }
         assertTrue(jdbc.sql("SELECT count(*) FROM report WHERE source_ref = '129' AND status = 'PENDING_ATTACHMENTS'").query(Long::class.java).single() == 0L)
     }
+
+    @Test
+    fun `report without a known kind and a routine English title stays irrelevant without AI or attachments`() {
+        pipeline.process(entry("130", "Notification under Art. 148 b of the POSA", ReportKind.OTHER))
+        pipeline.process(entry("131", "Minutes of meeting from an Extraordinary General Meeting of shareholders of \"Sopharma\" AD held on October 30, 2026", ReportKind.OTHER))
+
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("130"))
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("131"))
+        assertEquals(0, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
+    }
+
+    @Test
+    fun `report without a known kind and an English results title is read body first`() {
+        enqueueAsbisRb23()
+
+        pipeline.process(entry("132", "Interim consolidated financial statements for Q3 2026", ReportKind.OTHER))
+
+        assertEquals(ReportStatus.SCORED, statusOf("132"))
+        assertEquals(1, server.requestCount)
+        verify(exactly = 1) { contentClient.fetch(any(), false) }
+        verify(exactly = 0) { contentClient.fetch(any(), true) }
+    }
+
+    @Test
+    fun `report without a known kind waiting for attachments is rerouted by its title`() {
+        asbis()
+        val id = checkNotNull(
+            reports.saveIfNew(
+                pl.investor.report.Report(
+                    null, 1L, Market.GPW, ReportKind.OTHER, "85/2026", "499856", "Notification under Art. 148 b of the POSA",
+                    Instant.parse("2026-11-02T14:09:24Z"), clock.instant(), "https://www.gpw.pl/komunikat?geru_id=499856", ReportStatus.PENDING_ATTACHMENTS,
+                )
+            )?.id
+        )
+
+        pipeline.reprocess(id, allowWithoutAttachments = false)
+
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("499856"))
+        assertEquals(0, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
+    }
+
+    @Test
+    fun `periodic report whose Bankier article has no attachment links yet waits for attachments`() {
+        val http = mockk<pl.investor.source.PoliteHttpClient>()
+        val locator = mockk<pl.investor.source.content.BankierReportLocator>()
+        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http))
+        every { http.get(Source.GPW_LISTING, any()) } returns fixture("reports/asbis-ps-2026.html")
+        every { locator.find(any()) } returns "https://www.bankier.pl/wiadomosc/asbis.html"
+        every { http.get(Source.BANKIER, "https://www.bankier.pl/wiadomosc/asbis.html") } returns "<html><body><p>Raport półroczny</p></body></html>"
+        every { contentClient.fetch(any(), any()) } answers { realClient.fetch(firstArg(), secondArg()) }
+
+        pipeline.process(entry("134", null, ReportKind.HALF_YEARLY))
+
+        assertEquals(ReportStatus.PENDING_ATTACHMENTS, statusOf("134"))
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `report without a known kind does not wait for an unsupported-only attachment page`() {
+        enqueueResultsWithoutNumbers()
+        enqueueNews(category = NewsCategory.GUIDANCE, impact = 40)
+        every { contentClient.fetch(match { it.sourceRef == "133" }, false) } returns
+            ReportContentParser().parse(fixture("reports/asbis-rb-23-2026.html")).copy(attachmentUrls = listOf("https://www.gpw.pl/attachment/zal01.doc,20261102"))
+
+        pipeline.process(entry("133", "Interim consolidated financial statements for Q3 2026", ReportKind.OTHER))
+
+        assertEquals(ReportStatus.SCORED, statusOf("133"))
+        assertEquals("NEWS", eventTypeOf("133"))
+        assertEquals(2, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), true) }
+    }
 }

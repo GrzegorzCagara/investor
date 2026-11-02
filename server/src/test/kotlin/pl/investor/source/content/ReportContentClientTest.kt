@@ -51,7 +51,7 @@ class ReportContentClientTest {
     @Test
     fun `attachment text is filled when the article is located`() {
         every { locator.find(entry) } returns "https://www.bankier.pl/wiadomosc/x.html"
-        every { attachments.relevantText("https://www.bankier.pl/wiadomosc/x.html") } returns "Przychody 992 558"
+        every { attachments.read("https://www.bankier.pl/wiadomosc/x.html") } returns AttachmentReading("Przychody 992 558", nothingReadable = false)
 
         val content = client.fetch(entry, includeAttachments = true)
 
@@ -79,7 +79,7 @@ class ReportContentClientTest {
     @Test
     fun `any failure while reading the article keeps the body and marks attachments pending`() {
         every { locator.find(entry) } returns "https://www.bankier.pl/wiadomosc/x.html"
-        every { attachments.relevantText(any()) } throws java.time.format.DateTimeParseException("bad", "x", 0)
+        every { attachments.read(any()) } throws java.time.format.DateTimeParseException("bad", "x", 0)
 
         val content = client.fetch(entry, includeAttachments = true)
 
@@ -126,9 +126,49 @@ class ReportContentClientTest {
     }
 
     @Test
+    fun `located article whose archives hold nothing readable is not pending`() {
+        every { locator.find(entry) } returns "https://www.bankier.pl/wiadomosc/x.html"
+        every { attachments.read(any()) } returns AttachmentReading("", nothingReadable = true)
+
+        val content = client.fetch(entry, includeAttachments = true)
+
+        assertFalse(content.attachmentsPending)
+        assertEquals("", content.attachmentText)
+    }
+
+    @Test
+    fun `report page whose attachments are all unsupported is not pending and Bankier is not asked`() {
+        val unsupported = entry.copy(detailUrl = "https://example.test/unsupported")
+        val html = checkNotNull(javaClass.getResource("/fixtures/reports/asbis-ps-2026.html")).readText()
+            .replace(Regex("""(attachment/zal\d+_[^",]+)\.pdf"""), "$1.docx")
+        every { http.get(Source.GPW_LISTING, unsupported.detailUrl) } returns html
+
+        val content = client.fetch(unsupported, includeAttachments = true)
+
+        assertTrue(content.attachmentUrls.isNotEmpty())
+        assertFalse(content.attachmentsPending)
+        verify(exactly = 0) { locator.find(any()) }
+    }
+
+    @Test
+    fun `report page with a rar attachment goes to Bankier`() {
+        val rar = entry.copy(detailUrl = "https://example.test/rar")
+        val html = checkNotNull(javaClass.getResource("/fixtures/reports/asbis-ps-2026.html")).readText()
+            .replace(Regex("""(attachment/zal\d+_[^",]+)\.pdf"""), "$1.rar")
+        every { http.get(Source.GPW_LISTING, rar.detailUrl) } returns html
+        every { locator.find(rar) } returns "https://www.bankier.pl/wiadomosc/rar.html"
+        every { attachments.read("https://www.bankier.pl/wiadomosc/rar.html") } returns AttachmentReading("Revenue from sale of goods 26 380", nothingReadable = false)
+
+        val content = client.fetch(rar, includeAttachments = true)
+
+        assertEquals("Revenue from sale of goods 26 380", content.attachmentText)
+        assertFalse(content.attachmentsPending)
+    }
+
+    @Test
     fun `located article without attachment text is marked pending`() {
         every { locator.find(entry) } returns "https://www.bankier.pl/wiadomosc/x.html"
-        every { attachments.relevantText(any()) } returns ""
+        every { attachments.read(any()) } returns AttachmentReading("", nothingReadable = false)
 
         val content = client.fetch(entry, includeAttachments = true)
 

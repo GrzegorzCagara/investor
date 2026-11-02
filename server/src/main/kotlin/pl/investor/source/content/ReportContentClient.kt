@@ -19,13 +19,18 @@ class ReportContentClient(
 
     fun fetch(entry: ListingEntry, includeAttachments: Boolean = false): ReportContent {
         val content = parser.parse(http.get(entry.market.source(), entry.detailUrl), entry.market.baseUrl(), entry.detailUrl)
-        return if (includeAttachments && content.attachmentUrls.isNotEmpty()) content.withAttachmentsOf(entry) else content
+        return if (includeAttachments && content.hasSupportedAttachments) content.withAttachmentsOf(entry) else content
     }
 
     private fun ReportContent.withAttachmentsOf(entry: ListingEntry): ReportContent =
         try {
-            val text = locator.find(entry)?.let(attachments::relevantText).orEmpty()
-            if (text.isEmpty()) copy(attachmentsPending = true) else copy(attachmentText = text)
+            val reading = locator.find(entry)?.let(attachments::read)
+            when {
+                reading == null -> copy(attachmentsPending = true)
+                reading.text.isNotEmpty() -> copy(attachmentText = reading.text)
+                reading.nothingReadable -> this
+                else -> copy(attachmentsPending = true)
+            }
         } catch (e: Exception) {
             log.warn("Attachments of {} unavailable for now: {}", entry.detailUrl, e.message)
             copy(attachmentsPending = true)

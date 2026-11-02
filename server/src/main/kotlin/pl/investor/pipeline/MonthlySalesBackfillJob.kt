@@ -15,7 +15,6 @@ import pl.investor.history.RevenuePeriodRepository
 import pl.investor.report.CompanyRepository
 import pl.investor.report.Market
 import pl.investor.report.Report
-import pl.investor.report.ReportKind
 import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
 import pl.investor.source.content.ReportContentClient
@@ -168,7 +167,7 @@ private val ASSET_SALE = Regex("akcj|udzial|obligacj|nieruchomosc|wierzytelnosc|
 
 fun ListingEntry.isMonthlySales(): Boolean {
     val normalized = title?.withoutPolishMarks() ?: return false
-    return kind == ReportKind.CURRENT && normalized.isAboutRevenue() && normalized.coversOneMonth()
+    return !kind.isPeriodic && normalized.isAboutRevenue() && normalized.coversOneMonth()
 }
 
 private fun String.isAboutRevenue(): Boolean =

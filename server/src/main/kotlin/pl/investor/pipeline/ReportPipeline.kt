@@ -34,7 +34,6 @@ import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.EventType
 import pl.investor.report.Report
-import pl.investor.report.ReportKind
 import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
 import pl.investor.scoring.Score
@@ -110,7 +109,7 @@ class ReportPipeline(
         when {
             title?.let(ResultsKeywordFilter::isCorrection) == true -> setStatus(report, ReportStatus.CORRECTION_SKIPPED)
             report.eventType == EventType.NEWS -> assessNews(report, company, entry, content = null)
-            entry.kind != ReportKind.CURRENT -> analyze(report, company, entry, allowWithoutAttachments)
+            entry.kind.isPeriodic -> analyze(report, company, entry, allowWithoutAttachments)
             title == null -> setStatus(report, ReportStatus.IRRELEVANT)
             ResultsKeywordFilter.matches(title) -> analyze(report, company, entry, allowWithoutAttachments)
             else -> assessNewsUnlessRoutine(report, company, entry, content = null)
@@ -192,7 +191,7 @@ class ReportPipeline(
         val extracted = extractWithBodyFirst(report, company, entry, allowWithoutAttachments) ?: return
         val category = extracted.verified.extraction.category
         when {
-            report.kind == ReportKind.CURRENT && category != ReportCategory.RESULTS -> assessNewsUnlessRoutine(report, company, entry, extracted.content)
+            !report.kind.isPeriodic && category != ReportCategory.RESULTS -> assessNewsUnlessRoutine(report, company, entry, extracted.content)
             category == ReportCategory.OTHER -> setStatus(report, ReportStatus.IRRELEVANT)
             else -> {
                 extractions.save(checkNotNull(report.id), extracted.verified)
@@ -202,13 +201,13 @@ class ReportPipeline(
     }
 
     private fun extractWithBodyFirst(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean): Extracted? {
-        val periodic = entry.kind != ReportKind.CURRENT
+        val periodic = entry.kind.isPeriodic
         if (!periodic && report.status == ReportStatus.PENDING_ATTACHMENTS) return extractAwaitingAttachments(report, company, entry, allowWithoutAttachments)
         val firstContent = contentClient.fetch(entry, includeAttachments = periodic)
         if (periodic && holdForAttachments(report, firstContent, allowWithoutAttachments)) return null
         val first = extractFrom(report, company, firstContent) ?: return null
         val extraction = first.verified.extraction
-        if (periodic || extraction.category != ReportCategory.RESULTS || extraction.primaryPeriod() != null || firstContent.attachmentUrls.isEmpty()) return first
+        if (periodic || extraction.category != ReportCategory.RESULTS || extraction.primaryPeriod() != null || !firstContent.hasSupportedAttachments) return first
         val withAttachments = contentClient.fetch(entry, includeAttachments = true)
         if (withAttachments.attachmentsPending) {
             if (!allowWithoutAttachments) setStatus(report, ReportStatus.PENDING_ATTACHMENTS)
@@ -314,7 +313,7 @@ class ReportPipeline(
         saveRevenuePeriods(report, company, verified)
         when {
             verified.extraction.primaryPeriod() != null -> scoreAndNotify(report, company, verified)
-            report.kind == ReportKind.CURRENT -> assessNews(report, company, entry, content)
+            !report.kind.isPeriodic -> assessNews(report, company, entry, content)
             else -> setStatus(report, ReportStatus.PENDING_DATA)
         }
     }
@@ -343,7 +342,7 @@ class ReportPipeline(
     private fun scoreWithoutAi(report: Report, company: Company) {
         notifyBudgetExhaustedOnce(AiPool.GPW)
         refreshQuietly(company)
-        val hasStructuredDataFromToday = report.kind != ReportKind.CURRENT &&
+        val hasStructuredDataFromToday = report.kind.isPeriodic &&
             quarterResults.publishedOn(checkNotNull(company.id), report.publishedAt.toWarsawDate()) != null
         if (hasStructuredDataFromToday) {
             scoreAndNotify(report, company, verified = null)

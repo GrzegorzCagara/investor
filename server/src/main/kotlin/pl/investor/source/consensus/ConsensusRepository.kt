@@ -2,6 +2,7 @@ package pl.investor.source.consensus
 
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
+import pl.investor.report.ReportKind
 import pl.investor.support.toInstant
 import pl.investor.support.toUtc
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -58,11 +59,12 @@ class ConsensusRepository(private val jdbc: JdbcClient) {
               AND r.status IN ('SCORED', 'PUSH_PENDING')
               AND r.published_at >= :since
               AND n.report_id IS NULL
-              AND (r.kind <> 'CURRENT' OR lower(coalesce(r.title, '')) LIKE '%wynik%')
+              AND (r.kind IN (:periodicKinds) OR lower(coalesce(r.title, '')) LIKE '%wynik%')
             ORDER BY r.published_at, r.id
             """
         )
             .param("since", since.toUtc())
+            .param("periodicKinds", ReportKind.periodic.map { it.name })
             .query { rs, _ -> PendingConsensus(rs.getLong("id"), rs.getLong("company_id"), rs.toInstant("published_at")) }
             .list()
 }
