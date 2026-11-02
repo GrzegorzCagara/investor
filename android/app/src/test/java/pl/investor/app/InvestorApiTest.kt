@@ -59,6 +59,18 @@ class InvestorApiTest {
         assertEquals("""{"token":"fcm-token"}""", deviceRequest.body.readUtf8())
     }
 
+    @Test
+    fun `server path prefix is kept in requests`() = runBlocking {
+        val store = PreferenceDataStoreFactory.create(scope = scope) { File(folder.root, "connection.preferences_pb") }
+        val settings = ConnectionSettings(store)
+        settings.save(server.url("/investor").toString(), "secret")
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody("""{"items":[]}"""))
+
+        InvestorApi.create(settings).alerts()
+
+        assertEquals("/investor/api/alerts?limit=100", server.takeRequest().path)
+    }
+
     private fun api() = InvestorApi.create(server.url("/"), OkHttpClient())
 
     private fun enqueueJson(body: String) {

@@ -64,17 +64,16 @@ class DeviceRegistrationTest {
     }
 
     @Test
-    fun `identical token is not sent again and a new token is`() = runBlocking {
-        server.enqueue(MockResponse().setResponseCode(204))
-        server.enqueue(MockResponse().setResponseCode(204))
+    fun `every sync registers the current token`() = runBlocking {
+        repeat(3) { server.enqueue(MockResponse().setResponseCode(204)) }
 
         registration.syncCurrentToken()
         registration.syncCurrentToken()
-        assertEquals(1, server.requestCount)
+        assertEquals(2, server.requestCount)
 
         fcmToken = "token-2"
         registration.syncCurrentToken()
-        assertEquals(2, server.requestCount)
+        assertEquals(3, server.requestCount)
         assertEquals("token-2", settings.registeredToken())
     }
 

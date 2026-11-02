@@ -83,10 +83,12 @@ class ConnectionInterceptor(private val settings: ConnectionSettings) : Intercep
         } catch (e: IllegalArgumentException) {
             throw IOException("Nieprawidłowy adres serwera", e)
         }
-        val url = chain.request().url.newBuilder()
+        val original = chain.request()
+        val url = original.url.newBuilder()
             .scheme(server.scheme)
             .host(server.host)
             .port(server.port)
+            .encodedPath(server.encodedPath.trimEnd('/') + original.url.encodedPath)
             .build()
         val request = chain.request().newBuilder()
             .url(url)

@@ -33,7 +33,7 @@ class DeviceRegistration(
             Log.w(TAG, "Could not obtain FCM token", e)
             return
         }
-        if (token != settings.registeredToken()) register(token)
+        register(token)
     }
 
     private companion object {
