@@ -381,3 +381,8 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
   - Raport oznaczony przez AI jako jednorazowy kwartał (np. premiera gry) dostaje za niespodziankę najwyżej połowę punktów. Creepy Jar za I kw. 2026 ma 55 pkt i nie dostaje pushu.
   - Raport półroczny ASBIS nie zawiera zapowiedzi zarządu, więc ocena „brak zapowiedzi” jest poprawna.
   - Próg zostaje 70. Po około 3 miesiącach zakładka Skuteczność pokaże, czy oceny 60–69 też dają zysk; wtedy można obniżyć próg.
+
+## Wrzutka
+ssh grzegorz@minipc "rm -rf /home/grzegorz/investor/server"
+scp -r server docker-compose.yml grzegorz@minipc:/home/grzegorz/investor/
+ssh grzegorz@minipc "cd /home/grzegorz/investor && docker compose up -d --build"
