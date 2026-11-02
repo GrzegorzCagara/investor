@@ -33,8 +33,9 @@ class AttachmentTextExtractorTest {
                 return when {
                     path.startsWith("/wiadomosc/asbis") -> html("bankier/asbis-article-ps-2026.html")
                     path.startsWith("/wiadomosc/xtb") -> html("bankier/xtb-article-prelim-q2-2026.html")
+                    path.startsWith("/wiadomosc/mostalplc") -> html("bankier/mostalplc-article-saq-3-2026.html")
                     path in unavailablePaths -> MockResponse.Builder().code(404).build()
-                    path.startsWith("/static/att/") -> pdf(path.substringAfterLast('/'))
+                    path.startsWith("/static/att/") -> attachment(path.substringAfterLast('/'))
                     else -> MockResponse.Builder().code(404).build()
                 }
             }
@@ -52,13 +53,15 @@ class AttachmentTextExtractorTest {
         return MockResponse.Builder().body(body).addHeader("Content-Type", "text/html; charset=utf-8").build()
     }
 
-    private fun pdf(fileName: String): MockResponse {
+    private fun attachment(fileName: String): MockResponse {
         val fixture = when {
             fileName.endsWith("Zalacznik_do_RB_nr_18_2026_PL.pdf") -> "attachments/xtb-prelim-q2-2026-1.pdf"
             fileName.endsWith("Raport_polroczny_H1_2026.pdf") -> "attachments/asbis-ps-2026-2.pdf"
             fileName.endsWith("Sprawozdanie_finansowe_H1_2026.pdf") -> "attachments/asbis-ps-2026-1.pdf"
             fileName.endsWith("ASBISc_FS_H1_2026.pdf") -> "attachments/asbis-ps-2026-4.pdf"
             fileName.endsWith("EN_report_Q2_andH1_2026.pdf") -> "attachments/asbis-ps-2026-3.pdf"
+            fileName.endsWith("Informacja_dodatkowa-2026-09-30-1-pl.xhtml") -> "attachments/mostalplc-saq-3-2026-Informacja_dodatkowa.xhtml"
+            fileName.endsWith("Pozostale_informacje-2026-09-30-1-pl.xhtml") -> "attachments/mostalplc-saq-3-2026-Pozostale_informacje.xhtml"
             else -> return MockResponse.Builder().code(404).build()
         }
         return MockResponse.Builder().body(Buffer().write(resource(fixture))).build()
@@ -66,7 +69,7 @@ class AttachmentTextExtractorTest {
 
     private fun articleUrl(path: String) = server.url(path).toString()
 
-    private fun pdfRequests() = requested.filter { it.url.encodedPath.startsWith("/static/att/") }
+    private fun attachmentRequests() = requested.filter { it.url.encodedPath.startsWith("/static/att/") }
 
     @Test
     fun `XTB preliminary results text contains Q2 revenue and net profit`() {
@@ -84,6 +87,32 @@ class AttachmentTextExtractorTest {
     }
 
     @Test
+    fun `Mostostal Plock Q3 xhtml attachments contain the quarter revenue`() {
+        val text = extractor.relevantText(articleUrl("/wiadomosc/mostalplc"))
+
+        assertTrue("73 704 27 463 101 167" in text, "Q3 revenue missing")
+        assertEquals(2, attachmentRequests().size)
+    }
+
+    @Test
+    fun `signature files next to xhtml attachments are not downloaded`() {
+        extractor.relevantText(articleUrl("/wiadomosc/mostalplc"))
+
+        assertTrue(attachmentRequests().none { it.url.encodedPath.endsWith(".xades") })
+    }
+
+    @Test
+    fun `xhtml keeps first two pages and keyword pages only`() {
+        val xhtml = resource("attachments/mostalplc-saq-3-2026-Informacja_dodatkowa.xhtml")
+
+        val pages = extractor.relevantXhtmlPages(xhtml)
+        val all = org.jsoup.Jsoup.parse(xhtml.inputStream(), null, "").select("div.pf").joinToString(" ") { it.text() }
+
+        assertTrue(pages.length < all.length)
+        assertFalse(pages.contains("Base CSS for pdf2htmlEX"))
+    }
+
+    @Test
     fun `result is capped at 30000 characters and whitespace is normalized`() {
         val text = extractor.relevantText(articleUrl("/wiadomosc/asbis"))
 
@@ -95,15 +124,15 @@ class AttachmentTextExtractorTest {
     fun `downloads at most three attachments and sends the article as referer`() {
         extractor.relevantText(articleUrl("/wiadomosc/asbis"))
 
-        assertEquals(3, pdfRequests().size)
-        assertTrue(pdfRequests().all { it.headers["Referer"] == articleUrl("/wiadomosc/asbis") })
+        assertEquals(3, attachmentRequests().size)
+        assertTrue(attachmentRequests().all { it.headers["Referer"] == articleUrl("/wiadomosc/asbis") })
     }
 
     @Test
     fun `english attachment is skipped when polish ones exist`() {
         extractor.relevantText(articleUrl("/wiadomosc/asbis"))
 
-        assertTrue(pdfRequests().none { "EN_report" in it.url.encodedPath })
+        assertTrue(attachmentRequests().none { "EN_report" in it.url.encodedPath })
     }
 
     @Test
@@ -112,7 +141,7 @@ class AttachmentTextExtractorTest {
 
         val text = extractor.relevantText(articleUrl("/wiadomosc/asbis"))
 
-        assertEquals(3, pdfRequests().size)
+        assertEquals(3, attachmentRequests().size)
         assertTrue(text.isNotBlank())
     }
 
@@ -139,7 +168,7 @@ class AttachmentTextExtractorTest {
 
     private fun requestedPathOf(suffix: String): String {
         extractor.relevantText(articleUrl("/wiadomosc/asbis"))
-        val path = pdfRequests().first { it.url.encodedPath.endsWith(suffix) }.url.encodedPath
+        val path = attachmentRequests().first { it.url.encodedPath.endsWith(suffix) }.url.encodedPath
         requested.clear()
         return path
     }

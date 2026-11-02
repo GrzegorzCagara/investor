@@ -157,6 +157,11 @@ Conclusion: BLOCKED. The WAF requires a JS-capable client; no legitimate header/
 - `bankier/asbis-article-ps-2026.html`, `bankier/xtb-article-prelim-q2-2026.html`: the Bankier article pages (PDF links on bonnier.pl).
 - `attachments/*.pdf`: see the Bankier route above. Slug: the GPW short name (ASBIS, XTB), not derivable from the company name "ASBISC ENTERPRISES PLC": the locator tries first word, then trimmed by 1 and 2 characters (ASBISC returns 500, ASBIS works).
 
+### ATTACHMENTS: standalone SA-Q report with XHTML attachments (2026-11-02)
+- `bankier/mostalplc-komunikaty.html`: GET https://www.bankier.pl/gielda/notowania/akcje/MOSTALPLC/komunikaty. Top item "02.11.2026 08:57" titled "SA-Q 3/2026: formularz raportu kwartalnego dla emitentów prowadzących działalność wytwórczą, budowlaną, handlową lub usługową" (not "Wyniki finansowe ..."); the H1 report is "Wyniki finansowe SA-P /2026". GPW listing time 08:57:47, Kwartalny, empty title.
+- `bankier/mostalplc-article-saq-3-2026.html`: the Bankier article. Attachments are two `.xhtml` files (pdf2htmlEX output, pages `div.pf`) plus `.BES.BES.BES.xhtml.xades` signatures; no PDF.
+- `attachments/mostalplc-saq-3-2026-{Informacja_dodatkowa,Pozostale_informacje}.xhtml`: the two XHTML attachments (Referer = article, plain curl, 200). `Pozostale_informacje` has "Przychody netto ze sprzedaży produktów i towarów 73 704 27 463 101 167" (H1, Q3, 9M 2026, thousand PLN).
+
 ### PAP consensus notes: Bankier fixtures (phase 2, T2)
 - `bankier/asbis-wiadomosci.html`: GET https://www.bankier.pl/gielda/notowania/akcje/ASBIS/wiadomosci (same slug as `/komunikaty`). News list items `a.m-listing-article-list__anchor` with `.m-listing-article-list__title` and `.m-listing-article-list__date-time` ("yyyy-MM-dd HH:mm", Warsaw). Contains `/wiadomosc/Wyniki-Asbisu-w-II-kwartale-2026-roku-vs-konsensus-PAP-tabela-9178558.html` listed 2026-08-06 06:46. Fetched 2026-10-31.
 - `bankier/asbis-konsensus-q2-2026.html`: GET https://www.bankier.pl/wiadomosc/Wyniki-Asbisu-w-II-kwartale-2026-roku-vs-konsensus-PAP-tabela-9178558.html. `datePublished` 2026-08-06T06:46:00+0200 (ASBIS H1 report 2026-08-06 00:20:21). Table label | wyniki | kons. | różnica | r/r; rows Przychody, EBITDA, EBIT, zysk netto j.d. have % differences, margin rows have pp differences without %. Fetched 2026-10-31.

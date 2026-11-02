@@ -104,7 +104,7 @@ class BankierReportLocator(
 
     private fun Announcement.isLikelyCopyOf(entry: ListingEntry): Boolean {
         val entryTitle = entry.title
-        if (entryTitle.isNullOrBlank()) return title.normalizedTitle().startsWith(PERIODIC_TITLE_PREFIX)
+        if (entryTitle.isNullOrBlank()) return isPeriodicResultsTitle()
         return title.significantTokens().jaccardWith(entryTitle.significantTokens()) >= MIN_TITLE_SIMILARITY
     }
 
@@ -124,11 +124,15 @@ class BankierReportLocator(
         return left.contains(right) || right.contains(left)
     }
 
-    private fun Announcement.isPeriodicResultsTitleOf(kind: ReportKind): Boolean {
+    private fun Announcement.isPeriodicResultsTitle(): Boolean {
         val normalized = title.normalizedTitle()
-        if (!normalized.startsWith(PERIODIC_TITLE_PREFIX)) return false
+        return normalized.startsWith(PERIODIC_TITLE_PREFIX) || STANDALONE_FORM_TITLE.containsMatchIn(normalized)
+    }
+
+    private fun Announcement.isPeriodicResultsTitleOf(kind: ReportKind): Boolean {
+        if (!isPeriodicResultsTitle()) return false
         val keywords = PERIODIC_KEYWORDS[kind] ?: return false
-        return normalized.split(' ').any { token -> token in keywords.exact || keywords.prefixes.any(token::startsWith) }
+        return title.normalizedTitle().split(' ').any { token -> token in keywords.exact || keywords.prefixes.any(token::startsWith) }
     }
 
     private fun String.normalizedTitle(): String =
@@ -168,10 +172,11 @@ class BankierReportLocator(
         val DIACRITICS = Regex("\\p{M}+")
         val INNER_PUNCTUATION = Regex("[.'’]")
         val NON_ALPHANUMERIC = Regex("[^a-z0-9]+")
+        val STANDALONE_FORM_TITLE = Regex("^sa (q|qs|qsr|p|ps|psr|r|rs|rr|srr)\\b")
         val PERIODIC_KEYWORDS = mapOf(
-            ReportKind.QUARTERLY to PeriodicKeywords(setOf("qs", "qsr"), setOf("kwarta")),
-            ReportKind.HALF_YEARLY to PeriodicKeywords(setOf("ps", "psr"), setOf("polroc")),
-            ReportKind.ANNUAL to PeriodicKeywords(setOf("rs", "rr", "srs", "srr"), setOf("roczn")),
+            ReportKind.QUARTERLY to PeriodicKeywords(setOf("q", "qs", "qsr"), setOf("kwarta")),
+            ReportKind.HALF_YEARLY to PeriodicKeywords(setOf("p", "ps", "psr"), setOf("polroc")),
+            ReportKind.ANNUAL to PeriodicKeywords(setOf("r", "rs", "rr", "srs", "srr"), setOf("roczn")),
         )
     }
 }

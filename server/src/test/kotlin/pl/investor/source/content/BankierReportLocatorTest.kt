@@ -45,6 +45,7 @@ class BankierReportLocatorTest {
                     "/gielda/notowania/akcje/ASBIS/komunikaty" -> if (asbisListFails) MockResponse.Builder().code(404).build() else list("bankier/asbis-komunikaty.html")
                     "/gielda/notowania/akcje/DUP/komunikaty" -> MockResponse.Builder().body(dupList).addHeader("Content-Type", "text/html; charset=utf-8").build()
                     "/gielda/notowania/akcje/XTB/komunikaty" -> list("bankier/xtb-komunikaty.html")
+                    "/gielda/notowania/akcje/MOSTALPLC/komunikaty" -> list("bankier/mostalplc-komunikaty.html")
                     else -> MockResponse.Builder().code(404).build()
                 }
             }
@@ -206,6 +207,35 @@ class BankierReportLocatorTest {
         dupList = item("01.09.2026 10:00", "Wyniki finansowe QS 1/2026", 1) + item("01.09.2026 10:00", "Wyniki finansowe PS /2026", 2)
 
         assertEquals("https://www.bankier.pl/wiadomosc/x-2.html", locator.find(dupEntry.copy(title = null, kind = ReportKind.HALF_YEARLY)))
+    }
+
+    @Test
+    fun `Mostostal Plock SA-Q quarterly report maps to its formularz article`() {
+        every { biznesRadar.mediumNameFor("MOSTOSTAL PŁOCK SPÓŁKA AKCYJNA") } returns "MOSTALPLC"
+        val saq = entry("MOSTOSTAL PŁOCK SPÓŁKA AKCYJNA", "PLMSTPL00018", "2026-11-02T07:57:47Z", null, ReportKind.QUARTERLY)
+
+        assertEquals(
+            "https://www.bankier.pl/wiadomosc/MOSTALPLC-SA-Q-3-2026-formularz-raportu-kwartalnego-dla-emitentow-prowadzacych-dzialalnosc-wytworcza-budowlana-handlowa-lub-uslugowa-9222007.html",
+            locator.find(saq),
+        )
+    }
+
+    @Test
+    fun `standalone form codes select the matching report kind`() {
+        dupList = item("01.09.2026 10:00", "SA-Q 2/2026: formularz raportu kwartalnego", 1) +
+            item("01.09.2026 10:00", "Wyniki finansowe SA-P /2026", 2) +
+            item("01.09.2026 10:00", "SA-R 2025: formularz raportu rocznego", 3)
+
+        assertEquals("https://www.bankier.pl/wiadomosc/x-1.html", locator.find(dupEntry.copy(title = null, kind = ReportKind.QUARTERLY)))
+        assertEquals("https://www.bankier.pl/wiadomosc/x-2.html", locator.find(dupEntry.copy(title = null, kind = ReportKind.HALF_YEARLY)))
+        assertEquals("https://www.bankier.pl/wiadomosc/x-3.html", locator.find(dupEntry.copy(title = null, kind = ReportKind.ANNUAL)))
+    }
+
+    @Test
+    fun `title starting with SA and a word is not a periodic form`() {
+        dupList = item("01.09.2026 10:00", "SA pozyskała nowy kontrakt", 1)
+
+        assertNull(locator.find(dupEntry.copy(title = null, kind = ReportKind.QUARTERLY)))
     }
 
     @Test
