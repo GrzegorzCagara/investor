@@ -37,7 +37,7 @@ class SwedishCompanyRefresher(
     fun refresh(company: Company, force: Boolean = false) {
         val companyId = checkNotNull(company.id)
         val today = clock.instant().toWarsawDate()
-        val identified = identified(company).takeIf { it.isIdentified() } ?: return
+        val identified = (identification(company) as? SwedishIdentification.Identified)?.company ?: return
         runCatching { swedishQuotes.updateIndex() }.onFailure { log.warn("OMXSPI quotes update failed: {}", it.message) }
         swedishQuotes.updateCompany(identified)
         val lastRefresh = settings.find(refreshKey(companyId))?.let(LocalDate::parse)
@@ -56,32 +56,39 @@ class SwedishCompanyRefresher(
     private fun closeAt(isin: String, quarterEnd: LocalDate): BigDecimal? =
         quotes.closesUpTo(isin, quarterEnd, 1).firstOrNull()?.takeIf { it.date.isAfter(quarterEnd.minusDays(MAX_QUOTE_GAP_DAYS)) }?.close
 
-    fun identified(company: Company): Company {
+    fun identification(company: Company): SwedishIdentification {
         val current = companies.findById(checkNotNull(company.id))
-        return current.takeIf { it.isIdentified() } ?: identifyOncePerDay(current, clock.instant().toWarsawDate()) ?: current
+        if (current.isIdentified()) return SwedishIdentification.Identified(current)
+        val attemptKey = identityTriedKey(checkNotNull(current.id), clock.instant().toWarsawDate())
+        return if (settings.putIfAbsent(attemptKey, IdentityAttempt.TRIED.name)) identify(current, attemptKey) else earlierAttempt(attemptKey)
     }
 
     private fun Company.isIdentified(): Boolean = avanzaId != null && isin != null
 
-    private fun identifyOncePerDay(company: Company, today: LocalDate): Company? {
+    private fun earlierAttempt(attemptKey: String): SwedishIdentification =
+        if (settings.find(attemptKey) == IdentityAttempt.NOT_LISTED.name) SwedishIdentification.NotListed else SwedishIdentification.Unavailable
+
+    private fun identify(company: Company, attemptKey: String): SwedishIdentification {
         val companyId = checkNotNull(company.id)
-        if (!settings.putIfAbsent(identityTriedKey(companyId, today), today.toString())) return null
         val stock = try {
             avanza.stock(avanza.findStock(company.name).orderBookId)
         } catch (e: AvanzaStockNotFoundException) {
-            log.warn("No Avanza stock found for {}, retrying tomorrow", company.name)
-            return null
+            log.info("{} has no share on Stockholmsbörsen or First North Stockholm, its releases are skipped until tomorrow", company.name)
+            settings.put(attemptKey, IdentityAttempt.NOT_LISTED.name)
+            return SwedishIdentification.NotListed
         } catch (e: SourceUnavailableException) {
             log.warn("Avanza unavailable while identifying {}, retrying tomorrow", company.name)
-            return null
+            return SwedishIdentification.Unavailable
         }
         companies.updateAvanzaIdentity(companyId, stock.identity())
-        return companies.findById(companyId).takeIf { it.isin != null }
+        return companies.findById(companyId).takeIf { it.isIdentified() }?.let(SwedishIdentification::Identified) ?: SwedishIdentification.Unavailable
     }
 
     private fun refreshKey(companyId: Long) = "AVANZA_REFRESHED_$companyId"
 
     private fun identityTriedKey(companyId: Long, day: LocalDate) = "AVANZA_IDENTITY_TRIED_${companyId}_$day"
+
+    private enum class IdentityAttempt { TRIED, NOT_LISTED }
 
     private companion object {
         const val MAX_QUOTE_GAP_DAYS = 10L

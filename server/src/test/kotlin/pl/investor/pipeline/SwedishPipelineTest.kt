@@ -1,5 +1,6 @@
 package pl.investor.pipeline
 
+import com.anthropic.client.AnthropicClient
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import io.mockk.every
 import io.mockk.mockk
@@ -40,7 +41,11 @@ import pl.investor.scoring.ScoringInputAssembler
 import pl.investor.scoring.Warning
 import pl.investor.settings.AlertFilters
 import pl.investor.settings.PushThreshold
+import pl.investor.monitoring.SourceHealthTracker
 import pl.investor.settings.SettingRepository
+import pl.investor.source.PoliteHttpClient
+import pl.investor.source.Source
+import pl.investor.source.SourceUnavailableException
 import pl.investor.source.avanza.AvanzaClient
 import pl.investor.source.avanza.AvanzaParser
 import pl.investor.source.avanza.AvanzaSearchHit
@@ -67,6 +72,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SwedishPipelineTest : PostgresTestBase() {
@@ -100,6 +106,7 @@ class SwedishPipelineTest : PostgresTestBase() {
     private lateinit var server: MockWebServer
     private lateinit var budget: AiBudget
     private lateinit var pipeline: ReportPipeline
+    private lateinit var anthropic: AnthropicClient
 
     private fun fixture(path: String) = checkNotNull(javaClass.getResource("/fixtures/se/$path")) { "missing fixture $path" }.readText()
 
@@ -111,22 +118,26 @@ class SwedishPipelineTest : PostgresTestBase() {
         settings.put("PUSH_THRESHOLD", "0")
         server = MockWebServer().apply { start() }
         budget = AiBudget(aiUsage, clock)
-        val anthropic = AnthropicOkHttpClient.builder()
+        anthropic = AnthropicOkHttpClient.builder()
             .baseUrl(server.url("/").toString().trimEnd('/'))
             .apiKey("test-key")
             .maxRetries(0)
             .build()
-        every { avanza.findStock(any()) } throws AvanzaStockNotFoundException("unknown")
+        every { avanza.findStock(any()) } throws SourceUnavailableException(Source.AVANZA, RuntimeException("Avanza down"))
         every { avanza.findStock("Opter AB") } returns AvanzaSearchHit("1307030", "Opter", "SE", "First North Stockholm")
         every { avanza.stock("1307030") } returns AvanzaStock("1307030", "Opter", "SE0016075063", "OPTER", "SEK", "First North Stockholm")
         every { avanza.quarters("1307030") } returns AvanzaParser.quarters(fixture("avanza-analysis-opter.json"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg()) }
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +14% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
-        val swedishRefresher = SwedishCompanyRefresher(avanza, swedishQuotes, companies, quarterResults, valuations, quotes, settings, clock)
+        pipeline = pipelineWith(avanza)
+    }
+
+    private fun pipelineWith(avanzaClient: AvanzaClient): ReportPipeline {
+        val swedishRefresher = SwedishCompanyRefresher(avanzaClient, swedishQuotes, companies, quarterResults, valuations, quotes, settings, clock)
         val biznesRadar = mockk<BiznesRadarClient>()
         val refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, swedishRefresher)
-        pipeline = ReportPipeline(
+        return ReportPipeline(
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
@@ -362,10 +373,110 @@ class SwedishPipelineTest : PostgresTestBase() {
         assertTrue(swedish.id != gpw.id)
     }
 
+    private fun interimReport(companyName: String, sourceRef: String) = ListingEntry(
+        Market.SE, companyName, null, ReportKind.QUARTERLY, "Interim report (Q1 and Q3)", sourceRef,
+        "$companyName Interim report Q3 2026", Instant.parse("2026-10-30T06:00:00Z"), "https://view.news.eu.nasdaq.com/view?id=$sourceRef",
+    )
+
+    private fun assertSkippedWithoutWork(sourceRef: String) {
+        assertEquals(ReportStatus.IRRELEVANT, statusOf(sourceRef))
+        assertEquals(0, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    private fun withAvanzaServer(vararg responses: String, block: (AvanzaClient, MockWebServer) -> Unit) {
+        val avanzaServer = MockWebServer().apply { start() }
+        responses.forEach { avanzaServer.enqueue(MockResponse().setBody(if (it.endsWith(".json")) fixture(it) else it)) }
+        val http = PoliteHttpClient(Clock.systemUTC(), "me@example.com", mockk<SourceHealthTracker>(relaxed = true))
+        try {
+            block(AvanzaClient(http, avanzaServer.url("/").toString().trimEnd('/')), avanzaServer)
+        } finally {
+            avanzaServer.shutdown()
+        }
+    }
+
+    @Test
+    fun `periodic report of a bond-only issuer without an Avanza share is irrelevant without content, AI or push`() {
+        every { avanza.findStock("Swedavia AB") } throws AvanzaStockNotFoundException("Swedavia AB")
+
+        pipeline.process(interimReport("Swedavia AB", "900101"))
+
+        assertSkippedWithoutWork("900101")
+        val companyId = reports.findById(reportId("900101")).companyId
+        assertEquals("NOT_LISTED", settings.find("AVANZA_IDENTITY_TRIED_${companyId}_2026-10-30"))
+    }
+
+    @Test
+    fun `report is processed as before when Avanza is unavailable`() {
+        enqueueResultsWithoutNumbers()
+
+        pipeline.process(interimReport("MacGregor Group AB", "900102"))
+
+        assertTrue(statusOf("900102") != ReportStatus.IRRELEVANT)
+        assertEquals(1, server.requestCount)
+        verify(exactly = 1) { contentClient.fetch(any(), true) }
+    }
+
+    @Test
+    fun `not listed is remembered for the day so later releases skip Avanza`() {
+        every { avanza.findStock("Ziklo Bank AB") } throws AvanzaStockNotFoundException("Ziklo Bank AB")
+
+        pipeline.process(interimReport("Ziklo Bank AB", "900103"))
+        pipeline.process(interimReport("Ziklo Bank AB", "900104").copy(publishedAt = Instant.parse("2026-10-30T09:00:00Z")))
+
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("900103"))
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("900104"))
+        verify(exactly = 1) { avanza.findStock("Ziklo Bank AB") }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `Stockholm release of a GPW company is recognised by name without an ISIN`() {
+        companies.save(Company(null, "KRUK SPÓŁKA AKCYJNA", "PLKRK0000010", Market.GPW, "KRU", "KRUK", false, "KRUK"))
+
+        pipeline.process(interimReport("KRUK S.A.", "900105"))
+
+        assertSkippedWithoutWork("900105")
+    }
+
+    @Test
+    fun `Neem's Hill is identified through the first-word fallback and processed`() {
+        val stock = fixture("avanza-stock-mips.json")
+            .replace("\"orderbookId\":\"740416\"", "\"orderbookId\":\"710553\"")
+            .replace("\"name\":\"Mips\"", "\"name\":\"Neem's Hill B\"")
+            .replace("SE0009216278", "SE0012729366")
+        withAvanzaServer(NO_HITS, "avanza-search-neem.json", stock) { client, avanzaServer ->
+            enqueueResultsWithoutNumbers()
+
+            pipelineWith(client).process(interimReport("Neem's Hill AB", "900106"))
+
+            assertEquals(3, avanzaServer.requestCount)
+            val company = companies.findById(reports.findById(reportId("900106")).companyId)
+            assertEquals("710553", company.avanzaId)
+            assertEquals("SE0012729366", company.isin)
+            assertTrue(statusOf("900106") != ReportStatus.IRRELEVANT)
+            assertEquals(1, server.requestCount)
+        }
+    }
+
+    @Test
+    fun `fallback search never accepts an unrelated company, so the report is irrelevant`() {
+        val neemoTech = fixture("avanza-search-neem.json").replace("Neem's Hill B (NEEMS B)", "Neemo Tech (NEEMO)")
+        withAvanzaServer(NO_HITS, neemoTech) { client, avanzaServer ->
+            pipelineWith(client).process(interimReport("Neem's Hill AB", "900107"))
+
+            assertEquals(2, avanzaServer.requestCount)
+            assertSkippedWithoutWork("900107")
+            assertNull(companies.findById(reports.findById(reportId("900107")).companyId).avanzaId)
+        }
+    }
+
     private companion object {
         const val OPTER = "1473716"
         const val MINESTO_EN = "1473457"
         const val MINESTO_SV = "1473458"
         const val ORTOMA = "1472686"
+        const val NO_HITS = """{"totalNumberOfHits":0,"hits":[],"searchQuery":"","searchFilter":{"types":["STOCK"]},"facets":{"types":[]},"pagination":{"size":5,"from":0}}"""
     }
 }

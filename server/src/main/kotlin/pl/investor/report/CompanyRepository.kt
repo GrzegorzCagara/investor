@@ -74,6 +74,12 @@ class CompanyRepository(private val jdbc: JdbcClient) {
             .query(Boolean::class.java)
             .single()
 
+    fun namesInMarkets(markets: Collection<Market>): List<String> =
+        jdbc.sql("SELECT name FROM company WHERE market IN (:markets)")
+            .param("markets", markets.map { it.name })
+            .query { rs, _ -> rs.getString("name") }
+            .list()
+
     fun findByIsin(isin: String, market: Market): Company? =
         jdbc.sql("SELECT * FROM company WHERE isin = :isin AND market = :market")
             .param("isin", isin)

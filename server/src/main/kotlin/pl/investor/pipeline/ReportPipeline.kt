@@ -33,6 +33,7 @@ import pl.investor.notification.PushMessageFactory
 import pl.investor.notification.PushNotifier
 import pl.investor.notification.ReasonWriter
 import pl.investor.report.Company
+import pl.investor.report.CompanyNames
 import pl.investor.report.CompanyRepository
 import pl.investor.report.EventType
 import pl.investor.report.Market
@@ -118,7 +119,7 @@ class ReportPipeline(
         val title = entry.title?.takeIf { it.isNotBlank() }
         when {
             entry.isIgnoredNasdaqCategory() -> setStatus(report, ReportStatus.IRRELEVANT)
-            isCoveredOnPolishMarket(company) -> setStatus(report, ReportStatus.IRRELEVANT)
+            isOutsideSwedishCoverage(company) -> setStatus(report, ReportStatus.IRRELEVANT)
             title?.let(ResultsKeywordFilter::isCorrection) == true -> setStatus(report, ReportStatus.CORRECTION_SKIPPED)
             report.eventType == EventType.NEWS -> assessNews(report, company, entry, content = null)
             entry.kind.isPeriodic -> analyze(report, company, entry, allowWithoutAttachments)
@@ -128,14 +129,22 @@ class ReportPipeline(
         }
     }
 
-    private fun isCoveredOnPolishMarket(company: Company): Boolean {
+    private fun isOutsideSwedishCoverage(company: Company): Boolean {
         if (company.market != Market.SE) return false
-        val isin = runCatching { refresher.identified(company) }
-            .onFailure { log.warn("Identifying {} failed, it will be retried", company.name, it) }
-            .getOrDefault(company)
-            .isin
-        return isin != null && companies.existsInMarkets(isin, POLISH_MARKETS)
+        return when (val identification = swedishIdentification(company)) {
+            SwedishIdentification.NotListed -> true
+            is SwedishIdentification.Identified -> companies.existsInMarkets(identification.isin, POLISH_MARKETS) || hasPolishNamesake(company)
+            SwedishIdentification.Unavailable -> hasPolishNamesake(company)
+        }
     }
+
+    private fun swedishIdentification(company: Company): SwedishIdentification =
+        runCatching { refresher.swedishIdentification(company) }
+            .onFailure { log.warn("Identifying {} failed, it will be retried", company.name, it) }
+            .getOrDefault(SwedishIdentification.Unavailable)
+
+    private fun hasPolishNamesake(company: Company): Boolean =
+        companies.namesInMarkets(POLISH_MARKETS).any { CompanyNames.sameCompany(it, company.name) }
 
     private fun isCopyOfKnownRelease(entry: ListingEntry, company: Company): Boolean =
         entry.market == Market.SE && reports.existsSameRelease(checkNotNull(company.id), entry.number, entry.publishedAt, SAME_RELEASE_WINDOW)

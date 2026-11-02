@@ -12,6 +12,11 @@ spring:
       pool:
         size: 6
 
+logging:
+  level:
+    org.apache.pdfbox: ERROR
+    org.apache.fontbox: ERROR
+
 management:
   endpoints:
     web:

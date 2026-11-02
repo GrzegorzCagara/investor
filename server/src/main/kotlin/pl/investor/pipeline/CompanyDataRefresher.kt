@@ -31,8 +31,7 @@ class CompanyDataRefresher(
         if (company.market == Market.SE) swedish.refresh(company, force) else refreshFromBiznesRadar(company, force)
     }
 
-    fun identified(company: Company): Company =
-        if (company.market == Market.SE) swedish.identified(company) else company
+    fun swedishIdentification(company: Company): SwedishIdentification = swedish.identification(company)
 
     private fun refreshFromBiznesRadar(company: Company, force: Boolean) {
         val companyId = checkNotNull(company.id)

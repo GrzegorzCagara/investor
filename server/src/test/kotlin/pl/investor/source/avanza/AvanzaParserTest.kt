@@ -6,6 +6,7 @@ import mockwebserver3.MockWebServer
 import org.junit.jupiter.api.Test
 import pl.investor.monitoring.SourceHealthTracker
 import pl.investor.source.PoliteHttpClient
+import tools.jackson.databind.json.JsonMapper
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
@@ -108,5 +109,91 @@ class AvanzaParserTest {
         assertTrue(request.body?.utf8().orEmpty().contains("\"query\":\"Mips\""))
         assertFailsWith<AvanzaStockNotFoundException> { client.findStock("Mips AB") }
         server.close()
+    }
+
+    @Test
+    fun `apostrophes vanish from the search query and wider legal forms are stripped`() {
+        assertEquals("Neems Hill", AvanzaClient.searchQuery("Neem's Hill AB"))
+        assertEquals("Neems Hill", AvanzaClient.searchQuery("Neem’s Hill AB"))
+        assertEquals("Kvika banki", AvanzaClient.searchQuery("Kvika banki hf."))
+        assertEquals("KRUK", AvanzaClient.searchQuery("KRUK S.A."))
+        assertEquals("Creditas Financial Solutions", AvanzaClient.searchQuery("Creditas Financial Solutions LTD"))
+    }
+
+    @Test
+    fun `fallback queries drop trailing generic words, then keep the first word of at least four letters`() {
+        assertEquals(listOf("Mips"), AvanzaClient.searchQueries("Mips AB"))
+        assertEquals(listOf("Lyckegård Group", "Lyckegård"), AvanzaClient.searchQueries("Lyckegård Group AB"))
+        assertEquals(listOf("Neems Hill", "Neem"), AvanzaClient.searchQueries("Neem's Hill AB"))
+        assertEquals(listOf("Avanza Bank Holding", "Avanza"), AvanzaClient.searchQueries("Avanza Bank Holding AB (publ)"))
+        assertEquals(
+            listOf("Sparbanken Mälardalen Holding", "Sparbanken Mälardalen", "Sparbanken"),
+            AvanzaClient.searchQueries("Sparbanken Mälardalen Holding AB"),
+        )
+        assertEquals(listOf("Ziklo Bank", "Ziklo"), AvanzaClient.searchQueries("Ziklo Bank AB"))
+        assertEquals(listOf("KRUK"), AvanzaClient.searchQueries("KRUK S.A."))
+        assertEquals(listOf("SBB Group", "SBB"), AvanzaClient.searchQueries("SBB Group AB"))
+    }
+
+    @Test
+    fun `the full name finds Neem's Hill once the apostrophe is removed`() {
+        withAvanza("avanza-search-neems-hill.json") { client, server ->
+            assertEquals("710553", client.findStock("Neem's Hill AB").orderBookId)
+            assertEquals(listOf("Neems Hill"), server.searchedQueries(1))
+        }
+    }
+
+    @Test
+    fun `the first word finds Neem's Hill when the full name has no hit`() {
+        withAvanza(NO_HITS, "avanza-search-neem.json") { client, server ->
+            assertEquals("710553", client.findStock("Neem's Hill AB").orderBookId)
+            assertEquals(listOf("Neems Hill", "Neem"), server.searchedQueries(2))
+        }
+    }
+
+    @Test
+    fun `the name without Group finds Lyckegård`() {
+        withAvanza("avanza-search-lyckegard-group.json", "avanza-search-lyckegard.json") { client, server ->
+            assertEquals("1348985", client.findStock("Lyckegård Group AB").orderBookId)
+            assertEquals(listOf("Lyckegård Group", "Lyckegård"), server.searchedQueries(2))
+        }
+    }
+
+    @Test
+    fun `a fallback hit must still match the full name so Neem never accepts Neemo Tech`() {
+        val neemoTech = AvanzaSearchHit("99", "Neemo Tech", "SE", "First North Stockholm")
+        assertNull(AvanzaClient.bestMatch("Neems Hill", listOf(neemoTech)))
+        val neemoTechResponse = fixture("avanza-search-neem.json").replace("Neem's Hill B (NEEMS B)", "Neemo Tech (NEEMO)")
+        withAvanza(NO_HITS, neemoTechResponse) { client, server ->
+            assertFailsWith<AvanzaStockNotFoundException> { client.findStock("Neem's Hill AB") }
+            assertEquals(listOf("Neems Hill", "Neem"), server.searchedQueries(2))
+        }
+    }
+
+    @Test
+    fun `identification gives up after at most three searches`() {
+        withAvanza(NO_HITS, NO_HITS, NO_HITS, NO_HITS) { client, server ->
+            assertFailsWith<AvanzaStockNotFoundException> { client.findStock("Sparbanken Mälardalen Holding AB") }
+            assertEquals(3, server.requestCount)
+        }
+    }
+
+    private fun withAvanza(vararg responses: String, block: (AvanzaClient, MockWebServer) -> Unit) {
+        val server = MockWebServer().apply { start() }
+        responses.forEach { server.enqueue(MockResponse.Builder().body(if (it.endsWith(".json")) fixture(it) else it).build()) }
+        val client = AvanzaClient(PoliteHttpClient(Clock.systemUTC(), "me@example.com", mockk<SourceHealthTracker>(relaxed = true)), server.url("").toString().trimEnd('/'))
+        try {
+            block(client, server)
+        } finally {
+            server.close()
+        }
+    }
+
+    private fun MockWebServer.searchedQueries(count: Int): List<String> =
+        List(count) { mapper.readTree(takeRequest().body?.utf8().orEmpty()).path("query").asString() }
+
+    private companion object {
+        const val NO_HITS = """{"totalNumberOfHits":0,"hits":[],"searchQuery":"","searchFilter":{"types":["STOCK"]},"facets":{"types":[]},"pagination":{"size":5,"from":0}}"""
+        val mapper: JsonMapper = JsonMapper.builder().build()
     }
 }
