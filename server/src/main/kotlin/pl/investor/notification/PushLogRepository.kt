@@ -43,6 +43,13 @@ class PushLogRepository(private val jdbc: JdbcClient) {
             .query(Boolean::class.java)
             .single()
 
+    fun newsPushExists(reportId: Long): Boolean =
+        jdbc.sql("SELECT EXISTS (SELECT 1 FROM push_log WHERE kind = :kind AND report_id = :reportId)")
+            .param("kind", PushKind.NEWS.name)
+            .param("reportId", reportId)
+            .query(Boolean::class.java)
+            .single()
+
     fun medianResultsLatencySeconds(since: Instant): Long? =
         jdbc.sql(
             """

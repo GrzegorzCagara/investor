@@ -19,7 +19,7 @@ class ReportContentClient(
 
     fun fetch(entry: ListingEntry, includeAttachments: Boolean = false): ReportContent {
         val content = parser.parse(http.get(entry.market.source(), entry.detailUrl), entry.market.baseUrl(), entry.detailUrl)
-        return if (includeAttachments) content.withAttachmentsOf(entry) else content
+        return if (includeAttachments && content.attachmentUrls.isNotEmpty()) content.withAttachmentsOf(entry) else content
     }
 
     private fun ReportContent.withAttachmentsOf(entry: ListingEntry): ReportContent =

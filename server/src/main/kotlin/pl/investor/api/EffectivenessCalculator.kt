@@ -78,6 +78,7 @@ object EffectivenessCalculator {
             }
         }
         val byReaction = population
+            .filter { it.eventType == EventType.RESULTS }
             .mapNotNull { result -> result.outcome?.reactionCategory()?.let { it to result } }
             .groupBy({ it.first }, { it.second })
             .let { grouped ->

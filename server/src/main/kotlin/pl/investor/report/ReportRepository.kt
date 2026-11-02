@@ -14,8 +14,8 @@ class ReportRepository(private val jdbc: JdbcClient) {
     fun saveIfNew(report: Report): Report? =
         jdbc.sql(
             """
-            INSERT INTO report (company_id, market, kind, number, source_ref, title, published_at, detected_at, detail_url, status, status_changed_at)
-            VALUES (:companyId, :market, :kind, :number, :sourceRef, :title, :publishedAt, :detectedAt, :detailUrl, :status, :detectedAt)
+            INSERT INTO report (company_id, market, kind, number, source_ref, title, published_at, detected_at, detail_url, status, status_changed_at, event_type)
+            VALUES (:companyId, :market, :kind, :number, :sourceRef, :title, :publishedAt, :detectedAt, :detailUrl, :status, :detectedAt, :eventType)
             ON CONFLICT (market, source_ref) DO NOTHING
             RETURNING id
             """
@@ -30,6 +30,7 @@ class ReportRepository(private val jdbc: JdbcClient) {
             .param("detectedAt", report.detectedAt.toUtc())
             .param("detailUrl", report.detailUrl)
             .param("status", report.status.name)
+            .param("eventType", report.eventType.name)
             .query(Long::class.java)
             .optional()
             .map { report.copy(id = it) }
@@ -53,6 +54,13 @@ class ReportRepository(private val jdbc: JdbcClient) {
         )
             .param("status", status.name)
             .param("at", at.toUtc())
+            .param("id", id)
+            .update()
+    }
+
+    fun updateEventType(id: Long, eventType: EventType) {
+        jdbc.sql("UPDATE report SET event_type = :eventType WHERE id = :id")
+            .param("eventType", eventType.name)
             .param("id", id)
             .update()
     }
@@ -105,5 +113,6 @@ class ReportRepository(private val jdbc: JdbcClient) {
         status = ReportStatus.valueOf(getString("status")),
         statusChangedAt = toInstant("status_changed_at"),
         lastAttemptAt = getObject("last_attempt_at", OffsetDateTime::class.java)?.toInstant(),
+        eventType = EventType.valueOf(getString("event_type")),
     )
 }

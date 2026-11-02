@@ -210,7 +210,9 @@ class ApiTest : PostgresTestBase() {
             .andExpect(jsonPath("\$.aiSpentUsd.${AiPool.GPW.name}").exists())
             .andExpect(jsonPath("\$.aiSpentUsd.${AiPool.US.name}").exists())
             .andExpect(jsonPath("\$.aiLimitUsd.${AiPool.GPW.name}").value(1.90))
-            .andExpect(jsonPath("\$.aiLimitUsd.${AiPool.US.name}").value(2.85))
+            .andExpect(jsonPath("\$.aiLimitUsd.${AiPool.US.name}").value(1.85))
+            .andExpect(jsonPath("\$.aiLimitUsd.${AiPool.NEWS.name}").value(1.00))
+            .andExpect(jsonPath("\$.aiSpentUsd.${AiPool.NEWS.name}").exists())
             .andExpect(jsonPath("\$.sources").isArray)
             .andExpect(jsonPath("\$.fcmConfigured").value(false))
     }

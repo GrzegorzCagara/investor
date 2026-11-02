@@ -17,6 +17,14 @@ import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResultRepository
 import pl.investor.history.RevenuePeriod
 import pl.investor.history.RevenuePeriodRepository
+import pl.investor.news.NewsAssessment
+import pl.investor.news.NewsAssessmentRepository
+import pl.investor.news.NewsAssessor
+import pl.investor.news.NewsDirection
+import pl.investor.news.NEWS_LISTED_MIN_SCORE
+import pl.investor.news.TRAILING_YEAR_QUARTERS
+import pl.investor.news.NewsInput
+import pl.investor.news.trailingYearRevenue
 import pl.investor.notification.PushLogRepository
 import pl.investor.notification.PushMessage
 import pl.investor.notification.PushMessageFactory
@@ -31,7 +39,9 @@ import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
 import pl.investor.scoring.Score
 import pl.investor.scoring.ScoreCalculator
+import pl.investor.scoring.ScoreComponents
 import pl.investor.scoring.ScoreRepository
+import pl.investor.scoring.StoredScore
 import pl.investor.scoring.ScoringInputAssembler
 import pl.investor.scoring.primaryPeriod
 import pl.investor.settings.AlertFilters
@@ -69,6 +79,8 @@ class ReportPipeline(
     private val pushLog: PushLogRepository,
     private val notifier: PushNotifier,
     private val messages: PushMessageFactory,
+    private val newsAssessor: NewsAssessor,
+    private val newsAssessments: NewsAssessmentRepository,
     private val clock: Clock,
 ) {
 
@@ -94,10 +106,14 @@ class ReportPipeline(
     }
 
     private fun route(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean) {
+        val title = entry.title?.takeIf { it.isNotBlank() }
         when {
-            entry.title.isCorrection() -> setStatus(report, ReportStatus.CORRECTION_SKIPPED)
-            entry.isOutsideResultsFilter() -> setStatus(report, ReportStatus.IRRELEVANT)
-            else -> analyze(report, company, entry, allowWithoutAttachments)
+            title?.let(ResultsKeywordFilter::isCorrection) == true -> setStatus(report, ReportStatus.CORRECTION_SKIPPED)
+            report.eventType == EventType.NEWS -> assessNews(report, company, entry, content = null)
+            entry.kind != ReportKind.CURRENT -> analyze(report, company, entry, allowWithoutAttachments)
+            title == null -> setStatus(report, ReportStatus.IRRELEVANT)
+            ResultsKeywordFilter.matches(title) -> analyze(report, company, entry, allowWithoutAttachments)
+            else -> assessNewsUnlessRoutine(report, company, entry, content = null)
         }
     }
 
@@ -113,11 +129,23 @@ class ReportPipeline(
         val report = reports.findById(reportId)
         val company = companies.findById(report.companyId)
         val stored = checkNotNull(scores.find(reportId)) { "Report $reportId has no score to push" }
-        val period = pushPeriod(report, company, extractions.find(reportId))
-        if (!report.isResultsPushEnabled() || isAlreadyPushed(company, period)) {
-            setStatus(report, ReportStatus.SCORED)
+        when {
+            report.eventType == EventType.NEWS -> retryNewsPush(report, company, stored)
+            !report.isResultsPushEnabled() -> setStatus(report, ReportStatus.SCORED)
+            else -> {
+                val period = pushPeriod(report, company, extractions.find(reportId))
+                if (isAlreadyPushed(company, period)) setStatus(report, ReportStatus.SCORED) else deliverResults(report, company, stored.score, stored.reason, period)
+            }
+        }
+    }
+
+    private fun retryNewsPush(report: Report, company: Company, stored: StoredScore) {
+        val id = checkNotNull(report.id)
+        val assessment = newsAssessments.find(id)
+        if (assessment != null && isNewsPushDue(report, assessment)) {
+            deliver(report, messages.forNews(company, report.market, stored.score, stored.reason, id))
         } else {
-            deliver(report, company, stored.score, stored.reason, period)
+            setStatus(report, ReportStatus.SCORED)
         }
     }
 
@@ -158,25 +186,29 @@ class ReportPipeline(
 
     private fun analyze(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean) {
         extractions.find(checkNotNull(report.id))?.let {
-            afterExtraction(report, company, it)
+            afterExtraction(report, company, entry, it, content = null)
             return
         }
-        val verified = extractWithBodyFirst(report, company, entry, allowWithoutAttachments) ?: return
-        if (verified.extraction.category == ReportCategory.OTHER) {
-            setStatus(report, ReportStatus.IRRELEVANT)
-            return
+        val extracted = extractWithBodyFirst(report, company, entry, allowWithoutAttachments) ?: return
+        val category = extracted.verified.extraction.category
+        when {
+            report.kind == ReportKind.CURRENT && category != ReportCategory.RESULTS -> assessNewsUnlessRoutine(report, company, entry, extracted.content)
+            category == ReportCategory.OTHER -> setStatus(report, ReportStatus.IRRELEVANT)
+            else -> {
+                extractions.save(checkNotNull(report.id), extracted.verified)
+                afterExtraction(report, company, entry, extracted.verified, extracted.content)
+            }
         }
-        extractions.save(checkNotNull(report.id), verified)
-        afterExtraction(report, company, verified)
     }
 
-    private fun extractWithBodyFirst(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean): VerifiedExtraction? {
+    private fun extractWithBodyFirst(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean): Extracted? {
         val periodic = entry.kind != ReportKind.CURRENT
         if (!periodic && report.status == ReportStatus.PENDING_ATTACHMENTS) return extractAwaitingAttachments(report, company, entry, allowWithoutAttachments)
         val firstContent = contentClient.fetch(entry, includeAttachments = periodic)
         if (periodic && holdForAttachments(report, firstContent, allowWithoutAttachments)) return null
         val first = extractFrom(report, company, firstContent) ?: return null
-        if (periodic || first.extraction.category == ReportCategory.OTHER || first.extraction.primaryPeriod() != null) return first
+        val extraction = first.verified.extraction
+        if (periodic || extraction.category != ReportCategory.RESULTS || extraction.primaryPeriod() != null || firstContent.attachmentUrls.isEmpty()) return first
         val withAttachments = contentClient.fetch(entry, includeAttachments = true)
         if (withAttachments.attachmentsPending) {
             if (!allowWithoutAttachments) setStatus(report, ReportStatus.PENDING_ATTACHMENTS)
@@ -185,7 +217,7 @@ class ReportPipeline(
         return extractFrom(report, company, withAttachments)
     }
 
-    private fun extractAwaitingAttachments(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean): VerifiedExtraction? {
+    private fun extractAwaitingAttachments(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean): Extracted? {
         val content = contentClient.fetch(entry, includeAttachments = true)
         return if (content.attachmentsPending && !allowWithoutAttachments) null else extractFrom(report, company, content)
     }
@@ -196,15 +228,21 @@ class ReportPipeline(
         return hold
     }
 
-    private fun extractFrom(report: Report, company: Company, content: ReportContent): VerifiedExtraction? {
+    private fun extractFrom(report: Report, company: Company, content: ReportContent): Extracted? {
         if (!budget.canSpend(AiPool.GPW)) {
             scoreWithoutAi(report, company)
             return null
         }
-        return try {
-            extractAndVerify(content, company)
+        return callingAi(report, onBudgetExhausted = { scoreWithoutAi(report, company) }) {
+            Extracted(extractAndVerify(content, company), content)
+        }
+    }
+
+    private fun <T> callingAi(report: Report, onBudgetExhausted: () -> Unit, call: () -> T): T? =
+        try {
+            call()
         } catch (e: AiBudgetExhaustedException) {
-            scoreWithoutAi(report, company)
+            onBudgetExhausted()
             null
         } catch (e: AiUnavailableException) {
             log.warn("AI unavailable for report {}, it stays pending", report.sourceRef, e)
@@ -216,15 +254,69 @@ class ReportPipeline(
             notifyAiKeyRejectedOnce()
             null
         }
+
+    private fun assessNewsUnlessRoutine(report: Report, company: Company, entry: ListingEntry, content: ReportContent?) {
+        if (RoutineNewsFilter.isRoutine(entry.title.orEmpty())) {
+            setStatus(report, ReportStatus.IRRELEVANT)
+        } else {
+            assessNews(report, company, entry, content)
+        }
     }
 
-    private fun afterExtraction(report: Report, company: Company, verified: VerifiedExtraction) {
-        saveRevenuePeriods(report, company, verified)
-        if (verified.extraction.primaryPeriod() == null) {
-            setStatus(report, if (report.kind == ReportKind.CURRENT) ReportStatus.UNSCORED_NO_DATA else ReportStatus.PENDING_DATA)
+    private fun assessNews(report: Report, company: Company, entry: ListingEntry, content: ReportContent?) {
+        val id = checkNotNull(report.id)
+        reports.updateEventType(id, EventType.NEWS)
+        val news = report.copy(eventType = EventType.NEWS)
+        newsAssessments.find(id)?.let {
+            scoreAndNotifyNews(news, company, it)
             return
         }
-        scoreAndNotify(report, company, verified)
+        if (!budget.canSpend(AiPool.NEWS)) {
+            newsWithoutAi(news)
+            return
+        }
+        val body = content ?: contentClient.fetch(entry, includeAttachments = false)
+        refreshQuietly(company)
+        val input = NewsInput(company.name, report.market, entry.title.orEmpty(), body, trailingRevenue(company, report))
+        val assessment = callingAi(news, onBudgetExhausted = { newsWithoutAi(news) }) { newsAssessor.assess(input) } ?: return
+        newsAssessments.save(id, assessment, clock.instant())
+        scoreAndNotifyNews(news, company, assessment)
+    }
+
+    private fun scoreAndNotifyNews(report: Report, company: Company, assessment: NewsAssessment) {
+        val id = checkNotNull(report.id)
+        val score = Score(assessment.score, NO_COMPONENTS, 0.0, emptySet())
+        scores.save(id, score, assessment.reason, clock.instant())
+        if (!isNewsPushDue(report, assessment)) {
+            setStatus(report, ReportStatus.SCORED)
+            return
+        }
+        setStatus(report, ReportStatus.PUSH_PENDING)
+        deliver(report, messages.forNews(company, report.market, score, assessment.reason, id))
+    }
+
+    private fun isNewsPushDue(report: Report, assessment: NewsAssessment): Boolean =
+        assessment.direction == NewsDirection.POSITIVE &&
+            assessment.score >= maxOf(pushThreshold.current(), NEWS_LISTED_MIN_SCORE.toDouble()) &&
+            report.isNewsPushEnabled() &&
+            !pushLog.newsPushExists(checkNotNull(report.id))
+
+    private fun newsWithoutAi(report: Report) {
+        notifyBudgetExhaustedOnce(AiPool.NEWS)
+        setStatus(report, ReportStatus.UNSCORED_NO_AI)
+    }
+
+    private fun trailingRevenue(company: Company, report: Report) =
+        quarterResults.publishedBefore(checkNotNull(company.id), report.publishedAt.toWarsawDate().plusDays(1), TRAILING_YEAR_QUARTERS)
+            .trailingYearRevenue()
+
+    private fun afterExtraction(report: Report, company: Company, entry: ListingEntry, verified: VerifiedExtraction, content: ReportContent?) {
+        saveRevenuePeriods(report, company, verified)
+        when {
+            verified.extraction.primaryPeriod() != null -> scoreAndNotify(report, company, verified)
+            report.kind == ReportKind.CURRENT -> assessNews(report, company, entry, content)
+            else -> setStatus(report, ReportStatus.PENDING_DATA)
+        }
     }
 
     private fun extractAndVerify(content: ReportContent, company: Company): VerifiedExtraction =
@@ -249,7 +341,7 @@ class ReportPipeline(
     }
 
     private fun scoreWithoutAi(report: Report, company: Company) {
-        notifyBudgetExhaustedOnce()
+        notifyBudgetExhaustedOnce(AiPool.GPW)
         refreshQuietly(company)
         val hasStructuredDataFromToday = report.kind != ReportKind.CURRENT &&
             quarterResults.publishedOn(checkNotNull(company.id), report.publishedAt.toWarsawDate()) != null
@@ -272,13 +364,19 @@ class ReportPipeline(
             return
         }
         setStatus(report, ReportStatus.PUSH_PENDING)
-        deliver(report, company, score, reason, period)
+        deliverResults(report, company, score, reason, period)
     }
 
-    private fun deliver(report: Report, company: Company, score: Score, reason: String, period: PushPeriod?) {
+    private fun deliverResults(report: Report, company: Company, score: Score, reason: String, period: PushPeriod?) =
+        deliver(
+            report,
+            messages.forResults(company, report.market, score, reason, checkNotNull(report.id))
+                .copy(companyId = company.id, periodKind = period?.kind, periodEnd = period?.end),
+        )
+
+    private fun deliver(report: Report, message: PushMessage) {
         try {
-            val message = messages.forResults(company, report.market, score, reason, checkNotNull(report.id))
-            notifier.send(message.copy(companyId = company.id, periodKind = period?.kind, periodEnd = period?.end))
+            notifier.send(message)
             setStatus(report, ReportStatus.SCORED)
         } catch (e: Exception) {
             log.error("Sending push for report {} failed, it stays PUSH_PENDING", report.sourceRef, e)
@@ -287,6 +385,8 @@ class ReportPipeline(
 
     private fun Report.isResultsPushEnabled(): Boolean = alertFilters.allows(market, EventType.RESULTS)
 
+    private fun Report.isNewsPushEnabled(): Boolean = alertFilters.allows(market, EventType.NEWS)
+
     private fun isAlreadyPushed(company: Company, period: PushPeriod?): Boolean =
         period != null && pushLog.resultsPushExists(checkNotNull(company.id), period.kind, period.end)
 
@@ -294,8 +394,8 @@ class ReportPipeline(
         verified?.extraction?.primaryPeriod()?.let { PushPeriod(it.kind, it.periodEnd) }
             ?: assembler.currentQuarter(company, report)?.let { PushPeriod(PeriodKind.QUARTER, it.quarterEnd) }
 
-    private fun notifyBudgetExhaustedOnce() =
-        notifyOnce("AI_BUDGET_NOTIFIED_${AiPool.GPW.name}_${YearMonth.now(clock)}") { messages.forAiBudgetExhausted(AiPool.GPW) }
+    private fun notifyBudgetExhaustedOnce(pool: AiPool) =
+        notifyOnce("AI_BUDGET_NOTIFIED_${pool.name}_${YearMonth.now(clock)}") { messages.forAiBudgetExhausted(pool) }
 
     private fun notifyAiKeyRejectedOnce() =
         notifyOnce("AI_AUTH_NOTIFIED_${clock.instant().toWarsawDate()}") { messages.forAiKeyRejected() }
@@ -318,11 +418,6 @@ class ReportPipeline(
     }
 
     private fun setStatus(report: Report, status: ReportStatus) = reports.updateStatus(checkNotNull(report.id), status, clock.instant())
-
-    private fun ListingEntry.isOutsideResultsFilter() =
-        kind == ReportKind.CURRENT && title?.let(ResultsKeywordFilter::matches) != true
-
-    private fun String?.isCorrection() = this?.let(ResultsKeywordFilter::isCorrection) == true
 
     private fun newReport(entry: ListingEntry, company: Company) = Report(
         id = null,
@@ -351,4 +446,10 @@ class ReportPipeline(
     )
 
     private data class PushPeriod(val kind: PeriodKind, val end: LocalDate)
+
+    private data class Extracted(val verified: VerifiedExtraction, val content: ReportContent)
+
+    private companion object {
+        val NO_COMPONENTS = ScoreComponents(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    }
 }

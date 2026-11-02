@@ -15,7 +15,7 @@ import java.time.Instant
 data class SettingsForm(
     val threshold: String,
     val enabledMarkets: Set<Market>,
-    val resultsEnabled: Boolean,
+    val enabledEventTypes: Set<EventType>,
     val quietEnabled: Boolean,
     val quietFrom: String,
     val quietTo: String,
@@ -35,7 +35,7 @@ data class SettingsForm(
     fun toView(): SettingsView = SettingsView(
         pushThreshold = threshold.trim().toInt(),
         disabledMarkets = Market.entries.filterNot { it in enabledMarkets },
-        disabledEventTypes = if (resultsEnabled) emptyList() else listOf(EventType.RESULTS),
+        disabledEventTypes = EventType.entries.filterNot { it in enabledEventTypes },
         quietHours = QuietHoursView(quietEnabled, quietFrom.trim(), quietTo.trim()),
     )
 
@@ -50,7 +50,7 @@ data class SettingsForm(
         fun from(view: SettingsView) = SettingsForm(
             threshold = view.pushThreshold.toString(),
             enabledMarkets = Market.entries.filterNot { it in view.disabledMarkets }.toSet(),
-            resultsEnabled = EventType.RESULTS !in view.disabledEventTypes,
+            enabledEventTypes = EventType.entries.filterNot { it in view.disabledEventTypes }.toSet(),
             quietEnabled = view.quietHours.enabled,
             quietFrom = view.quietHours.from,
             quietTo = view.quietHours.to,
@@ -108,7 +108,8 @@ class SettingsViewModel(private val api: InvestorApi, private val clock: Clock) 
     fun onMarketChange(market: Market, enabled: Boolean) =
         edit { it.copy(enabledMarkets = if (enabled) it.enabledMarkets + market else it.enabledMarkets - market) }
 
-    fun onResultsChange(enabled: Boolean) = edit { it.copy(resultsEnabled = enabled) }
+    fun onEventTypeChange(type: EventType, enabled: Boolean) =
+        edit { it.copy(enabledEventTypes = if (enabled) it.enabledEventTypes + type else it.enabledEventTypes - type) }
 
     fun onQuietEnabledChange(enabled: Boolean) = edit { it.copy(quietEnabled = enabled) }
 
@@ -177,7 +178,7 @@ class SettingsViewModel(private val api: InvestorApi, private val clock: Clock) 
             .map { pool -> AiUsageRow(Formatting.aiPoolLabel(pool), Formatting.aiUsage(aiSpentUsd[pool] ?: 0.0, aiLimitUsd[pool])) }
 
     companion object {
-        private val AI_POOL_ORDER = listOf("GPW", "US")
+        private val AI_POOL_ORDER = listOf("GPW", "US", "NEWS")
         private const val BAD_REQUEST = 400
         const val LOAD_ERROR = "Nie udało się pobrać ustawień"
         const val STATUS_ERROR = "Nie udało się pobrać stanu serwera"

@@ -12,10 +12,16 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import pl.investor.news.NewsAssessment
+import pl.investor.news.ContractCurrency
+import pl.investor.news.NewsAssessmentRepository
+import pl.investor.news.NewsCategory
+import pl.investor.news.NewsDirection
 import pl.investor.outcome.Outcome
 import pl.investor.outcome.OutcomeRepository
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
+import pl.investor.report.EventType
 import pl.investor.report.Market
 import pl.investor.report.Report
 import pl.investor.report.ReportKind
@@ -46,6 +52,7 @@ class ReadApiTest : PostgresTestBase() {
     @Autowired lateinit var scores: ScoreRepository
     @Autowired lateinit var outcomes: OutcomeRepository
     @Autowired lateinit var consensus: ConsensusRepository
+    @Autowired lateinit var newsAssessments: NewsAssessmentRepository
 
     private lateinit var mvc: MockMvc
     private val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
@@ -70,11 +77,19 @@ class ReadApiTest : PostgresTestBase() {
     private fun company(name: String, market: Market = Market.GPW): Long =
         checkNotNull(companies.save(Company(null, name + UUID.randomUUID(), null, market, null, null, false, name)).id)
 
-    private fun report(companyId: Long, daysAgo: Long, status: ReportStatus = ReportStatus.SCORED, total: Double? = null, market: Market = Market.GPW): Long {
+    private fun report(
+        companyId: Long,
+        daysAgo: Long,
+        status: ReportStatus = ReportStatus.SCORED,
+        total: Double? = null,
+        market: Market = Market.GPW,
+        eventType: EventType = EventType.RESULTS,
+    ): Long {
         val publishedAt = now.minus(daysAgo, ChronoUnit.DAYS)
+        val kind = if (eventType == EventType.NEWS) ReportKind.CURRENT else ReportKind.QUARTERLY
         val id = checkNotNull(
             reports.saveIfNew(
-                Report(null, companyId, market, ReportKind.QUARTERLY, "1/2026", UUID.randomUUID().toString(), "Raport", publishedAt, publishedAt, "https://example.test/r", status),
+                Report(null, companyId, market, kind, "1/2026", UUID.randomUUID().toString(), "Raport", publishedAt, publishedAt, "https://example.test/r", status, eventType = eventType),
             )?.id,
         )
         total?.let { scores.save(id, Score(it, ScoreComponents(10.0, 10.0, 10.0, 10.0, 10.0, 10.0), 0.0, emptySet()), "Powód.", publishedAt) }
@@ -205,7 +220,7 @@ class ReadApiTest : PostgresTestBase() {
 
         mvc.perform(authorized("/api/effectiveness"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("\$.buckets.length()").value(4))
+            .andExpect(jsonPath("\$.buckets.length()").value(8))
             .andExpect(jsonPath("\$.buckets[0].eventType").value("RESULTS"))
             .andExpect(jsonPath("\$.buckets[0].label").value("50–59"))
             .andExpect(jsonPath("\$.buckets[0].alerts").value(1))
@@ -308,5 +323,105 @@ class ReadApiTest : PostgresTestBase() {
             .andExpect(jsonPath("\$.reaction.indexPct").doesNotExist())
             .andExpect(jsonPath("\$.reaction.category").value("POSITIVE"))
             .andExpect(jsonPath("\$.companyHistory.length()").value(0))
+    }
+
+
+    private fun news(companyId: Long, daysAgo: Long, impact: Double, direction: NewsDirection = NewsDirection.POSITIVE, status: ReportStatus = ReportStatus.SCORED): Long {
+        val assessment = NewsAssessment(NewsCategory.CONTRACT, direction, impact, "Duża umowa względem przychodów.", BigDecimal("18400"), ContractCurrency.PLN, 20.0)
+        val total = assessment.score.takeIf { status == ReportStatus.SCORED || status == ReportStatus.PUSH_PENDING }
+        return report(companyId, daysAgo, status, total, eventType = EventType.NEWS).also { newsAssessments.save(it, assessment, now) }
+    }
+
+    @Test
+    fun `alerts list news only when scored at least 50`() {
+        val alfa = company("Alfa")
+        val strong = news(alfa, 1, 72.0)
+        val borderline = news(alfa, 2, 49.5)
+        val weak = news(alfa, 3, 49.4)
+        val negative = news(alfa, 4, 90.0, NewsDirection.NEGATIVE)
+        val unassessed = news(alfa, 5, 90.0, status = ReportStatus.UNSCORED_NO_AI)
+        val pending = news(alfa, 6, 90.0, status = ReportStatus.PENDING_AI)
+        val results = report(alfa, 7, ReportStatus.UNSCORED_NO_DATA)
+
+        mvc.perform(authorized("/api/alerts"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.items.length()").value(3))
+            .andExpect(jsonPath("\$.items[0].id").value(strong))
+            .andExpect(jsonPath("\$.items[0].eventType").value("NEWS"))
+            .andExpect(jsonPath("\$.items[0].score").value(72))
+            .andExpect(jsonPath("\$.items[0].summary").value("Powód."))
+            .andExpect(jsonPath("\$.items[1].id").value(borderline))
+            .andExpect(jsonPath("\$.items[2].id").value(results))
+            .andExpect(jsonPath("\$.items[2].eventType").value("RESULTS"))
+        listOf(weak, negative, unassessed, pending).forEach { mvc.perform(authorized("/api/alerts/$it")).andExpect(status().isNotFound) }
+    }
+
+    @Test
+    fun `news detail carries the news view and no results components`() {
+        val alfa = company("Alfa")
+        val earlierNews = news(alfa, 9, 65.0)
+        news(alfa, 8, 30.0)
+        val earlierResults = report(alfa, 7, total = 61.0)
+        val current = news(alfa, 1, 77.0)
+
+        mvc.perform(authorized("/api/alerts/$current"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.eventType").value("NEWS"))
+            .andExpect(jsonPath("\$.score").value(77))
+            .andExpect(jsonPath("\$.reason").value("Powód."))
+            .andExpect(jsonPath("\$.components.length()").value(0))
+            .andExpect(jsonPath("\$.revenueHistory.length()").value(0))
+            .andExpect(jsonPath("\$.news.categoryLabel").value("Umowa"))
+            .andExpect(jsonPath("\$.news.direction").value("pozytywny"))
+            .andExpect(jsonPath("\$.news.contractValue").value("18,4 mln PLN"))
+            .andExpect(jsonPath("\$.news.revenueSharePct").value(20.0))
+            .andExpect(jsonPath("\$.companyHistory.length()").value(2))
+            .andExpect(jsonPath("\$.companyHistory[0].id").value(earlierResults))
+            .andExpect(jsonPath("\$.companyHistory[0].eventType").value("RESULTS"))
+            .andExpect(jsonPath("\$.companyHistory[1].id").value(earlierNews))
+            .andExpect(jsonPath("\$.companyHistory[1].eventType").value("NEWS"))
+        mvc.perform(authorized("/api/alerts/$earlierResults"))
+            .andExpect(jsonPath("\$.eventType").value("RESULTS"))
+            .andExpect(jsonPath("\$.news").value(nullValue()))
+            .andExpect(jsonPath("\$.components.length()").value(6))
+    }
+
+    @Test
+    fun `ranking keeps the latest result and the latest listed news of a company separately`() {
+        val alfa = company("Alfa")
+        val results = report(alfa, 5, total = 60.0)
+        val listedNews = news(alfa, 4, 80.0)
+        news(alfa, 2, 40.0)
+        news(company("Beta"), 1, 95.0, NewsDirection.NEUTRAL)
+
+        mvc.perform(authorized("/api/ranking"))
+            .andExpect(jsonPath("\$.items.length()").value(2))
+            .andExpect(jsonPath("\$.items[0].id").value(listedNews))
+            .andExpect(jsonPath("\$.items[0].eventType").value("NEWS"))
+            .andExpect(jsonPath("\$.items[1].id").value(results))
+            .andExpect(jsonPath("\$.items[1].eventType").value("RESULTS"))
+    }
+
+    @Test
+    fun `effectiveness groups news separately and outcomes skip low news`() {
+        val alfa = checkNotNull(companies.save(Company(null, "Alfa" + UUID.randomUUID(), "PL" + UUID.randomUUID(), Market.GPW, null, null, false, "Alfa")).id)
+        val listedNews = news(alfa, 3, 75.0)
+        val lowNews = news(alfa, 2, 20.0)
+        report(alfa, 1, total = 72.0)
+
+        mvc.perform(authorized("/api/effectiveness"))
+            .andExpect(jsonPath("\$.buckets.length()").value(8))
+            .andExpect(jsonPath("\$.buckets[2].eventType").value("RESULTS"))
+            .andExpect(jsonPath("\$.buckets[2].alerts").value(1))
+            .andExpect(jsonPath("\$.buckets[6].eventType").value("NEWS"))
+            .andExpect(jsonPath("\$.buckets[6].label").value("70–79"))
+            .andExpect(jsonPath("\$.buckets[6].alerts").value(1))
+            .andExpect(jsonPath("\$.items.length()").value(2))
+            .andExpect(jsonPath("\$.items[1].id").value(listedNews))
+            .andExpect(jsonPath("\$.items[1].eventType").value("NEWS"))
+
+        val pending = outcomes.pending(now.minus(30, ChronoUnit.DAYS)).map { it.reportId }
+        assertEquals(true, listedNews in pending)
+        assertEquals(false, lowNews in pending)
     }
 }

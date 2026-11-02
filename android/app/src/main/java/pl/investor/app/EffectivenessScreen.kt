@@ -114,7 +114,7 @@ private fun OutcomeCard(item: OutcomeItem, now: Instant, onOpen: (Long) -> Unit)
                 ScoreBadge(item.score)
             }
             Text(
-                "${Formatting.date(item.publishedAt, now)} · ${Formatting.outcomeLine(item)}",
+                "${Formatting.date(item.publishedAt, now)} · ${Formatting.alertTypeLabel(item.eventType)} · ${Formatting.outcomeLine(item)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF555555),
                 modifier = Modifier.padding(top = 3.dp),

@@ -47,6 +47,15 @@ data class AlertDetail(
     val reaction: ReactionView?,
     val consensus: List<ConsensusRowView>,
     val companyHistory: List<OutcomeItem>,
+    val eventType: EventType = EventType.RESULTS,
+    val news: NewsView? = null,
+)
+
+data class NewsView(
+    val categoryLabel: String,
+    val direction: String,
+    val contractValue: String?,
+    val revenueSharePct: Double?,
 )
 
 enum class Reaction { NEGATIVE, FLAT, POSITIVE }

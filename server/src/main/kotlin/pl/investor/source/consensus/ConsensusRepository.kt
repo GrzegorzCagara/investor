@@ -54,6 +54,7 @@ class ConsensusRepository(private val jdbc: JdbcClient) {
             JOIN score s ON s.report_id = r.id
             LEFT JOIN consensus_note n ON n.report_id = r.id
             WHERE r.market = 'GPW'
+              AND r.event_type = 'RESULTS'
               AND r.status IN ('SCORED', 'PUSH_PENDING')
               AND r.published_at >= :since
               AND n.report_id IS NULL

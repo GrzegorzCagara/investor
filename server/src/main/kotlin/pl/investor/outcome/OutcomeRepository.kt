@@ -2,6 +2,7 @@ package pl.investor.outcome
 
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
+import pl.investor.news.NEWS_LISTED_MIN_SCORE
 import pl.investor.report.Market
 import pl.investor.support.toInstant
 import pl.investor.support.toLocalDate
@@ -75,6 +76,7 @@ class OutcomeRepository(private val jdbc: JdbcClient) {
             LEFT JOIN report_outcome o ON o.report_id = r.id
             WHERE r.status IN ('SCORED', 'PUSH_PENDING')
               AND c.isin IS NOT NULL
+              AND (r.event_type <> 'NEWS' OR round(s.total::numeric) >= $NEWS_LISTED_MIN_SCORE)
               AND r.published_at >= :since
               AND (:includeComplete OR o.return60_pct IS NULL OR o.index60_pct IS NULL)
             ORDER BY r.published_at, r.id

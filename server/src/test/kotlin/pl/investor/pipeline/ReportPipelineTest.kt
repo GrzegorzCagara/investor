@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.simple.JdbcClient
+import pl.investor.api.AlertRepository
 import pl.investor.extraction.AiBudget
 import pl.investor.extraction.AiPool
 import pl.investor.extraction.AiUsageRepository
@@ -25,6 +26,10 @@ import pl.investor.extraction.QuoteVerifier
 import pl.investor.history.QuarterResultRepository
 import pl.investor.history.RevenuePeriodRepository
 import pl.investor.history.ValuationRepository
+import pl.investor.news.NewsAssessmentRepository
+import pl.investor.news.NewsAssessor
+import pl.investor.news.NewsCategory
+import pl.investor.news.NewsDirection
 import pl.investor.notification.PushLogRepository
 import pl.investor.notification.PushMessage
 import pl.investor.notification.PushMessageFactory
@@ -84,6 +89,8 @@ class ReportPipelineTest : PostgresTestBase() {
     @Autowired lateinit var settings: SettingRepository
     @Autowired lateinit var pushLog: PushLogRepository
     @Autowired lateinit var aiUsage: AiUsageRepository
+    @Autowired lateinit var newsAssessments: NewsAssessmentRepository
+    @Autowired lateinit var alerts: AlertRepository
 
     private val clock: Clock = Clock.fixed(Instant.parse("2026-09-21T06:15:00Z"), ZoneOffset.UTC)
     private val notifier = mockk<PushNotifier>(relaxed = true)
@@ -122,7 +129,8 @@ class ReportPipelineTest : PostgresTestBase() {
         pipeline = ReportPipeline(
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
-            refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(), clock,
+            refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, clock,
         )
     }
 
@@ -137,7 +145,8 @@ class ReportPipelineTest : PostgresTestBase() {
         checkNotNull(javaClass.getResource("/fixtures/$path")) { "missing fixture $path" }.readText()
 
     private fun content(sourceRef: String, includeAttachments: Boolean): ReportContent {
-        val parsed = ReportContentParser().parse(fixture(fixtureBySourceRef[sourceRef] ?: "reports/asbis-rb-23-2026.html"))
+        val parsed = fixtureBySourceRef[sourceRef]?.let { ReportContentParser().parse(fixture(it)) }
+            ?: ReportContentParser().parse(fixture("reports/asbis-rb-23-2026.html")).copy(attachmentUrls = listOf("https://www.gpw.pl/attachment/zal01.pdf"))
         return if (includeAttachments && sourceRef in pendingAttachments) parsed.copy(attachmentsPending = true) else parsed
     }
 
@@ -614,7 +623,7 @@ class ReportPipelineTest : PostgresTestBase() {
     }
 
     @Test
-    fun `periodic report without verified revenue waits for data and current one is unscored`() {
+    fun `periodic report without verified revenue waits for data and current one is judged as news`() {
         asbis()
         val empty = VerifiedExtraction(
             Extraction(ReportCategory.RESULTS, emptyList(), Outlook(OutlookTone.NONE, null), false, null, false),
@@ -625,11 +634,16 @@ class ReportPipelineTest : PostgresTestBase() {
         extractions.save(periodic, empty)
         extractions.save(current, empty)
 
+        enqueueNews(category = NewsCategory.GUIDANCE, impact = 40)
+
         pipeline.reprocess(periodic, allowWithoutAttachments = true)
         pipeline.reprocess(current, allowWithoutAttachments = true)
 
         assertEquals(ReportStatus.PENDING_DATA, statusOf("80"))
-        assertEquals(ReportStatus.UNSCORED_NO_DATA, statusOf("81"))
+        assertEquals("RESULTS", eventTypeOf("80"))
+        assertEquals(ReportStatus.SCORED, statusOf("81"))
+        assertEquals("NEWS", eventTypeOf("81"))
+        assertEquals(1, server.requestCount)
     }
 
     @Test
@@ -761,5 +775,341 @@ class ReportPipelineTest : PostgresTestBase() {
         pipeline.process(entry("90"))
 
         assertEquals(ReportStatus.NEW, statusOf("90"))
+    }
+
+
+    private val newsTitle = "Zawarcie istotnej umowy na dostawy stacji transformatorowych"
+
+    private fun newsResponse(category: NewsCategory, direction: NewsDirection, impact: Int, reason: String = "Notowanie we Frankfurcie poszerza grono inwestorów. Drugie zdanie.") =
+        json(
+            """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"${category.name}\",\"direction\":\"${direction.name}\",\"impact\":$impact,\"contractValue\":null,\"reason\":\"$reason\"}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
+        )
+
+    private fun enqueueNews(category: NewsCategory = NewsCategory.LISTING, direction: NewsDirection = NewsDirection.POSITIVE, impact: Int = 80) =
+        server.enqueue(newsResponse(category, direction, impact))
+
+    private fun eventTypeOf(sourceRef: String): String =
+        jdbc.sql("SELECT event_type FROM report WHERE source_ref = :ref").param("ref", sourceRef).query(String::class.java).single()
+
+    private fun newsPushes() = jdbc.sql("SELECT count(*) FROM push_log WHERE kind = 'NEWS'").query(Long::class.java).single()
+
+    private fun listedIds() = alerts.newest(100).map { it.id }
+
+    @Test
+    fun `routine announcement stays irrelevant without AI`() {
+        pipeline.process(entry("100", "Zawiadomienie w trybie art. 69 ustawy o ofercie publicznej"))
+
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("100"))
+        assertEquals("RESULTS", eventTypeOf("100"))
+        assertEquals(0, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
+    }
+
+    @Test
+    fun `strong positive news is assessed, scored, pushed and listed`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        enqueueNews(impact = 80)
+
+        pipeline.process(entry("101", newsTitle))
+
+        val id = reportId("101")
+        assertEquals(ReportStatus.SCORED, statusOf("101"))
+        assertEquals("NEWS", eventTypeOf("101"))
+        assertEquals(80.0, checkNotNull(scores.find(id)).score.total, 0.001)
+        assertEquals(NewsCategory.LISTING, newsAssessments.find(id)?.category)
+        verify(exactly = 1) {
+            notifier.send(match { it.title == "ASBIS (GPW) · WYDARZENIE · ocena 80" && it.body == "Notowanie we Frankfurcie poszerza grono inwestorów." })
+        }
+        assertEquals(1L, newsPushes())
+        assertTrue(id in listedIds())
+        verify(exactly = 1) { contentClient.fetch(any(), false) }
+        val request = server.takeRequest().body.readUtf8()
+        assertTrue("<komunikat>" in request && "max_tokens\":2000" in request)
+        assertTrue(aiUsage.costUsd(LocalDate.parse("2026-09-01"), AiPool.NEWS).signum() > 0)
+        assertEquals(0, aiUsage.costUsd(LocalDate.parse("2026-09-01"), AiPool.GPW).signum())
+    }
+
+    @Test
+    fun `news below the threshold is stored and listed but not pushed`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        enqueueNews(impact = 60)
+
+        pipeline.process(entry("102", newsTitle))
+
+        assertEquals(ReportStatus.SCORED, statusOf("102"))
+        verify(exactly = 0) { notifier.send(any()) }
+        assertTrue(reportId("102") in listedIds())
+    }
+
+    @Test
+    fun `negative news is stored with zero and not listed`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        enqueueNews(category = NewsCategory.SHARE_ISSUE, direction = NewsDirection.NEGATIVE, impact = 90)
+
+        pipeline.process(entry("103", "Niedojście do skutku emisji akcji serii C"))
+
+        val id = reportId("103")
+        assertEquals(ReportStatus.SCORED, statusOf("103"))
+        assertEquals(0.0, checkNotNull(scores.find(id)).score.total, 0.001)
+        assertEquals(NewsDirection.NEGATIVE, newsAssessments.find(id)?.direction)
+        verify(exactly = 0) { notifier.send(any()) }
+        assertFalse(id in listedIds())
+        assertEquals(null, alerts.find(id))
+    }
+
+    @Test
+    fun `results title whose extraction says CONTRACT is assessed as news from the same content`() {
+        server.enqueue(
+            json(
+                """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"CONTRACT\",\"periods\":[],\"outlook\":{\"tone\":\"NONE\",\"quote\":null},\"oneOffQuarter\":false,\"oneOffQuote\":null,\"cyclicalIndustry\":false}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
+            )
+        )
+        enqueueNews(category = NewsCategory.CONTRACT, impact = 55)
+
+        pipeline.process(entry("104", "Zawarcie przez spółkę zależną RCEkoenergia sp. z o.o. umowy wieloletniej na sprzedaż ciepła do miasta Czechowice-Dziedzice"))
+
+        val id = reportId("104")
+        assertEquals(ReportStatus.SCORED, statusOf("104"))
+        assertEquals("NEWS", eventTypeOf("104"))
+        assertEquals(2, server.requestCount)
+        verify(exactly = 1) { contentClient.fetch(any(), any()) }
+        assertEquals(null, extractions.find(id))
+        assertEquals(55.0, checkNotNull(scores.find(id)).score.total, 0.001)
+    }
+
+    @Test
+    fun `unavailable AI keeps news pending and the retry goes straight to the news assessment`() {
+        server.enqueue(MockResponse().setResponseCode(529).setBody("""{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""))
+        enqueueNews(impact = 75)
+
+        pipeline.process(entry("105", newsTitle))
+        assertEquals(ReportStatus.PENDING_AI, statusOf("105"))
+        assertEquals("NEWS", eventTypeOf("105"))
+
+        pipeline.reprocess(reportId("105"), allowWithoutAttachments = false)
+
+        assertEquals(ReportStatus.SCORED, statusOf("105"))
+        assertEquals(2, server.requestCount)
+        server.takeRequest()
+        assertTrue("<komunikat>" in server.takeRequest().body.readUtf8())
+    }
+
+    @Test
+    fun `exhausted NEWS pool leaves news unassessed and unlisted with one budget push`() {
+        budget.record(AiPool.NEWS, 20_000_000, 0)
+
+        pipeline.process(entry("106", newsTitle))
+        pipeline.process(entry("107", "Zawarcie umowy inwestycyjnej"))
+
+        assertEquals(ReportStatus.UNSCORED_NO_AI, statusOf("106"))
+        assertEquals(ReportStatus.UNSCORED_NO_AI, statusOf("107"))
+        assertEquals(0, server.requestCount)
+        assertFalse(reportId("106") in listedIds())
+        verify(exactly = 1) { notifier.send(match { it.title == "Limit AI wyczerpany" && it.body == "Do końca miesiąca wydarzenia nie są oceniane" }) }
+        assertTrue(settings.find("AI_BUDGET_NOTIFIED_NEWS_2026-09") != null)
+    }
+
+    @Test
+    fun `exhausted NEWS pool does not stop results extraction`() {
+        budget.record(AiPool.NEWS, 20_000_000, 0)
+        enqueueAsbisRb23()
+
+        pipeline.process(entry())
+
+        assertEquals(ReportStatus.SCORED, statusOf("497297"))
+        verify(exactly = 1) { notifier.send(match { it.title.startsWith("ASBIS (GPW) · WYNIKI · ocena") }) }
+    }
+
+    @Test
+    fun `disabled NEWS pushes keep the news listed without a push`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        AlertFilters(settings).update(emptyList(), listOf(EventType.NEWS))
+        enqueueNews(impact = 90)
+
+        pipeline.process(entry("108", newsTitle))
+
+        assertEquals(ReportStatus.SCORED, statusOf("108"))
+        verify(exactly = 0) { notifier.send(any()) }
+        assertTrue(reportId("108") in listedIds())
+    }
+
+    @Test
+    fun `failed news push is retried once and not repeated`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        every { notifier.send(any()) } throws RuntimeException("fcm down")
+        enqueueNews(impact = 85)
+
+        pipeline.process(entry("109", newsTitle))
+        assertEquals(ReportStatus.PUSH_PENDING, statusOf("109"))
+
+        every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
+        pipeline.retryPush(reportId("109"))
+        pipeline.retryPush(reportId("109"))
+
+        assertEquals(ReportStatus.SCORED, statusOf("109"))
+        assertEquals(1L, newsPushes())
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `news prompt carries the last twelve months revenue from stored BiznesRadar quarters`() {
+        enqueueNews(impact = 40)
+
+        pipeline.process(entry("110", newsTitle))
+
+        val quarters = QuarterlyResultsParser().parse(fixture("biznesradar/ASBISC-pl-q.html"))
+            .filter { it.publishedOn != null && it.publishedOn!! <= LocalDate.parse("2026-09-21") }
+            .sortedByDescending { it.quarterEnd }
+            .take(4)
+        val expected = quarters.sumOf { it.revenue!! }.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString()
+        assertTrue("Przychody z ostatnich 12 miesięcy: $expected tys. zł" in server.takeRequest().body.readUtf8())
+    }
+
+    @Test
+    fun `English correction title is skipped`() {
+        pipeline.process(entry("111", "Correction of current report no 12/2026"))
+
+        assertEquals(ReportStatus.CORRECTION_SKIPPED, statusOf("111"))
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `report without a title stays irrelevant`() {
+        pipeline.process(entry("112", null))
+
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("112"))
+        assertEquals(0, server.requestCount)
+    }
+
+
+    private fun enqueueExtraction(category: ReportCategory) = server.enqueue(
+        json(
+            """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"${category.name}\",\"periods\":[],\"outlook\":{\"tone\":\"NONE\",\"quote\":null},\"oneOffQuarter\":false,\"oneOffQuote\":null,\"cyclicalIndustry\":false}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
+        )
+    )
+
+    @Test
+    fun `neutral news is not pushed even with threshold 0`() {
+        enqueueNews(category = NewsCategory.OTHER, direction = NewsDirection.NEUTRAL, impact = 60)
+
+        pipeline.process(entry("120", newsTitle))
+
+        assertEquals(ReportStatus.SCORED, statusOf("120"))
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `news below the listing floor is not pushed even when the threshold is lower`() {
+        settings.put("PUSH_THRESHOLD", "30")
+        enqueueNews(impact = 40)
+
+        pipeline.process(entry("121", newsTitle))
+
+        assertEquals(ReportStatus.SCORED, statusOf("121"))
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `news above the listing floor and the threshold is pushed with the company id`() {
+        settings.put("PUSH_THRESHOLD", "30")
+        enqueueNews(impact = 55)
+
+        pipeline.process(entry("122", newsTitle))
+
+        verify(exactly = 1) { notifier.send(match { it.title == "ASBIS (GPW) · WYDARZENIE · ocena 55" }) }
+        assertEquals(1L, jdbc.sql("SELECT count(*) FROM push_log WHERE kind = 'NEWS' AND company_id IS NOT NULL").query(Long::class.java).single())
+    }
+
+    @Test
+    fun `pending news push that no longer qualifies ends SCORED without sending`() {
+        every { notifier.send(any()) } throws RuntimeException("fcm down")
+        enqueueNews(impact = 80)
+        pipeline.process(entry("123", newsTitle))
+        assertEquals(ReportStatus.PUSH_PENDING, statusOf("123"))
+        every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
+        val id = reportId("123")
+        jdbc.sql("UPDATE news_assessment SET impact = 45 WHERE report_id = :id").param("id", id).update()
+
+        pipeline.retryPush(id)
+
+        assertEquals(ReportStatus.SCORED, statusOf("123"))
+        assertEquals(0L, newsPushes())
+    }
+
+    @Test
+    fun `results title with a routine announcement classified as other stays irrelevant`() {
+        enqueueExtraction(ReportCategory.OTHER)
+
+        pipeline.process(entry("124", "Informacja o transakcjach na akcjach Spółki uzyskana w trybie art. 19 MAR"))
+
+        assertEquals(ReportStatus.IRRELEVANT, statusOf("124"))
+        assertEquals("RESULTS", eventTypeOf("124"))
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `unavailable source during news keeps it NEW and the retry goes straight to news`() {
+        every { contentClient.fetch(match { it.sourceRef == "125" }, any()) } throws SourceUnavailableException(Source.GPW_LISTING, RuntimeException("down"))
+
+        pipeline.process(entry("125", newsTitle))
+
+        assertEquals(ReportStatus.NEW, statusOf("125"))
+        assertEquals("NEWS", eventTypeOf("125"))
+        every { contentClient.fetch(any(), any()) } answers { content(firstArg<ListingEntry>().sourceRef, secondArg()) }
+        enqueueNews(impact = 66)
+
+        pipeline.reprocess(reportId("125"), allowWithoutAttachments = false)
+
+        assertEquals(ReportStatus.SCORED, statusOf("125"))
+        assertEquals(1, server.requestCount)
+        assertTrue("<komunikat>" in server.takeRequest().body.readUtf8())
+    }
+
+    @Test
+    fun `reprocessing assessed news makes no second AI call and pushes once`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        enqueueNews(impact = 80)
+        pipeline.process(entry("126", newsTitle))
+        val id = reportId("126")
+        reports.updateStatus(id, ReportStatus.NEW, clock.instant())
+
+        pipeline.reprocess(id, allowWithoutAttachments = false)
+
+        assertEquals(ReportStatus.SCORED, statusOf("126"))
+        assertEquals(1, server.requestCount)
+        assertEquals(1L, newsPushes())
+        verify(exactly = 1) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `rejected API key in the news path keeps news pending and pushes the key alert once a day`() {
+        repeat(2) { server.enqueue(MockResponse().setResponseCode(401).setBody("""{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}""")) }
+
+        pipeline.process(entry("127", newsTitle))
+        pipeline.process(entry("128", "Zawarcie umowy inwestycyjnej"))
+
+        assertEquals(ReportStatus.PENDING_AI, statusOf("127"))
+        assertEquals(ReportStatus.PENDING_AI, statusOf("128"))
+        assertEquals("NEWS", eventTypeOf("127"))
+        verify(exactly = 1) { notifier.send(match { it.title == "Claude odrzuca klucz API" }) }
+    }
+
+    @Test
+    fun `current results report without revenue and without attachments is judged as news after one extraction`() {
+        settings.put("PUSH_THRESHOLD", "70")
+        fixtureBySourceRef["129"] = "reports/crj-prelim-q1-2026.html"
+        enqueueExtraction(ReportCategory.RESULTS)
+        enqueueNews(category = NewsCategory.GUIDANCE, impact = 75)
+
+        pipeline.process(entry("129", "Informacja poufna na temat wyników osiągniętych przez Emitenta w III kwartale 2026 r."))
+
+        val id = reportId("129")
+        assertEquals(ReportStatus.SCORED, statusOf("129"))
+        assertEquals("NEWS", eventTypeOf("129"))
+        assertEquals(2, server.requestCount)
+        verify(exactly = 1) { contentClient.fetch(any(), false) }
+        assertEquals(75.0, checkNotNull(scores.find(id)).score.total, 0.001)
+        verify(exactly = 1) { notifier.send(match { it.title == "ASBIS (GPW) · WYDARZENIE · ocena 75" }) }
+        assertTrue(jdbc.sql("SELECT count(*) FROM report WHERE source_ref = '129' AND status = 'PENDING_ATTACHMENTS'").query(Long::class.java).single() == 0L)
     }
 }

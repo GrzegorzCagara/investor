@@ -87,7 +87,7 @@ fun AlertCard(alert: AlertItem, now: Instant, onOpen: (Long) -> Unit) {
                 ScoreBadge(alert.score)
             }
             Text(
-                "${Formatting.time(alert.publishedAt, now)} · ${alert.summary}",
+                Formatting.alertLine(alert, now),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF555555),
                 modifier = Modifier.padding(top = 3.dp),

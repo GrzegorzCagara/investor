@@ -25,6 +25,8 @@ class QuoteVerifier {
         )
     }
 
+    fun isSupported(amount: Amount, sourceText: String): Boolean = amount.isSupportedBy(sourceText.normalized())
+
     private fun ExtractedPeriod.verified(text: String, onUncertain: (String) -> Unit): ExtractedPeriod {
         fun Amount?.check(field: String): Amount? =
             this?.takeIf { it.isSupportedBy(text) }.also { if (this != null && it == null) onUncertain(field) }

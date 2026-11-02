@@ -34,7 +34,7 @@ enum class ReportStatus {
     BACKFILLED,
 }
 
-enum class EventType { RESULTS }
+enum class EventType { RESULTS, NEWS }
 
 enum class Reaction { NEGATIVE, FLAT, POSITIVE }
 
@@ -79,6 +79,16 @@ data class AlertDetail(
     val reaction: ReactionView? = null,
     val consensus: List<ConsensusRowView> = emptyList(),
     val companyHistory: List<OutcomeItem> = emptyList(),
+    val eventType: EventType = EventType.RESULTS,
+    val news: NewsView? = null,
+)
+
+@Serializable
+data class NewsView(
+    val categoryLabel: String,
+    val direction: String,
+    val contractValue: String? = null,
+    val revenueSharePct: Double? = null,
 )
 
 @Serializable

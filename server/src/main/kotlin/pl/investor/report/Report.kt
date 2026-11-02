@@ -16,4 +16,5 @@ data class Report(
     val status: ReportStatus,
     val lastAttemptAt: Instant? = null,
     val statusChangedAt: Instant? = null,
+    val eventType: EventType = EventType.RESULTS,
 )

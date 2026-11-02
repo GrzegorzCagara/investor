@@ -88,6 +88,44 @@ class ReportContentClientTest {
     }
 
     @Test
+    fun `report page without attachments is not pending and Bankier is not asked`() {
+        listOf(
+            "reports/crj-prelim-q1-2026.html" to Market.GPW,
+            "nc/report-beein-current-sales-2026-10-29.html" to Market.NC,
+        ).forEach { (fixture, market) ->
+            val withoutAttachments = entry.copy(market = market, detailUrl = "https://example.test/$fixture")
+            val source = if (market == Market.GPW) Source.GPW_LISTING else Source.NC_LISTING
+            every { http.get(source, withoutAttachments.detailUrl) } returns checkNotNull(javaClass.getResource("/fixtures/$fixture")).readText()
+
+            val content = client.fetch(withoutAttachments, includeAttachments = true)
+
+            assertEquals(emptyList(), content.attachmentUrls, fixture)
+            assertFalse(content.attachmentsPending, fixture)
+            assertEquals("", content.attachmentText)
+        }
+        verify(exactly = 0) { locator.find(any()) }
+    }
+
+    @Test
+    fun `report pages with attachments still go to Bankier`() {
+        listOf(
+            "reports/asbis-ps-2026.html" to Market.GPW,
+            "nc/report-present24-q2-2026-08-14.html" to Market.NC,
+        ).forEach { (fixture, market) ->
+            val withAttachments = entry.copy(market = market, detailUrl = "https://example.test/$fixture")
+            val source = if (market == Market.GPW) Source.GPW_LISTING else Source.NC_LISTING
+            every { http.get(source, withAttachments.detailUrl) } returns checkNotNull(javaClass.getResource("/fixtures/$fixture")).readText()
+            every { locator.find(withAttachments) } returns null
+
+            val content = client.fetch(withAttachments, includeAttachments = true)
+
+            assertTrue(content.attachmentUrls.isNotEmpty(), fixture)
+            assertTrue(content.attachmentsPending, fixture)
+            verify(exactly = 1) { locator.find(withAttachments) }
+        }
+    }
+
+    @Test
     fun `located article without attachment text is marked pending`() {
         every { locator.find(entry) } returns "https://www.bankier.pl/wiadomosc/x.html"
         every { attachments.relevantText(any()) } returns ""

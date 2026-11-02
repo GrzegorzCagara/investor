@@ -7,7 +7,7 @@ Instrukcja krok po kroku. Serwer działa na mini-PC w Dockerze i jest wystawiony
 1. Zainstaluj Docker Engine razem z wtyczką Compose: https://docs.docker.com/engine/install/
 2. Sprawdź: `docker --version` i `docker compose version`.
 3. Na Linuxie dodaj siebie do grupy `docker` (`sudo usermod -aG docker $USER`) i zaloguj się ponownie.
-4. Skopiuj cały kod z PC na mini-PC do `/home/grzegorz/investor` (rozdział 13). Dalsze komendy wykonuj w tym katalogu.
+4. Skopiuj z PC na mini-PC do `/home/grzegorz/investor` plik `docker-compose.yml` i katalog `server` (rozdział 13). Dalsze komendy wykonuj w tym katalogu.
 
 ## 2. Tailscale Funnel na mini-PC
 
@@ -133,8 +133,12 @@ Robisz to na drugim komputerze.
 1. Upewnij się, że `android/app/google-services.json` jest na miejscu (krok 3).
 2. Android Studio → Open → katalog `android/`.
 3. Poczekaj na synchronizację Gradle. Studio może zaproponować aktualizację wersji, możesz się zgodzić.
-4. W terminalu w `android/`: `./gradlew testDebugUnitTest assembleDebug`.
-5. APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
+4. W terminalu (PowerShell) zbuduj APK. Komenda najpierw uruchamia testy apki, a potem buduje plik:
+   ```
+   cd C:\projekty\investor\android
+   .\gradlew.bat testDebugUnitTest assembleDebug
+   ```
+5. APK: `C:\projekty\investor\android\app\build\outputs\apk\debug\app-debug.apk`.
 
 ## 9. Instalacja APK
 
@@ -160,56 +164,84 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
 
 ## 12. Ranking, Skuteczność i dane po raporcie
 
-- **Ranking:** spółki ocenione w ostatnich 30 dniach, od najwyższej oceny. Każda spółka występuje raz, z najnowszym raportem. Filtr rynku: GPW, NC, USA.
+- **Ranking:** spółki ocenione w ostatnich 30 dniach, od najwyższej oceny. Każda spółka występuje raz z najnowszym raportem wyników i raz z najnowszym wydarzeniem (od 50 pkt). Filtr rynku: GPW, NC, USA.
 - **Reakcja rynku** (w szczegółach raportu): zmiana kursu na pierwszej sesji zamkniętej po publikacji, obok zmiana indeksu (WIG albo NCIndex) i wolumen (liczba akcji) względem średniej z 20 sesji. Pojawia się po wieczornym przeliczeniu w dniu tej sesji.
 - **Skuteczność:** dla ocen 50–59, 60–69, 70–79 i 80+ średni zwrot ponad indeks po 5, 20 i 60 sesjach. Zwrot liczony jest od zamknięcia pierwszej sesji po raporcie, czyli od ceny, po której dało się kupić po alercie. Osobno wyniki według reakcji rynku w dniu raportu (spadek, płasko, wzrost).
 - Wyniki przelicza serwer w dni robocze o 22:00, po pobraniu notowań. Wynik po 60 sesjach pojawia się po około 3 miesiącach, więc przez pierwsze tygodnie zakładka będzie prawie pusta.
 - **Konsensus PAP** (w szczegółach raportu): dla większych spółek z GPW PAP publikuje kilka godzin po raporcie notkę „wyniki vs konsensus”. Serwer szuka jej na Bankierze co godzinę (o :15, w godz. 6–16 i 19–23, z przerwą na szczyt publikacji) przez 36 godzin po raporcie. Konsensus jest tylko informacją: nie zmienia oceny i nie wysyła pushu. Małe spółki zwykle go nie mają.
 
+## 12a. Wydarzenia
+
+- **Co to jest:** drugi typ alertu obok wyników. Raport bieżący z GPW albo NewConnect (po polsku albo po angielsku), który nie dotyczy wyników: umowa, przejęcie, wezwanie, skup akcji, dywidenda, notowanie na innej giełdzie, prognoza, emisja akcji, finansowanie, sąd, zmiany w zarządzie. Wydarzeniem jest też raport bieżący z wynikami, który nie podaje przychodów (np. tylko zysk albo wstępne wyniki bez sprzedaży) albo podaje dane niepieniężne (np. produkcja w tonach). Takiego raportu nie da się ocenić jak wyników, więc AI ocenia go jak wydarzenie.
+- **Filtr rutyny:** serwer najpierw odrzuca po samym tytule komunikaty, które prawie nigdy nie ruszają kursem: transakcje osób z zarządu (art. 19 MAR), zawiadomienia o stanie posiadania (art. 69), walne zgromadzenia, terminy raportów, statut, rada nadzorcza, audytor, raporty miesięczne NewConnect, raporty z bieżącego skupu akcji i podobne. Takie komunikaty nie trafiają do AI. Na zapisanych listach z GPW i NC odpada około połowy tytułów.
+- **Ocena AI:** Claude czyta tytuł, początek treści i przychody spółki z ostatnich 12 miesięcy (z BiznesRadaru). Zwraca kategorię, kierunek (pozytywny, negatywny, neutralny), siłę wpływu 0–100 i jedno zdanie uzasadnienia. Ocena wydarzenia to siła wpływu, gdy kierunek jest pozytywny, a w innym razie 0. Umowa bez wartości potwierdzonej w treści ma najwyżej 60.
+- **Push:** tylko dla wydarzenia pozytywnego, gdy ocena jest równa progowi alertu albo wyższa (ten sam próg co dla wyników, domyślnie 70). Przy progu niższym niż 50 push o wydarzeniu przychodzi dopiero od 50 pkt. Tytuł pushu: `Spółka (GPW) · WYDARZENIE · ocena 78`.
+- **Lista:** w Alertach i Rankingu widać tylko wydarzenia z oceną od 50 (etykieta „Wydarzenie”). Wydarzenia negatywne, neutralne i słabsze są zapisane, ale niewidoczne.
+- **Przełącznik:** w ustawieniach (⚙) typ zdarzenia „Wydarzenie” można wyłączyć osobno. Wtedy wydarzenia nadal są oceniane i widać je w Alertach, tylko push nie przychodzi.
+- **Koszt:** osobna pula AI `NEWS` ma 1,00 USD miesięcznie (około 4 zł). Pochodzi z puli USA, która ma teraz 1,85 USD. Pula GPW zostaje 1,90 USD, razem nadal 4,75 USD. Gdy pula `NEWS` się wyczerpie, wydarzenia do końca miesiąca nie są oceniane, a apka dostaje jeden push „Do końca miesiąca wydarzenia nie są oceniane”. Ocena wyników nigdy nie korzysta z puli `NEWS`.
+- **Skuteczność:** wydarzenia mają w zakładce Skuteczność własne przedziały ocen, osobno od wyników.
+- **Aktualizacja:** apkę i serwer zaktualizuj razem. Starsza apka nie zna typu „Wydarzenie” i nie odczyta odpowiedzi serwera.
+
 ## 13. Deploy na mini-PC
 
-Serwer działa na mini-PC (`debian-server`) z katalogu `/home/grzegorz/investor`. Nową wersję pobierasz z GitHuba na PC, kopiujesz cały kod na mini-PC i tam przebudowujesz kontener.
+Serwer działa na mini-PC (w sieci domowej `minipc`, w Tailscale `debian-server`) z katalogu `/home/grzegorz/investor`. Repozytorium trzymasz na PC w `C:\projekty\investor`. Nową wersję pobierasz z GitHuba na PC, kopiujesz na mini-PC i tam przebudowujesz kontener.
 
 ### Połączenie przez SSH
 
 Na PC otwórz PowerShell (`ssh` i `scp` są wbudowane w Windows 10 i 11):
 
 ```
-ssh grzegorz@<adres-IP-mini-PC>
+ssh grzegorz@minipc
 ```
 
-- Adres IP mini-PC w sieci domowej sprawdzisz na mini-PC komendą `hostname -I` (pierwszy adres na liście).
+- Jeśli nazwa `minipc` nie działa, użyj adresu IP mini-PC w sieci domowej. Sprawdzisz go na mini-PC komendą `hostname -I` (pierwszy adres na liście).
 - Publiczny adres `https://debian-server.tail8124e8.ts.net/investor` wystawia tylko serwer apki. SSH przez niego nie działa.
 - Gdy połączenie jest odrzucane, zainstaluj na mini-PC serwer SSH: `sudo apt install openssh-server`.
 - Żeby nie wpisywać hasła przy każdym logowaniu, utwórz klucz na PC i skopiuj go na mini-PC:
   ```
   ssh-keygen -t ed25519
-  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh grzegorz@<adres-IP-mini-PC> "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh grzegorz@minipc "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
   ```
   Przy `ssh-keygen` wciśnij Enter na wszystkie pytania. Hasło do mini-PC wpiszesz ostatni raz przy kopiowaniu klucza.
 
 ### Aktualizacja do nowej wersji
 
-1. Na PC, w katalogu repozytorium: `git pull`.
-2. Skopiuj cały kod na mini-PC do `/home/grzegorz/investor`, np. przez WinSCP albo `scp -r`. Nie nadpisuj na mini-PC plików `.env` i `secrets/firebase.json`. Jeśli na PC też masz `.env`, pomiń go przy kopiowaniu.
-3. Na mini-PC:
+Mini-PC potrzebuje z repozytorium tylko pliku `docker-compose.yml` i katalogu `server`. Pliki `.env` i `secrets/firebase.json` są tylko na mini-PC i poniższe komendy ich nie ruszają. Baza też zostaje, bo leży w wolumenie Dockera.
+
+1. Na PC, w PowerShell, pobierz nową wersję:
    ```
+   cd C:\projekty\investor
+   git pull
+   ```
+2. Usuń stary kod serwera na mini-PC. Dzięki temu nie zostaną tam pliki skasowane w nowej wersji:
+   ```
+   ssh grzegorz@minipc "rm -rf /home/grzegorz/investor/server"
+   ```
+3. Skopiuj nowy kod. Uruchom komendy na PC w `C:\projekty\investor`, a nie w `C:\projekty\investor\server`: komenda `dir` musi tam pokazać katalog `server` i plik `docker-compose.yml`.
+   ```
+   scp -r server grzegorz@minipc:/home/grzegorz/investor/
+   scp docker-compose.yml grzegorz@minipc:/home/grzegorz/investor/
+   ```
+   Pierwsza komenda kopiuje cały katalog `server` z podkatalogami (`-r`), druga sam plik. Sprawdź wynik: `ssh grzegorz@minipc "ls /home/grzegorz/investor/server"` powinno pokazać m.in. `Dockerfile` i `src`.
+   Jeśli na PC jest katalog `server\build` (powstaje po uruchomieniu testów), możesz go najpierw usunąć, żeby kopiowanie trwało krócej. Przy budowie obrazu i tak jest pomijany.
+4. Zaloguj się na mini-PC i zbuduj nową wersję:
+   ```
+   ssh grzegorz@minipc
    cd /home/grzegorz/investor
    docker compose up -d --build
    docker compose logs -f server
    ```
-   `docker compose up -d --build` buduje nowy obraz (kilka minut) i podmienia kontener serwera. Baza zostaje, a zmiany w niej (migracje) wykonują się same przy starcie.
-4. W logach poczekaj na linię `Started InvestorApplication`. Ctrl+C zamyka podgląd logów, serwer działa dalej.
-5. Sprawdź API:
+   `docker compose up -d --build` buduje nowy obraz (kilka minut) i podmienia kontener serwera. Zmiany w bazie (migracje) wykonują się same przy starcie.
+5. W logach poczekaj na linię `Started InvestorApplication`. Ctrl+C zamyka podgląd logów, serwer działa dalej.
+6. Sprawdź API:
    ```
    T=$(docker compose exec -T server printenv INVESTOR_API_TOKEN)
    curl -i -H "X-Investor-Token: $T" http://127.0.0.1:8080/api/status
    ```
    Oczekiwane: `HTTP/1.1 200`.
-6. Jeśli w rozdziale 7 jest akapit „Po aktualizacji z …” dla tej wersji, uruchom backfill.
-7. Raz na jakiś czas usuń stare obrazy, które zajmują miejsce na dysku: `docker image prune -f`.
-
-Kopiowanie nie usuwa na mini-PC plików, które zniknęły z nowej wersji. Jeśli build po aktualizacji zgłosi błąd w pliku, którego nie ma już w repozytorium, usuń stary kod serwera (`rm -rf /home/grzegorz/investor/server`) i skopiuj kod jeszcze raz.
+7. Jeśli w rozdziale 7 jest akapit „Po aktualizacji z …” dla tej wersji, uruchom backfill.
+8. Jeśli nowa wersja zmienia też apkę (np. dochodzi nowy typ alertu), zbuduj nowy APK (rozdział 8) i zainstaluj go na telefonie (rozdział 9). Apkę i serwer aktualizuj wtedy razem.
+9. Raz na jakiś czas usuń stare obrazy, które zajmują miejsce na dysku: `docker image prune -f`.
 
 Przy pierwszej instalacji przed `docker compose up` wykonaj jeszcze rozdziały 3 (`secrets/firebase.json`) i 5 (`.env`), a po starcie rozdział 7 (backfill).
 
@@ -234,17 +266,19 @@ docker compose exec db psql -U investor -d investor -c "SELECT count(*) FROM dev
 **Raporty z ostatniej doby według statusu:**
 
 ```
-docker compose exec db psql -U investor -d investor -c "SELECT status, count(*) FROM report WHERE detected_at > now() - interval '1 day' GROUP BY status;"
+docker compose exec db psql -U investor -d investor -c "SELECT event_type, status, count(*) FROM report WHERE detected_at > now() - interval '1 day' GROUP BY event_type, status ORDER BY 1, 2;"
 ```
+
+Kolumna `event_type` to `RESULTS` (wyniki) albo `NEWS` (wydarzenie). Tytuły po angielsku też są rozpoznawane jako wyniki (np. „Interim report”, „Preliminary sales revenue”).
 
 | Status | Znaczenie |
 |---|---|
-| `IRRELEVANT` | komunikat niezwiązany z wynikami, np. zwołanie walnego zgromadzenia; serwer go pomija; tych jest najwięcej |
+| `IRRELEVANT` | komunikat bez znaczenia dla kursu: rutynowy komunikat odrzucony po tytule (np. zwołanie walnego zgromadzenia, transakcje osób z zarządu, art. 69) albo raport, który AI uznało za nieistotny; serwer go pomija; tych jest najwięcej |
 | `CORRECTION_SKIPPED` | korekta wcześniejszego raportu; pomijana |
-| `SCORED` | raport oceniony; widać go w zakładce Alerty |
+| `SCORED` | raport oceniony; wyniki widać w zakładce Alerty zawsze, wydarzenie tylko z oceną od 50 (wydarzenia negatywne, neutralne i słabsze są zapisane, ale ukryte) |
 | `PUSH_PENDING` | ocena gotowa, push czeka na wysłanie (np. telefon jeszcze niezarejestrowany) |
-| `PENDING_ATTACHMENTS`, `PENDING_DATA`, `PENDING_AI` | serwer czeka na pliki raportu, dane albo AI i ponowi próbę; raport widać w Alertach jako „czeka” |
-| `UNSCORED_NO_AI`, `UNSCORED_NO_DATA` | raport bez oceny, bo zabrakło limitu AI albo danych; widać go w Alertach bez oceny |
+| `PENDING_ATTACHMENTS`, `PENDING_DATA`, `PENDING_AI` | serwer czeka na pliki raportu, dane albo AI i ponowi próbę; wyniki widać w Alertach jako „czeka”, wydarzenia są ukryte do oceny; na pliki serwer czeka tylko wtedy, gdy strona raportu ma załączniki |
+| `UNSCORED_NO_AI`, `UNSCORED_NO_DATA` | raport bez oceny, bo zabrakło limitu AI albo danych; wyniki widać w Alertach bez oceny, wydarzenia bez oceny są ukryte |
 | `NEW`, `EXTRACTED` | raport w trakcie obsługi |
 | `FAILED` | raport nie dał się obsłużyć; szczegóły w `docker compose logs server` |
 
@@ -287,7 +321,7 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 3. Wynik: `____`
 
 **(c) Koszt AI.**
-1. Odczytaj `aiSpentUsd` z `/api/status` (suma obu pul za bieżący miesiąc; miesiąc liczony w UTC, tak jak w Console).
+1. Odczytaj `aiSpentUsd` z `/api/status` (suma wszystkich pul za bieżący miesiąc; miesiąc liczony w UTC, tak jak w Console).
 2. Porównaj z kosztem w Anthropic Console → Usage (workspace `investor`, ten sam miesiąc).
 3. Różnica ma być ≤ 10%.
 4. Wynik: `____`
@@ -298,6 +332,7 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 - Źródła to scraping stron. Strona może zmienić układ i adapter przestanie działać. Pokaże to alert o awarii źródła.
 - Apka łączy się z głównym adresem `https://debian-server.tail8124e8.ts.net`, bez `/investor`. Działa, bo Funnel wystawia serwer także pod głównym adresem. Jeśli przypiszesz główny adres innej usłudze, apka straci połączenie z serwerem i trzeba ją poprawić.
 - Apkę i serwer aktualizuj razem. Gdy serwer dostanie nowy rynek albo typ zdarzenia (fazy 3 i 5), starsza apka nie odczyta odpowiedzi.
+- Ocena wydarzeń przez AI nie jest jeszcze sprawdzona na prawdziwych reakcjach kursu. Po kilku tygodniach zajrzyj do Skuteczności (przedziały „Wydarzenie”) i dopiero wtedy ufaj pushom o wydarzeniach. Filtr rutyny działa po tytule, więc nietypowo nazwany ważny komunikat może zostać odrzucony, a rutynowy może trafić do AI.
 - Polling sprawdza najpierw GPW, potem NewConnect. W wieczór z dużą liczbą raportów alerty z NewConnect mogą się spóźnić, bo czekają na obsłużenie raportów z GPW.
 - Kalibracja (2026-10-31):
   - Kara za rajd kursu (−10 pkt) nie działa, gdy spółka ma za sobą co najmniej 3 mocne raporty z rzędu i tanią wycenę. Rajd jest wtedy pokazany jako ostrzeżenie. Lipcowa sprzedaż ASBIS ma 75,83 pkt i push.

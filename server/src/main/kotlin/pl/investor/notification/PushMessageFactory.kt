@@ -22,6 +22,15 @@ class PushMessageFactory {
         reportId = alertId,
     )
 
+    fun forNews(company: Company, market: Market, score: Score, reason: String, alertId: Long) = PushMessage(
+        title = "${company.shortName ?: company.name} (${market.name}) · WYDARZENIE · ocena ${score.displayScore()}",
+        body = reason.firstSentence().take(BODY_LIMIT),
+        data = mapOf("alertId" to alertId.toString()),
+        kind = PushKind.NEWS,
+        reportId = alertId,
+        companyId = company.id,
+    )
+
     fun forSourceOutage(source: Source, since: Instant) = PushMessage(
         title = "Źródło ${source.name} nie działa",
         body = "Brak danych od ${since.atZone(WARSAW).format(HOUR_MINUTE)}",
@@ -32,7 +41,7 @@ class PushMessageFactory {
 
     fun forAiBudgetExhausted(pool: AiPool) = PushMessage(
         title = "Limit AI wyczerpany",
-        body = "Do końca miesiąca raporty ${pool.label()} są oceniane bez AI",
+        body = pool.budgetExhaustedBody(),
         data = mapOf("pool" to pool.name),
         kind = PushKind.AI_BUDGET,
         reportId = null,
@@ -46,9 +55,10 @@ class PushMessageFactory {
         reportId = null,
     )
 
-    private fun AiPool.label() = when (this) {
-        AiPool.GPW -> "GPW/NC"
-        AiPool.US -> "USA"
+    private fun AiPool.budgetExhaustedBody() = when (this) {
+        AiPool.GPW -> "Do końca miesiąca raporty GPW/NC są oceniane bez AI"
+        AiPool.US -> "Do końca miesiąca raporty USA są oceniane bez AI"
+        AiPool.NEWS -> "Do końca miesiąca wydarzenia nie są oceniane"
     }
 
     private companion object {

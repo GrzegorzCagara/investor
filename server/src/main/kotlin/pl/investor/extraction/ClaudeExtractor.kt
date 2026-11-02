@@ -3,13 +3,6 @@ package pl.investor.extraction
 import com.anthropic.client.AnthropicClient
 import com.anthropic.core.JsonValue
 import com.anthropic.errors.AnthropicException
-import com.anthropic.errors.AnthropicIoException
-import com.anthropic.errors.AnthropicRetryableException
-import com.anthropic.errors.InternalServerException
-import com.anthropic.errors.PermissionDeniedException
-import com.anthropic.errors.RateLimitException
-import com.anthropic.errors.UnauthorizedException
-import com.anthropic.errors.UnexpectedStatusCodeException
 import com.anthropic.models.messages.JsonOutputFormat
 import com.anthropic.models.messages.Message
 import com.anthropic.models.messages.MessageCreateParams
@@ -30,22 +23,11 @@ class ClaudeExtractor(private val budget: AiBudget, private val client: Anthropi
         val message = try {
             client.messages().create(request(content, companyName))
         } catch (e: AnthropicException) {
-            throw when {
-                e.isTransient() -> AiUnavailableException(e)
-                e.isAuthenticationFailure() -> AiAuthenticationException(e)
-                else -> ExtractionFailedException("Anthropic API call failed", e)
-            }
+            throw e.toAiFailure { ExtractionFailedException("Anthropic API call failed", it) }
         }
         budget.record(pool, message.usage().inputTokens(), message.usage().outputTokens())
         return message.toExtraction()
     }
-
-    private fun AnthropicException.isTransient(): Boolean =
-        this is RateLimitException || this is InternalServerException || this is AnthropicIoException ||
-            this is AnthropicRetryableException || (this is UnexpectedStatusCodeException && statusCode() >= 500)
-
-    private fun AnthropicException.isAuthenticationFailure(): Boolean =
-        this is UnauthorizedException || this is PermissionDeniedException
 
     private fun request(content: ReportContent, companyName: String): MessageCreateParams =
         MessageCreateParams.builder()

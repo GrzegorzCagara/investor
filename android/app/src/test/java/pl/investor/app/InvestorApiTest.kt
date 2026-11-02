@@ -75,6 +75,39 @@ class InvestorApiTest {
         assertTrue(detail.consensus.isEmpty())
         assertTrue(detail.companyHistory.isEmpty())
         assertNull(detail.outlookQuote)
+        assertEquals(EventType.RESULTS, detail.eventType)
+        assertNull(detail.news)
+    }
+
+    @Test
+    fun `news detail parses the event type and the assessment`() = runBlocking {
+        enqueueJson(
+            """{"id":77,"companyName":"Mirbud","market":"GPW","reportNumber":"31/2026","reportKind":"CURRENT",""" +
+                """"publishedAt":"2026-11-02T08:15:00Z","score":78,"components":[],"penalty":0.0,"warnings":[],""" +
+                """"reason":"Umowa na 18,4 mln PLN to blisko 12% rocznych przychodów.","outlookQuote":null,"revenueHistory":[],""" +
+                """"sourceUrl":"https://example.test/n","reaction":null,"consensus":[],"companyHistory":[],"eventType":"NEWS",""" +
+                """"news":{"categoryLabel":"Umowa","direction":"pozytywny","contractValue":"18,4 mln PLN","revenueSharePct":11.8}}""",
+        )
+
+        val detail = api().alert(77)
+
+        assertEquals(EventType.NEWS, detail.eventType)
+        assertEquals(NewsView("Umowa", "pozytywny", "18,4 mln PLN", 11.8), detail.news)
+        assertTrue(detail.components.isEmpty())
+        assertTrue(detail.revenueHistory.isEmpty())
+    }
+
+    @Test
+    fun `news detail without a contract value parses`() = runBlocking {
+        enqueueJson(
+            "{$DETAIL_BASE," +
+                """"eventType":"NEWS","news":{"categoryLabel":"Notowanie na innej giełdzie","direction":"neutralny",""" +
+                """"contractValue":null,"revenueSharePct":null}}""",
+        )
+
+        val detail = api().alert(42)
+
+        assertEquals(NewsView("Notowanie na innej giełdzie", "neutralny", null, null), detail.news)
     }
 
     @Test
@@ -128,9 +161,23 @@ class InvestorApiTest {
         val us = api().ranking(Market.US)
 
         assertEquals(83, all.items.single().score)
+        assertEquals(EventType.RESULTS, all.items.single().eventType)
         assertTrue(us.items.isEmpty())
         assertEquals("/api/ranking", server.takeRequest().path)
         assertEquals("/api/ranking?market=US", server.takeRequest().path)
+    }
+
+    @Test
+    fun `alerts parse news items`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":77,"companyName":"Mirbud","market":"GPW","eventType":"NEWS","publishedAt":"2026-11-02T08:15:00Z",""" +
+                """"score":78,"belowThreshold":false,"summary":"Umowa na 18,4 mln PLN.","status":"SCORED"}]}""",
+        )
+
+        val item = api().alerts().items.single()
+
+        assertEquals(EventType.NEWS, item.eventType)
+        assertEquals(78, item.score)
     }
 
     @Test
@@ -172,8 +219,8 @@ class InvestorApiTest {
         assertEquals(listOf("GPW_LISTING", "BANKIER_NEWS"), status.sources.map { it.source })
         assertNull(status.sources.first().lastFailureAt)
         assertEquals(Instant.parse("2026-10-31T09:00:00Z"), status.sources.last().lastFailureAt)
-        assertEquals(mapOf("GPW" to 0.42, "US" to 0.0), status.aiSpentUsd)
-        assertEquals(mapOf("GPW" to 1.90, "US" to 2.85), status.aiLimitUsd)
+        assertEquals(mapOf("GPW" to 0.42, "US" to 0.0, "NEWS" to 0.1), status.aiSpentUsd)
+        assertEquals(mapOf("GPW" to 1.90, "US" to 2.85, "NEWS" to 1.00), status.aiLimitUsd)
         assertNull(status.medianLatencySeconds7d)
     }
 

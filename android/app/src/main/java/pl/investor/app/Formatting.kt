@@ -98,7 +98,23 @@ object Formatting {
 
     fun eventTypeLabel(type: EventType): String = when (type) {
         EventType.RESULTS -> "Wyniki"
+        EventType.NEWS -> "Wydarzenia"
     }
+
+    fun alertTypeLabel(type: EventType): String = when (type) {
+        EventType.RESULTS -> "Wyniki"
+        EventType.NEWS -> "Wydarzenie"
+    }
+
+    fun alertLine(alert: AlertItem, now: Instant): String =
+        "${time(alert.publishedAt, now)} · ${alertTypeLabel(alert.eventType)} · ${alert.summary}"
+
+    fun contractValueLine(news: NewsView): String? = news.contractValue?.let { value ->
+        news.revenueSharePct?.let { "$value (${share(it)} rocznych przychodów)" } ?: value
+    }
+
+    private fun share(pct: Double): String =
+        pct.rounded(1).takeIf { it.signum() > 0 }?.let { "${it.polish()}%" } ?: "<0,1%"
 
     fun reactionLabel(reaction: Reaction): String = when (reaction) {
         Reaction.NEGATIVE -> "Spadek w dniu raportu"
@@ -122,6 +138,7 @@ object Formatting {
     fun aiPoolLabel(pool: String): String = when (pool) {
         "GPW" -> "GPW/NC"
         "US" -> "USA"
+        "NEWS" -> "Wydarzenia"
         else -> pool
     }
 
@@ -149,7 +166,7 @@ object Formatting {
             "20 s. ${percent(item.excess20Pct)}, 60 s. ${percent(item.excess60Pct)}"
 
     fun historyLine(item: OutcomeItem, now: Instant): String =
-        "${date(item.publishedAt, now)} · po 20 sesjach ${percent(item.excess20Pct)}"
+        "${date(item.publishedAt, now)} · ${alertTypeLabel(item.eventType)} · po 20 sesjach ${percent(item.excess20Pct)}"
 
     private fun Double.rounded(scale: Int): BigDecimal = BigDecimal.valueOf(this).setScale(scale, RoundingMode.HALF_UP)
 

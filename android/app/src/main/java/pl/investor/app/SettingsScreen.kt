@@ -70,7 +70,9 @@ private fun SettingsFormSection(form: SettingsForm, state: SettingsUiState, view
     }
 
     SectionTitle("Rodzaje zdarzeń")
-    SwitchRow(Formatting.eventTypeLabel(EventType.RESULTS), form.resultsEnabled, editable, viewModel::onResultsChange)
+    EventType.entries.forEach { type ->
+        SwitchRow(Formatting.eventTypeLabel(type), type in form.enabledEventTypes, editable) { viewModel.onEventTypeChange(type, it) }
+    }
     Hint("Wyłączone rynki i zdarzenia nadal widać w aplikacji, tylko bez powiadomień.")
 
     SectionTitle("Godziny ciszy")

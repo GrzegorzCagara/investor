@@ -3,7 +3,7 @@ package pl.investor.notification
 import pl.investor.history.PeriodKind
 import java.time.LocalDate
 
-enum class PushKind { RESULTS, SOURCE_OUTAGE, AI_BUDGET, AI_AUTH }
+enum class PushKind { RESULTS, NEWS, SOURCE_OUTAGE, AI_BUDGET, AI_AUTH }
 
 data class PushMessage(
     val title: String,

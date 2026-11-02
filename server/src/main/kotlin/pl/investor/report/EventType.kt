@@ -1,3 +1,3 @@
 package pl.investor.report
 
-enum class EventType { RESULTS }
+enum class EventType { RESULTS, NEWS }

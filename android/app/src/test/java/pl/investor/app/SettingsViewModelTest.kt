@@ -76,7 +76,7 @@ class SettingsViewModelTest {
             SettingsForm(
                 threshold = "70",
                 enabledMarkets = setOf(Market.GPW, Market.US),
-                resultsEnabled = true,
+                enabledEventTypes = setOf(EventType.RESULTS, EventType.NEWS),
                 quietEnabled = false,
                 quietFrom = "22:00",
                 quietTo = "07:00",
@@ -90,7 +90,14 @@ class SettingsViewModelTest {
             ),
             state.sources,
         )
-        assertEquals(listOf(AiUsageRow("GPW/NC", "0,42 z 1,90 USD"), AiUsageRow("USA", "0,00 z 2,85 USD")), state.aiUsage)
+        assertEquals(
+            listOf(
+                AiUsageRow("GPW/NC", "0,42 z 1,90 USD"),
+                AiUsageRow("USA", "0,00 z 2,85 USD"),
+                AiUsageRow("Wydarzenia", "0,10 z 1,00 USD"),
+            ),
+            state.aiUsage,
+        )
         assertNull(state.statusError)
     }
 
@@ -100,7 +107,7 @@ class SettingsViewModelTest {
         viewModel.onThresholdChange("55")
         viewModel.onMarketChange(Market.NC, true)
         viewModel.onMarketChange(Market.US, false)
-        viewModel.onResultsChange(false)
+        viewModel.onEventTypeChange(EventType.RESULTS, false)
         viewModel.onQuietEnabledChange(true)
         viewModel.onQuietFromChange("23:00")
         viewModel.onQuietToChange("06:30")
@@ -115,6 +122,36 @@ class SettingsViewModelTest {
         )
         assertTrue(putBodies.single().contains("\"disabledMarkets\":[\"US\"]"))
         assertEquals("55", saved.form?.threshold)
+    }
+
+    @Test
+    fun `event type switches are sent and read back independently`() {
+        val viewModel = loadedViewModel()
+        viewModel.onEventTypeChange(EventType.NEWS, false)
+
+        viewModel.save()
+        val newsOff = viewModel.await { !it.saving && it.saveMessage != null }
+
+        assertTrue(putBodies.last().contains("\"disabledEventTypes\":[\"NEWS\"]"))
+        assertEquals(setOf(EventType.RESULTS), newsOff.form?.enabledEventTypes)
+
+        viewModel.onEventTypeChange(EventType.NEWS, true)
+        viewModel.onEventTypeChange(EventType.RESULTS, false)
+        viewModel.save()
+        val resultsOff = viewModel.await { !it.saving && it.saveMessage != null }
+
+        assertTrue(putBodies.last().contains("\"disabledEventTypes\":[\"RESULTS\"]"))
+        assertEquals(setOf(EventType.NEWS), resultsOff.form?.enabledEventTypes)
+
+        viewModel.onEventTypeChange(EventType.NEWS, false)
+        viewModel.save()
+        val bothOff = viewModel.await { !it.saving && it.saveMessage != null }
+
+        assertEquals(
+            listOf(EventType.RESULTS, EventType.NEWS),
+            InvestorApi.json.decodeFromString(SettingsView.serializer(), putBodies.last()).disabledEventTypes,
+        )
+        assertTrue(bothOff.form!!.enabledEventTypes.isEmpty())
     }
 
     @Test
@@ -167,6 +204,6 @@ class SettingsViewModelTest {
             """{"sources":[""" +
                 """{"source":"GPW_LISTING","lastSuccessAt":"2026-10-31T09:55:00Z","lastFailureAt":null,"lastError":null,"outageNotified":false},""" +
                 """{"source":"BANKIER_NEWS","lastSuccessAt":"2026-10-31T07:00:00Z","lastFailureAt":"2026-10-31T09:00:00Z","lastError":"timeout","outageNotified":false}""" +
-                """],"aiSpentUsd":{"GPW":0.42,"US":0},"aiLimitUsd":{"GPW":1.90,"US":2.85},"medianLatencySeconds7d":null,"fcmConfigured":true}"""
+                """],"aiSpentUsd":{"GPW":0.42,"US":0,"NEWS":0.1},"aiLimitUsd":{"GPW":1.90,"US":2.85,"NEWS":1.00},"medianLatencySeconds7d":null,"fcmConfigured":true}"""
     }
 }

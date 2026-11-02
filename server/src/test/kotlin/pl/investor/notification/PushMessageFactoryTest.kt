@@ -39,6 +39,18 @@ class PushMessageFactoryTest {
     }
 
     @Test
+    fun `news message names the event, carries the alert id and the first sentence of the reason`() {
+        val message = factory.forNews(asbis, Market.NC, score(84.5), "Wejście na giełdę we Frankfurcie. Drugie zdanie.", 7)
+
+        assertEquals("ASBIS (NC) · WYDARZENIE · ocena 85", message.title)
+        assertEquals("Wejście na giełdę we Frankfurcie.", message.body)
+        assertEquals(mapOf("alertId" to "7"), message.data)
+        assertEquals(7L, message.reportId)
+        assertEquals(PushKind.NEWS, message.kind)
+        assertEquals(180, factory.forNews(asbis, Market.GPW, score(80.0), "a".repeat(300), 1).body.length)
+    }
+
+    @Test
     fun `push body is the first sentence cut to 180 chars`() {
         val reason = "Przychody +91% r/r; 7. mocny raport z rzędu; C/Z 20,1. Drugie zdanie."
         assertEquals("Przychody +91% r/r; 7. mocny raport z rzędu; C/Z 20,1.", factory.forResults(asbis, Market.GPW, score(80.0), reason, 1).body)
@@ -60,6 +72,7 @@ class PushMessageFactoryTest {
     fun `AI budget message names the pool`() {
         assertEquals("Do końca miesiąca raporty GPW/NC są oceniane bez AI", factory.forAiBudgetExhausted(AiPool.GPW).body)
         assertEquals("Do końca miesiąca raporty USA są oceniane bez AI", factory.forAiBudgetExhausted(AiPool.US).body)
+        assertEquals("Do końca miesiąca wydarzenia nie są oceniane", factory.forAiBudgetExhausted(AiPool.NEWS).body)
         assertEquals("Limit AI wyczerpany", factory.forAiBudgetExhausted(AiPool.GPW).title)
     }
 }

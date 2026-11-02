@@ -31,6 +31,20 @@ class EffectivenessCalculatorTest {
         outcome = outcome,
     )
 
+    @Test
+    fun `reaction groups count results only while items mix results and news`() {
+        val response = EffectivenessCalculator.calculate(
+            listOf(
+                result(1, 70.0, outcome(reaction = 3.0, reactionIndex = 0.0)),
+                result(2, 80.0, outcome(reaction = 5.0, reactionIndex = 0.0)).copy(eventType = EventType.NEWS),
+            ),
+        )
+
+        assertEquals(1, response.reaction(Reaction.POSITIVE).alerts)
+        assertEquals(1, response.buckets.single { it.eventType == EventType.NEWS && it.label == "80+" }.alerts)
+        assertEquals(listOf(EventType.NEWS, EventType.RESULTS), response.items.map { it.eventType })
+    }
+
     private fun EffectivenessResponse.bucket(label: String) = buckets.single { it.eventType == EventType.RESULTS && it.label == label }
 
     private fun EffectivenessResponse.reaction(reaction: Reaction) = byReaction.single { it.reaction == reaction }
@@ -43,7 +57,8 @@ class EffectivenessCalculatorTest {
             listOf(result(1, 49.4), result(2, 49.5), result(3, 59.4), result(4, 59.5), result(5, 79.5), result(6, 100.0)),
         )
 
-        assertEquals(listOf("50–59", "60–69", "70–79", "80+"), response.buckets.map { it.label })
+        assertEquals(listOf("50–59", "60–69", "70–79", "80+"), response.buckets.filter { it.eventType == EventType.RESULTS }.map { it.label })
+        assertEquals(listOf(0, 0, 0, 0), response.buckets.filter { it.eventType == EventType.NEWS }.map { it.alerts })
         assertEquals(2, response.bucket("50–59").alerts)
         assertEquals(1, response.bucket("60–69").alerts)
         assertEquals(0, response.bucket("70–79").alerts)

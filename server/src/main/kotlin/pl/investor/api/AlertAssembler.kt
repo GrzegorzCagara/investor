@@ -7,6 +7,9 @@ import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResultRepository
 import pl.investor.history.RevenuePeriodRepository
 import pl.investor.history.indexInstrument
+import pl.investor.news.NewsAssessment
+import pl.investor.news.NewsAssessmentRepository
+import pl.investor.news.contractValueText
 import pl.investor.notification.firstSentence
 import pl.investor.outcome.Outcome
 import pl.investor.outcome.OutcomeRepository
@@ -36,6 +39,7 @@ class AlertAssembler(
     private val alerts: AlertRepository,
     private val outcomes: OutcomeRepository,
     private val consensusNotes: ConsensusRepository,
+    private val newsAssessments: NewsAssessmentRepository,
     private val clock: Clock,
 ) {
 
@@ -47,7 +51,7 @@ class AlertAssembler(
                 id = row.id,
                 companyName = row.companyName,
                 market = row.market,
-                eventType = EventType.RESULTS,
+                eventType = row.eventType,
                 publishedAt = row.publishedAt,
                 score = score,
                 belowThreshold = row.scoredTotal()?.let { it < threshold } ?: false,
@@ -59,7 +63,8 @@ class AlertAssembler(
 
     fun detail(row: AlertRow): AlertDetail {
         val stored = scores.find(row.id).takeIf { row.hasScore() }
-        val extraction = extractions.find(row.id)?.extraction
+        val news = row.takeIf { it.eventType == EventType.NEWS }?.let { newsAssessments.find(it.id) }
+        val extraction = extractions.find(row.id)?.extraction.takeIf { row.eventType == EventType.RESULTS }
         val outlook = extraction?.outlook
         return AlertDetail(
             id = row.id,
@@ -69,7 +74,7 @@ class AlertAssembler(
             reportKind = row.reportKind,
             publishedAt = row.publishedAt,
             score = row.score(),
-            components = stored?.score?.components?.views().orEmpty(),
+            components = stored?.score?.components?.takeIf { row.eventType == EventType.RESULTS }?.views().orEmpty(),
             penalty = stored?.score?.penalty ?: 0.0,
             warnings = stored?.score?.warnings.orEmpty().map(WarningLabels::label),
             reason = row.summary(),
@@ -79,6 +84,8 @@ class AlertAssembler(
             reaction = outcomes.find(row.id)?.reactionView(row.market),
             consensus = consensusNotes.find(row.id)?.rows.orEmpty().map { ConsensusRowView(it.label, it.actual, it.consensus, it.differencePct) },
             companyHistory = scoredOutcomes(alerts.scoredBefore(row.companyId, row.publishedAt, COMPANY_HISTORY_SIZE)).map { it.toOutcomeItem() },
+            eventType = row.eventType,
+            news = news?.view(),
         )
     }
 
@@ -86,10 +93,12 @@ class AlertAssembler(
         val byReport = outcomes.findAll(rows.map { it.id })
         return rows.mapNotNull { row ->
             row.scoredTotal()?.let { total ->
-                ScoredOutcome(row.id, row.companyName, row.market, EventType.RESULTS, row.publishedAt, total, byReport[row.id])
+                ScoredOutcome(row.id, row.companyName, row.market, row.eventType, row.publishedAt, total, byReport[row.id])
             }
         }
     }
+
+    private fun NewsAssessment.view() = NewsView(category.label, direction.label, contractValueText(), revenueSharePct)
 
     private fun Outcome.reactionView(market: Market): ReactionView? {
         val stockPct = reactionPct ?: return null

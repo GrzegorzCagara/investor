@@ -77,6 +77,18 @@ class EffectivenessViewModelTest {
     }
 
     @Test
+    fun `buckets are grouped per event type`() {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody(TWO_TYPES_JSON))
+
+        val loaded = viewModel().awaitLoaded()
+
+        assertEquals(listOf("Wyniki", "Wydarzenia"), loaded.scoreGroups.map { it.title })
+        assertEquals(listOf(SCORE_LABELS, SCORE_LABELS), loaded.scoreGroups.map { group -> group.rows.map { it.label } })
+        assertEquals(listOf(0, 0, 0, 1), loaded.scoreGroups.last().rows.map { it.alerts })
+        assertEquals(EventType.NEWS, loaded.items.single().eventType)
+    }
+
+    @Test
     fun `failed request exposes an error`() {
         server.enqueue(MockResponse().setResponseCode(500))
 
@@ -100,6 +112,30 @@ class EffectivenessViewModelTest {
               "items":[
                 {"id":43,"companyName":"Beta","market":"GPW","eventType":"RESULTS","publishedAt":"2026-10-21T12:00:00Z","score":65,"reactionPct":-3.0,"reactionIndexPct":1.0,"excess5Pct":-5.0,"excess20Pct":null,"excess60Pct":null},
                 {"id":40,"companyName":"Gamma","market":"NC","eventType":"RESULTS","publishedAt":"2026-10-01T12:00:00Z","score":55,"reactionPct":null,"reactionIndexPct":null,"excess5Pct":null,"excess20Pct":null,"excess60Pct":null}
+              ]
+            }
+        """.trimIndent()
+
+        private val SCORE_LABELS = listOf("50–59", "60–69", "70–79", "80+")
+
+        private const val NO_STATS =
+            """[{"sessions":5,"count":0,"avgExcessPct":null},{"sessions":20,"count":0,"avgExcessPct":null},{"sessions":60,"count":0,"avgExcessPct":null}]"""
+
+        private val TWO_TYPES_JSON = """
+            {
+              "buckets":[
+                {"eventType":"RESULTS","label":"50–59","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"RESULTS","label":"60–69","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"RESULTS","label":"70–79","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"RESULTS","label":"80+","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"NEWS","label":"50–59","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"NEWS","label":"60–69","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"NEWS","label":"70–79","alerts":0,"horizons":$NO_STATS},
+                {"eventType":"NEWS","label":"80+","alerts":1,"horizons":$NO_STATS}
+              ],
+              "byReaction":[],
+              "items":[
+                {"id":77,"companyName":"Mirbud","market":"GPW","eventType":"NEWS","publishedAt":"2026-10-21T12:00:00Z","score":82,"reactionPct":null,"reactionIndexPct":null,"excess5Pct":null,"excess20Pct":null,"excess60Pct":null}
               ]
             }
         """.trimIndent()

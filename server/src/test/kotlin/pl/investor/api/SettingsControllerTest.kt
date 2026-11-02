@@ -72,6 +72,15 @@ class SettingsControllerTest : PostgresTestBase() {
     }
 
     @Test
+    fun `news pushes can be switched off separately`() {
+        putSettings(body(eventTypes = """["NEWS"]""")).andExpect(status().isOk)
+
+        getSettings()
+            .andExpect(jsonPath("\$.disabledEventTypes.length()").value(1))
+            .andExpect(jsonPath("\$.disabledEventTypes[0]").value("NEWS"))
+    }
+
+    @Test
     fun `put returns the saved settings and get reads them back`() {
         putSettings(body()).expectSaved()
 

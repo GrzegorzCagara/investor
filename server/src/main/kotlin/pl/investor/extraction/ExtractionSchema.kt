@@ -1,5 +1,8 @@
 package pl.investor.extraction
 
+import pl.investor.extraction.JsonSchemas.enumOf
+import pl.investor.extraction.JsonSchemas.nullable
+import pl.investor.extraction.JsonSchemas.obj
 import pl.investor.history.PeriodKind
 
 object ExtractionSchema {
@@ -32,17 +35,4 @@ object ExtractionSchema {
         "valueInThousands" to mapOf("type" to "number"),
         "sourceText" to mapOf("type" to "string"),
     )
-
-    private fun obj(vararg properties: Pair<String, Any>): Map<String, Any> = mapOf(
-        "type" to "object",
-        "properties" to mapOf(*properties),
-        "required" to properties.map { it.first },
-        "additionalProperties" to false,
-    )
-
-    private fun nullable(schema: Map<String, Any>): Map<String, Any> =
-        mapOf("anyOf" to listOf(schema, mapOf("type" to "null")))
-
-    private inline fun <reified E : Enum<E>> enumOf(): Map<String, Any> =
-        mapOf("type" to "string", "enum" to enumValues<E>().map { it.name })
 }

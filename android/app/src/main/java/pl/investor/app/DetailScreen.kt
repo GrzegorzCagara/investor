@@ -35,6 +35,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,6 +82,7 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
             }
             ScoreBadge(detail.score)
         }
+        detail.news?.let { NewsSection(it) }
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
@@ -94,19 +96,8 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
             )
         }
         detail.reaction?.let { Text(Formatting.reactionLine(it), fontSize = 13.sp) }
-        if (detail.consensus.isNotEmpty()) {
-            Text(Formatting.consensusLine(detail.consensus), fontSize = 13.sp)
-        }
-        detail.components.forEach { ComponentRow(it) }
-        if (detail.penalty > 0) {
-            Text("Kara: −${Formatting.points(detail.penalty)}", color = WARNING, fontSize = 12.sp)
-        }
-        if (detail.revenueHistory.isNotEmpty()) {
-            RevenueChart(detail.revenueHistory)
-        }
-        detail.outlookQuote?.let { quote ->
-            Text("Zapowiedź zarządu", fontSize = 11.sp, color = Color(0xFF888888))
-            Text("„$quote”", fontStyle = FontStyle.Italic, style = MaterialTheme.typography.bodyMedium)
+        if (detail.eventType == EventType.RESULTS) {
+            ResultsBreakdown(detail)
         }
         detail.warnings.forEach { Text("⚠ $it", color = WARNING, fontSize = 12.sp) }
         if (detail.companyHistory.isNotEmpty()) {
@@ -116,6 +107,42 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
         Button(onClick = { uriHandler.openUri(detail.sourceUrl) }, modifier = Modifier.fillMaxWidth()) {
             Text("Otwórz raport")
         }
+    }
+}
+
+@Composable
+private fun ResultsBreakdown(detail: AlertDetail) {
+    if (detail.consensus.isNotEmpty()) {
+        Text(Formatting.consensusLine(detail.consensus), fontSize = 13.sp)
+    }
+    detail.components.forEach { ComponentRow(it) }
+    if (detail.penalty > 0) {
+        Text("Kara: −${Formatting.points(detail.penalty)}", color = WARNING, fontSize = 12.sp)
+    }
+    if (detail.revenueHistory.isNotEmpty()) {
+        RevenueChart(detail.revenueHistory)
+    }
+    detail.outlookQuote?.let { quote ->
+        Text("Zapowiedź zarządu", fontSize = 11.sp, color = Color(0xFF888888))
+        Text("„$quote”", fontStyle = FontStyle.Italic, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun NewsSection(news: NewsView) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Wydarzenie", fontSize = 11.sp, color = Color(0xFF888888))
+        NewsRow("Rodzaj", news.categoryLabel)
+        NewsRow("Wpływ na kurs", news.direction)
+        Formatting.contractValueLine(news)?.let { NewsRow("Wartość umowy", it) }
+    }
+}
+
+@Composable
+private fun NewsRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(label, modifier = Modifier.weight(1f), fontSize = 13.sp)
+        Text(value, modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.End)
     }
 }
 

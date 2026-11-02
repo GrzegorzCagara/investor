@@ -102,8 +102,9 @@ class FormattingTest {
     @Test
     fun `history line uses the 20 session excess`() {
         val item = OutcomeItem(1, "ASBIS", Market.GPW, EventType.RESULTS, Instant.parse("2026-05-14T15:30:00Z"), 82, excess20Pct = -1.25)
-        assertEquals("14.05 · po 20 sesjach −1,3%", Formatting.historyLine(item, now))
-        assertEquals("14.05 · po 20 sesjach —", Formatting.historyLine(item.copy(excess20Pct = null), now))
+        assertEquals("14.05 · Wyniki · po 20 sesjach −1,3%", Formatting.historyLine(item, now))
+        assertEquals("14.05 · Wyniki · po 20 sesjach —", Formatting.historyLine(item.copy(excess20Pct = null), now))
+        assertEquals("14.05 · Wydarzenie · po 20 sesjach −1,3%", Formatting.historyLine(item.copy(eventType = EventType.NEWS), now))
     }
 
     @Test
@@ -128,8 +129,48 @@ class FormattingTest {
         assertEquals("NOWE_ZRODLO", Formatting.sourceLabel("NOWE_ZRODLO"))
         assertEquals("GPW/NC", Formatting.aiPoolLabel("GPW"))
         assertEquals("USA", Formatting.aiPoolLabel("US"))
+        assertEquals("Wydarzenia", Formatting.aiPoolLabel("NEWS"))
         assertEquals("Spadek w dniu raportu", Formatting.reactionLabel(Reaction.NEGATIVE))
         assertEquals("Płasko", Formatting.reactionLabel(Reaction.FLAT))
         assertEquals("Wzrost", Formatting.reactionLabel(Reaction.POSITIVE))
+    }
+
+    @Test
+    fun `event type labels`() {
+        assertEquals("Wyniki", Formatting.eventTypeLabel(EventType.RESULTS))
+        assertEquals("Wydarzenia", Formatting.eventTypeLabel(EventType.NEWS))
+        assertEquals("Wyniki", Formatting.alertTypeLabel(EventType.RESULTS))
+        assertEquals("Wydarzenie", Formatting.alertTypeLabel(EventType.NEWS))
+    }
+
+    @Test
+    fun `alert line shows the time, the type and the summary`() {
+        val alert = AlertItem(
+            id = 1,
+            companyName = "Mirbud",
+            market = Market.GPW,
+            eventType = EventType.NEWS,
+            publishedAt = Instant.parse("2026-09-21T06:09:00Z"),
+            score = 78,
+            belowThreshold = false,
+            summary = "Umowa na 18,4 mln PLN.",
+            status = ReportStatus.SCORED,
+        )
+        assertEquals("08:09 · Wydarzenie · Umowa na 18,4 mln PLN.", Formatting.alertLine(alert, now))
+        assertEquals("08:09 · Wyniki · Umowa na 18,4 mln PLN.", Formatting.alertLine(alert.copy(eventType = EventType.RESULTS), now))
+    }
+
+    @Test
+    fun `contract value adds the revenue share when known`() {
+        assertEquals(
+            "18,4 mln PLN (11,8% rocznych przychodów)",
+            Formatting.contractValueLine(NewsView("Umowa", "pozytywny", "18,4 mln PLN", 11.84)),
+        )
+        assertEquals(
+            "0,2 mln PLN (<0,1% rocznych przychodów)",
+            Formatting.contractValueLine(NewsView("Umowa", "pozytywny", "0,2 mln PLN", 0.04)),
+        )
+        assertEquals("18,4 mln PLN", Formatting.contractValueLine(NewsView("Umowa", "pozytywny", "18,4 mln PLN", null)))
+        assertEquals(null, Formatting.contractValueLine(NewsView("Dywidenda", "pozytywny", null, null)))
     }
 }
