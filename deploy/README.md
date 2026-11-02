@@ -7,22 +7,18 @@ Instrukcja krok po kroku. Serwer działa na mini-PC w Dockerze i jest wystawiony
 1. Zainstaluj Docker Engine razem z wtyczką Compose: https://docs.docker.com/engine/install/
 2. Sprawdź: `docker --version` i `docker compose version`.
 3. Na Linuxie dodaj siebie do grupy `docker` (`sudo usermod -aG docker $USER`) i zaloguj się ponownie.
-4. Pobierz kod na mini-PC do `/home/grzegorz/investor` (rozdział 13, „Pierwszy raz”). Dalsze komendy wykonuj w tym katalogu.
+4. Skopiuj cały kod z PC na mini-PC do `/home/grzegorz/investor` (rozdział 13). Dalsze komendy wykonuj w tym katalogu.
 
 ## 2. Tailscale Funnel na mini-PC
 
 Tailscale jest potrzebny tylko na mini-PC. Telefon nie potrzebuje aplikacji Tailscale ani włączonego VPN.
 
 1. Zainstaluj Tailscale na mini-PC (https://tailscale.com/download) i zaloguj się: `sudo tailscale up`.
-2. Włącz HTTPS i Funnel dla swojego tailnetu. Najprościej uruchom Funnel i otwórz link, który wypisze:
-   ```
-   sudo tailscale funnel --bg 8080
-   ```
-   Przy pierwszym razie Tailscale poprosi w panelu o włączenie certyfikatów HTTPS i Funnel. Funnel działa też w planie darmowym.
-3. Ustaw nazwę maszyny na `minipc` (https://login.tailscale.com/admin/machines), a nazwę tailnetu na `investor` (https://login.tailscale.com/admin/dns → Tailnet name). Jeśli `investor` jest już zajęta, Tailscale doda losowy sufiks i adres będzie inny.
-4. Publiczny adres serwera to `https://minipc.investor.ts.net` — bez `:8080`. Funnel sam łączy się z `127.0.0.1:8080`, dlatego `HOST_BIND` zostaje na `127.0.0.1`.
-5. Sprawdź stan: `tailscale funnel status`. Wyłączenie: `sudo tailscale funnel reset`.
-6. Flaga `--bg` sprawia, że Funnel działa po restarcie mini-PC, o ile Tailscale też startuje z systemem. Port 8080 nie jest wystawiony w sieci domowej.
+2. Włącz HTTPS i Funnel dla swojego tailnetu i wystaw port 8080 pod ścieżką `/investor`. Przy pierwszym razie Tailscale poprosi w panelu o włączenie certyfikatów HTTPS i Funnel. Funnel działa też w planie darmowym.
+3. Mini-PC nazywa się w Tailscale `debian-server`, a tailnet `tail8124e8`.
+4. Publiczny adres serwera to `https://debian-server.tail8124e8.ts.net/investor`, bez `:8080`. Funnel sam łączy się z `127.0.0.1:8080`, dlatego `HOST_BIND` zostaje na `127.0.0.1`.
+5. Sprawdź konfigurację: `tailscale funnel status`. Wyłączenie: `sudo tailscale funnel reset`.
+6. Funnel uruchomiony z flagą `--bg` działa też po restarcie mini-PC, o ile Tailscale startuje z systemem. Port 8080 nie jest wystawiony w sieci domowej.
 
 ## 3. Firebase
 
@@ -77,7 +73,7 @@ Wpisz token bez zostawiania go w historii powłoki:
 
 ```
 read -rs T
-curl -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/status
+curl -H "X-Investor-Token: $T" https://debian-server.tail8124e8.ts.net/investor/api/status
 ```
 
 Możesz też sprawdzić lokalnie z mini-PC: `curl http://127.0.0.1:8080/api/status` z tym samym nagłówkiem. Publiczny ruch idzie przez HTTPS, więc token jest szyfrowany.
@@ -103,7 +99,7 @@ Bez historii oceny nie mają danych do porównań. Backfill robi cztery rzeczy, 
 Krok 2 zużywa limit AI (pula GPW/NC, 1,90 USD miesięcznie). Gdy pula się wyczerpie albo Anthropic odrzuci klucz API, krok 2 się zatrzymuje, także dla spółek, które jeszcze czekały. Kroki 3 i 4 wykonują się mimo to. Całość trwa od kilku do kilkudziesięciu minut.
 
 ```
-curl -i -X POST -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/admin/backfill
+curl -i -X POST -H "X-Investor-Token: $T" https://debian-server.tail8124e8.ts.net/investor/api/admin/backfill
 ```
 
 Odpowiedź 202 oznacza, że ruszył. Odpowiedź 409 oznacza, że już trwa. Odpowiedź 401 oznacza zły token (rozdział 6). Odpowiedź nie ma treści, dlatego bez `-i` curl nic nie wypisuje.
@@ -118,8 +114,8 @@ Monthly sales backfill of ASBIS: 13 of 13 reports to read                (dla ka
 Monthly sales backfill finished, 60 monthly revenues saved
 Quotes backfill of 118 weekdays from 2026-05-20 to 2026-11-01 started
 Quotes backfill finished, latest session 2026-10-30
-Outcomes refreshed for 0 reports
-Backfill finished in 25 min
+Outcomes refreshed for 12 reports                                        (tylko gdy są już alerty)
+Backfill finished in 40 min
 ```
 
 Ostatnia linia oznacza koniec. Linie z `ERROR` lub `WARN` pokazują dni albo raporty, których nie udało się odczytać. Pojedyncze takie linie nie są problemem.
@@ -148,7 +144,7 @@ Robisz to na drugim komputerze.
 
 ## 10. Ekran konfiguracji w apce
 
-1. Adres serwera: `https://minipc.investor.ts.net`, bez `:8080` i bez ścieżki.
+1. Adres serwera: `https://debian-server.tail8124e8.ts.net/investor`, z `/investor` na końcu i bez `:8080`.
 2. Token: ten sam, co `INVESTOR_API_TOKEN`.
 3. Tailscale ani VPN na telefonie nie są potrzebne. Aplikację Tailscale możesz odinstalować.
 4. Sprawdź, że `GET /api/status` zwraca dane przez `curl` jak wyżej.
@@ -172,77 +168,53 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
 
 ## 13. Deploy na mini-PC
 
-Serwer działa na mini-PC z katalogu `/home/grzegorz/investor`. Ten katalog to klon repozytorium z GitHuba, więc nowa wersja to `git pull` i przebudowanie kontenera.
+Serwer działa na mini-PC (`debian-server`) z katalogu `/home/grzegorz/investor`. Nową wersję pobierasz z GitHuba na PC, kopiujesz cały kod na mini-PC i tam przebudowujesz kontener.
 
 ### Połączenie przez SSH
 
-Na drugim komputerze otwórz terminal (w Windows PowerShell, `ssh` jest wbudowany):
+Na PC otwórz PowerShell (`ssh` i `scp` są wbudowane w Windows 10 i 11):
 
 ```
-ssh grzegorz@minipc
+ssh grzegorz@<adres-IP-mini-PC>
 ```
 
-- Nazwa `minipc` działa, gdy drugi komputer też jest zalogowany do Tailscale. W sieci domowej możesz zamiast niej podać adres IP, np. `ssh grzegorz@192.168.1.50`. Adres sprawdzisz na mini-PC komendą `hostname -I`.
-- Publiczny adres `https://minipc.investor.ts.net` wystawia tylko serwer apki. SSH przez niego nie działa.
-- Gdy połączenie jest odrzucane, zainstaluj na mini-PC serwer SSH (Ubuntu/Debian): `sudo apt install openssh-server`.
-- Żeby nie wpisywać hasła przy każdym logowaniu, utwórz klucz na drugim komputerze i skopiuj go na mini-PC (PowerShell):
+- Adres IP mini-PC w sieci domowej sprawdzisz na mini-PC komendą `hostname -I` (pierwszy adres na liście).
+- Publiczny adres `https://debian-server.tail8124e8.ts.net/investor` wystawia tylko serwer apki. SSH przez niego nie działa.
+- Gdy połączenie jest odrzucane, zainstaluj na mini-PC serwer SSH: `sudo apt install openssh-server`.
+- Żeby nie wpisywać hasła przy każdym logowaniu, utwórz klucz na PC i skopiuj go na mini-PC:
   ```
   ssh-keygen -t ed25519
-  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh grzegorz@minipc "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh grzegorz@<adres-IP-mini-PC> "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
   ```
   Przy `ssh-keygen` wciśnij Enter na wszystkie pytania. Hasło do mini-PC wpiszesz ostatni raz przy kopiowaniu klucza.
 
-### Pierwszy raz
-
-Jeśli na mini-PC nie ma jeszcze `/home/grzegorz/investor`:
-
-```
-git clone https://github.com/GrzegorzCagara/investor.git /home/grzegorz/investor
-```
-
-Potem wykonaj rozdziały 3 (`secrets/firebase.json`), 5 (`.env`), 6 (start) i 7 (backfill). Gdy brakuje gita: `sudo apt install git`.
-
-Jeśli katalog już jest, ale został skopiowany ręcznie, zamień go na klon. Rozpoznasz to po tym, że `git -C /home/grzegorz/investor status` wypisuje „not a git repository”. `.env`, `secrets/` i baza zostają:
-
-```
-cd /home/grzegorz/investor
-docker compose down
-cd /home/grzegorz
-mv investor investor-stary
-git clone https://github.com/GrzegorzCagara/investor.git investor
-cp investor-stary/.env investor/
-sudo cp -a investor-stary/secrets investor/
-cd investor
-docker compose up -d --build
-```
-
-- Katalog musi nazywać się `investor`, bo od tej nazwy zależy wolumen z bazą (`investor_pgdata`). W katalogu o innej nazwie serwer wystartuje z pustą bazą.
-- `docker compose down` zatrzymuje kontenery, ale nie usuwa bazy. Nigdy nie używaj `docker compose down -v`, bo ta komenda usuwa bazę.
-- Gdy wszystko działa, usuń starą kopię: `sudo rm -rf /home/grzegorz/investor-stary`.
-
 ### Aktualizacja do nowej wersji
 
-```
-ssh grzegorz@minipc
-cd /home/grzegorz/investor
-git pull
-docker compose up -d --build
-docker compose logs -f server
-```
-
-1. `git pull` pobiera nową wersję z GitHuba. Repozytorium jest publiczne, więc token nie jest potrzebny. `.env`, `secrets/` i baza nie są w repozytorium, więc zostają bez zmian.
-2. `docker compose up -d --build` buduje nowy obraz (kilka minut) i podmienia kontener serwera. Zmiany w bazie (migracje) wykonują się same przy starcie.
-3. W logach poczekaj na linię `Started InvestorApplication`. Ctrl+C zamyka podgląd logów, serwer działa dalej.
-4. Sprawdź API:
+1. Na PC, w katalogu repozytorium: `git pull`.
+2. Skopiuj cały kod na mini-PC do `/home/grzegorz/investor`, np. przez WinSCP albo `scp -r`. Nie nadpisuj na mini-PC plików `.env` i `secrets/firebase.json`. Jeśli na PC też masz `.env`, pomiń go przy kopiowaniu.
+3. Na mini-PC:
+   ```
+   cd /home/grzegorz/investor
+   docker compose up -d --build
+   docker compose logs -f server
+   ```
+   `docker compose up -d --build` buduje nowy obraz (kilka minut) i podmienia kontener serwera. Baza zostaje, a zmiany w niej (migracje) wykonują się same przy starcie.
+4. W logach poczekaj na linię `Started InvestorApplication`. Ctrl+C zamyka podgląd logów, serwer działa dalej.
+5. Sprawdź API:
    ```
    T=$(docker compose exec -T server printenv INVESTOR_API_TOKEN)
    curl -i -H "X-Investor-Token: $T" http://127.0.0.1:8080/api/status
    ```
    Oczekiwane: `HTTP/1.1 200`.
-5. Jeśli w rozdziale 7 jest akapit „Po aktualizacji z …” dla tej wersji, uruchom backfill.
-6. Raz na jakiś czas usuń stare obrazy, które zajmują miejsce na dysku: `docker image prune -f`.
+6. Jeśli w rozdziale 7 jest akapit „Po aktualizacji z …” dla tej wersji, uruchom backfill.
+7. Raz na jakiś czas usuń stare obrazy, które zajmują miejsce na dysku: `docker image prune -f`.
 
-Gdy `git pull` odmawia, bo plik z repozytorium był zmieniony na mini-PC, `git status` pokaże, który to plik. Cofnij zmianę przez `git checkout -- <plik>` i powtórz `git pull`.
+Kopiowanie nie usuwa na mini-PC plików, które zniknęły z nowej wersji. Jeśli build po aktualizacji zgłosi błąd w pliku, którego nie ma już w repozytorium, usuń stary kod serwera (`rm -rf /home/grzegorz/investor/server`) i skopiuj kod jeszcze raz.
+
+Przy pierwszej instalacji przed `docker compose up` wykonaj jeszcze rozdziały 3 (`secrets/firebase.json`) i 5 (`.env`), a po starcie rozdział 7 (backfill).
+
+- Katalog musi nazywać się `investor`, bo od tej nazwy zależy wolumen z bazą (`investor_pgdata`). W katalogu o innej nazwie serwer wystartuje z pustą bazą.
+- Nigdy nie używaj `docker compose down -v`, bo ta komenda usuwa bazę. Samo `docker compose down` zatrzymuje kontenery i bazę zostawia.
 
 ## Pomiary
 
@@ -260,7 +232,7 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 7. Wynik: `____` (czas od blokady do pushu).
 
 **(b) Opóźnienie: mediana w 7 dni.**
-1. Po 7 dniach pracy: `curl -H "X-Investor-Token: $T" https://minipc.investor.ts.net/api/status` (zmienna `T` jak w kroku 6).
+1. Po 7 dniach pracy: `curl -H "X-Investor-Token: $T" https://debian-server.tail8124e8.ts.net/investor/api/status` (zmienna `T` jak w kroku 6).
 2. `medianLatencySeconds7d` ma być ≤ 300 (5 minut). Dopóki nie ma żadnych wyników, wartość to `null`.
 3. Wynik: `____`
 
