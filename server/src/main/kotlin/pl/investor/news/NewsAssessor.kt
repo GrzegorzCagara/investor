@@ -11,7 +11,7 @@ import com.anthropic.models.messages.StopReason
 import org.springframework.stereotype.Component
 import pl.investor.extraction.AiBudget
 import pl.investor.extraction.AiBudgetExhaustedException
-import pl.investor.extraction.AiPool
+import pl.investor.extraction.newsPool
 import pl.investor.extraction.Amount
 import pl.investor.extraction.QuoteVerifier
 import pl.investor.extraction.toAiFailure
@@ -31,13 +31,14 @@ class NewsAssessor(
     private val mapper = jacksonObjectMapper()
 
     fun assess(input: NewsInput): NewsAssessment {
-        if (!budget.canSpend(AiPool.NEWS)) throw AiBudgetExhaustedException(AiPool.NEWS)
+        val pool = input.market.newsPool()
+        if (!budget.canSpend(pool)) throw AiBudgetExhaustedException(pool)
         val message = try {
             client.messages().create(request(input))
         } catch (e: AnthropicException) {
             throw e.toAiFailure { NewsAssessmentFailedException("Anthropic API call failed", it) }
         }
-        budget.record(AiPool.NEWS, message.usage().inputTokens(), message.usage().outputTokens())
+        budget.record(pool, message.usage().inputTokens(), message.usage().outputTokens())
         return message.toModelAssessment().guarded(input)
     }
 
@@ -74,7 +75,7 @@ class NewsAssessor(
     private fun ModelNewsAssessment.guarded(input: NewsInput): NewsAssessment {
         val value = contractValue
             ?.takeIf { category == NewsCategory.CONTRACT }
-            ?.takeIf { verifier.isSupported(Amount(it.valueInThousands, it.sourceText), input.announcement) }
+            ?.takeIf { verifier.isSupported(Amount(it.valueInThousands, it.sourceText), input.announcement, input.market) }
         val currency = value?.currency
         val clamped = impact.coerceIn(0.0, 100.0)
         return NewsAssessment(
@@ -84,7 +85,7 @@ class NewsAssessor(
             reason = reason.trim(),
             contractValue = value?.valueInThousands,
             contractCurrency = currency,
-            revenueSharePct = value?.takeIf { currency == ContractCurrency.PLN }?.let { revenueSharePct(it.valueInThousands, input.trailingRevenuePln) },
+            revenueSharePct = value?.takeIf { currency?.name == input.currency }?.let { revenueSharePct(it.valueInThousands, input.trailingRevenue) },
         )
     }
 

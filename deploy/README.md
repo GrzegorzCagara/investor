@@ -126,6 +126,26 @@ Backfill nie dodaje niczego do zakładki Alerty. Zapisuje tylko historię, z kt�
 
 **Po aktualizacji z 1.11.2026** też uruchom backfill jeszcze raz. Serwer rozpoznaje teraz więcej tytułów raportów ze sprzedażą miesięczną, np. „Przychody ze sprzedaży za wrzesień” albo „Szacunkowe przychody w lipcu”, więc znajdzie więcej spółek.
 
+### Historia notowań GPW i NewConnect z 2,5 roku (jednorazowo, po aktualizacji „Szwecja”)
+
+Sygnały „Regularne wzrosty po raportach” i „Niskie oczekiwania” (rozdział 12b) potrzebują reakcji kursu z ostatnich 8 dni raportów i kursu z końca poprzedniego roku. Zwykły backfill pobiera notowania tylko z 165 dni. Drugi backfill dociąga notowania GPW, NewConnect, WIG i NCIndex z ostatnich 915 dni (około 2,5 roku). Pobiera tylko dni, których jeszcze nie ma w bazie, więc można go przerwać i uruchomić ponownie. Nie zużywa AI.
+
+```
+curl -i -X POST -H "X-Investor-Token: $T" https://debian-server.tail8124e8.ts.net/investor/api/admin/backfill-quote-history
+```
+
+Odpowiedzi 202, 409 i 401 znaczą to samo co wyżej (oba backfille nie mogą działać naraz). Trwa około 1–2 godzin, bo serwer pyta GPW najwyżej raz na sekundę. W logach (`grep -i 'quote history'`):
+
+```
+Quote history backfill started
+Quotes history backfill of 470 missing weekdays from 2024-05-01 to 2026-11-02 started
+Quotes history backfill: 50 of 470 weekdays done                          (co 50 dni)
+Quotes history backfill finished
+Quote history backfill finished in 75 min
+```
+
+Notowania spółek ze Szwecji serwer pobiera sam (z Avanzy, 2,5 roku przy pierwszym raporcie spółki), tego backfillu nie potrzebują.
+
 ## 8. Budowa APK w Android Studio
 
 Robisz to na drugim komputerze.
@@ -164,7 +184,7 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
 
 ## 12. Ranking, Skuteczność i dane po raporcie
 
-- **Ranking:** spółki ocenione w ostatnich 30 dniach, od najwyższej oceny. Każda spółka występuje raz z najnowszym raportem wyników i raz z najnowszym wydarzeniem (od 50 pkt). Filtr rynku: GPW, NC, USA.
+- **Ranking:** spółki ocenione w ostatnich 30 dniach, od najwyższej oceny. Każda spółka występuje raz z najnowszym raportem wyników i raz z najnowszym wydarzeniem (od 50 pkt). Filtr rynku: GPW, NC, SE (Szwecja), USA.
 - **Reakcja rynku** (w szczegółach raportu): zmiana kursu na pierwszej sesji zamkniętej po publikacji, obok zmiana indeksu (WIG albo NCIndex) i wolumen (liczba akcji) względem średniej z 20 sesji. Pojawia się po wieczornym przeliczeniu w dniu tej sesji.
 - **Skuteczność:** dla ocen 50–59, 60–69, 70–79 i 80+ średni zwrot ponad indeks po 5, 20 i 60 sesjach. Zwrot liczony jest od zamknięcia pierwszej sesji po raporcie, czyli od ceny, po której dało się kupić po alercie. Osobno wyniki według reakcji rynku w dniu raportu (spadek, płasko, wzrost).
 - Wyniki przelicza serwer w dni robocze o 22:00, po pobraniu notowań. Wynik po 60 sesjach pojawia się po około 3 miesiącach, więc przez pierwsze tygodnie zakładka będzie prawie pusta.
@@ -181,6 +201,28 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
 - **Koszt:** osobna pula AI `NEWS` ma 1,00 USD miesięcznie (około 4 zł). Pochodzi z puli USA, która ma teraz 1,85 USD. Pula GPW zostaje 1,90 USD, razem nadal 4,75 USD. Gdy pula `NEWS` się wyczerpie, wydarzenia do końca miesiąca nie są oceniane, a apka dostaje jeden push „Do końca miesiąca wydarzenia nie są oceniane”. Ocena wyników nigdy nie korzysta z puli `NEWS`.
 - **Skuteczność:** wydarzenia mają w zakładce Skuteczność własne przedziały ocen, osobno od wyników.
 - **Aktualizacja:** apkę i serwer zaktualizuj razem. Starsza apka nie zna typu „Wydarzenie” i nie odczyta odpowiedzi serwera.
+
+## 12b. Szwecja
+
+- **Rynek:** SE („Szwecja”) to Nasdaq Stockholm (rynek główny) i First North Sweden. Lista spółki (np. „Large Cap Stockholm”, „First North Stockholm”) jest w szczegółach raportu. Spotlight i NGM nie są obsługiwane.
+- **Źródła** (wszystkie darmowe i nieoficjalne, jak Bankier i BiznesRadar):
+  - Nasdaq Nordic (komunikaty spółek, co 60 s): wykrycie raportu, treść i PDF-y.
+  - Avanza: identyfikacja spółki (ISIN, ticker, lista), przychody i zysk netto z 10 ostatnich kwartałów z datami raportów, C/Z i C/S, notowania dzienne.
+  - Yahoo Finance: indeks OMXSPI (kalendarz sesji, rajd przed raportem, zwrot ponad indeks).
+  - Placera.se (Finwire): zapowiedzi „X väntas redovisa …” z konsensusem analityków, sprawdzane co 15 minut od 6:00 do 22:00.
+- **Koszt AI:** z dawnej puli USA. Pula `SE` (wyniki) ma 1,35 USD, pula `SE_NEWS` (wydarzenia) 0,50 USD miesięcznie. GPW/NC (1,90 USD) i `NEWS` (1,00 USD) bez zmian, razem nadal 4,75 USD. Gdy pula się wyczerpie, przychodzi jeden push „raporty ze Szwecji” albo „wydarzenia ze Szwecji”.
+- **Ocena:** te same 6 składowych i ten sam próg co GPW. Raporty ze Szwecji wychodzą zwykle 7:00–8:30, push przychodzi od razu, przed otwarciem sesji o 9:00.
+- **Konsensus (Szwecja):** Finwire publikuje na Placera około 2 dni przed raportem oczekiwaną sprzedaż i zysk operacyjny (rörelseresultat) według FactSet, Modular Finance, Bloomberg albo Infront. Gdy taka zapowiedź istnieje, „Niespodzianka” jest liczona względem konsensusu, a nie względem trendu spółki. Pobicie zysku operacyjnego waży mniej więcej dwa razy więcej niż pobicie sprzedaży. Mips za III kw. 2026 (zysk 60 vs 58 mln, sprzedaż 215 vs 216 mln) dostaje 13,5 z 30 pkt, Mips za II kw. 2026 (95 vs 77, 232 vs 214) pełne 30. W szczegółach raportu konsensus widać jako np. „Sprzedaż vs konsensus FactSet (6 analityków)”. Konsensus innego rodzaju (np. „cash ebit”, skorygowany EBIT) nie jest porównywany z zyskiem operacyjnym, tylko sprzedaż.
+- **Zapowiedzi i zamówienia** (wszystkie rynki): składowa 10 pkt patrzy teraz też na zamówienia (orderingång, order intake, portfel zamówień za okres). Bez zapowiedzi zarządu wzrost zamówień o co najmniej 20% r/r daje 10 pkt, spadek o co najmniej 20% daje 0.
+- **Odwrócenie trendu** (wszystkie rynki): kwartał ze wzrostem przychodów r/r po trzech kolejnych kwartałach spadków dostaje 4 pkt premii w „Wzrost przychodów”. Raporty miesięczne, półroczne i roczne jej nie dostają.
+- **Sygnały** (chipy w szczegółach, wszystkie rynki, **bez punktów**): „Odwrócenie trendu”, „Rosnące zamówienia” (zamówienia +20% r/r), „Niskie oczekiwania” (kurs od początku roku −30% lub gorzej i co najmniej 2 z 3 ostatnich reakcji na raport ujemne) i „Regularne wzrosty po raportach” (co najmniej 6 z 8 ostatnich reakcji na raport dodatnie). W szczegółach widać też zmianę kursu od początku roku, zamówienia r/r i reakcje kursu z ostatnich 8 dni raportów (z Placera, a gdy jej brak, z notowań; reakcje z naszych własnych alertów mają pierwszeństwo).
+- **Skuteczność** ma nową sekcję według sygnałów: dla każdego sygnału liczba raportów wyników z tym sygnałem (niezależnie od oceny) i średni zwrot ponad indeks po 5, 20 i 60 sesjach. Po około 3 miesiącach zdecydujemy, czy któryś sygnał ma dostawać punkty.
+- **Ograniczenia:**
+  - Źródła są nieoficjalne (scraping i nieudokumentowane API). Zmiana strony wyłączy adapter; awarię Nasdaq Nordic w godzinach publikacji zgłasza push.
+  - Konsensus mają tylko spółki pokryte przez analityków; większość spółek z First North go nie ma i dostaje ocenę względem własnego trendu. Lista Placera ma tylko 50 najnowszych depesz; w szczycie publikacji zapowiedź może wypaść z listy między dwoma sprawdzeniami i wtedy też liczy się trend.
+  - Sygnały są informacyjne, dopóki Skuteczność nie pokaże, że mają wartość.
+  - Spółki notowane jednocześnie na GPW i w Sztokholmie są oceniane tylko z raportów GPW.
+- **Aktualizacja:** serwer i apkę zaktualizuj razem. Apka ma ścisłą listę rynków, więc starsza apka nie odczyta odpowiedzi z rynkiem SE. Po aktualizacji serwera uruchom raz backfill notowań z rozdziału 7 („Historia notowań GPW i NewConnect z 2,5 roku”).
 
 ## 13. Deploy na mini-PC
 

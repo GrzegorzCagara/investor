@@ -16,6 +16,7 @@ object Formatting {
     private val dayMonth = DateTimeFormatter.ofPattern("dd.MM").withZone(warsaw)
     private val dayMonthYear = DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(warsaw)
     private val sessionDateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    private val shortDateFormat = DateTimeFormatter.ofPattern("dd.MM.yy")
     private val polish = Locale.forLanguageTag("pl-PL")
 
     const val TODAY = "Dziś"
@@ -42,7 +43,18 @@ object Formatting {
         Market.GPW -> "GPW"
         Market.NC -> "NC"
         Market.US -> "USA"
+        Market.SE -> "SE"
     }
+
+    fun marketName(m: Market): String = when (m) {
+        Market.GPW -> "GPW"
+        Market.NC -> "NC"
+        Market.US -> "USA"
+        Market.SE -> "Szwecja"
+    }
+
+    fun detailTitle(detail: AlertDetail): String =
+        "${detail.companyName} (${listOfNotNull(marketLabel(detail.market), detail.listing).joinToString(" · ")})"
 
     fun reportKindLabel(kind: ReportKind): String = when (kind) {
         ReportKind.CURRENT -> "raport bieżący"
@@ -60,9 +72,15 @@ object Formatting {
 
     fun amount(value: Double): String = String.format(polish, "%,.1f", value)
 
-    fun percent(value: Double?): String {
+    fun percent(value: Double?): String = signedPercent(value, 1)
+
+    fun wholePercent(value: Double?): String = signedPercent(value, 0)
+
+    fun sign(value: Double): Int = value.rounded(1).signum()
+
+    private fun signedPercent(value: Double?, scale: Int): String {
         if (value == null) return UNKNOWN
-        val rounded = value.rounded(1)
+        val rounded = value.rounded(scale)
         val sign = when (rounded.signum()) {
             1 -> "+"
             -1 -> MINUS
@@ -70,6 +88,13 @@ object Formatting {
         }
         return "$sign${rounded.abs().polish()}%"
     }
+
+    fun ytdLine(pct: Double): String = "Kurs od początku roku: ${wholePercent(pct)}"
+
+    fun ordersLine(pct: Double): String = "Zamówienia r/r: ${wholePercent(pct)}"
+
+    fun reactionDate(isoDate: String): String =
+        runCatching { LocalDate.parse(isoDate).format(shortDateFormat) }.getOrDefault(isoDate)
 
     fun multiple(value: Double?): String = value?.let { "${it.rounded(1).polish()}×" } ?: UNKNOWN
 
@@ -132,6 +157,10 @@ object Formatting {
         "INDEX_DAILY" -> "Notowania indeksów"
         "NC_DAILY" -> "Notowania NewConnect"
         "CLAUDE" -> "AI (Claude)"
+        "NASDAQ_NORDIC" -> "Nasdaq (komunikaty)"
+        "AVANZA" -> "Avanza"
+        "YAHOO" -> "Yahoo (indeks)"
+        "PLACERA" -> "Placera (konsensus)"
         else -> source
     }
 
@@ -139,6 +168,8 @@ object Formatting {
         "GPW" -> "GPW/NC"
         "US" -> "USA"
         "NEWS" -> "Wydarzenia"
+        "SE" -> "Szwecja – wyniki"
+        "SE_NEWS" -> "Szwecja – wydarzenia"
         else -> pool
     }
 
@@ -151,8 +182,15 @@ object Formatting {
         return "Reakcja rynku: ${parts.joinToString(", ")}"
     }
 
-    fun consensusLine(rows: List<ConsensusRowView>): String =
-        "Konsensus PAP: ${rows.joinToString(", ") { "${it.label} ${percent(it.differencePct)}" }}"
+    fun consensusLines(rows: List<ConsensusRowView>): List<String> {
+        val (sourced, pap) = rows.partition { it.currency != null }
+        val papLine = pap.takeIf { it.isNotEmpty() }
+            ?.let { "Konsensus PAP: ${it.joinToString(", ") { row -> "${row.label} ${percent(row.differencePct)}" }}" }
+        return listOfNotNull(papLine) + sourced.map { it.sourcedConsensusLine() }
+    }
+
+    private fun ConsensusRowView.sourcedConsensusLine(): String =
+        "$label: ${amount(actual)} wobec ${amount(consensus)} mln $currency (${percent(differencePct)})"
 
     fun horizonExcess(stats: HorizonStats?): String = percent(stats?.avgExcessPct)
 

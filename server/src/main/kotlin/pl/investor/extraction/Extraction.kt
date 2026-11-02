@@ -20,6 +20,8 @@ data class ExtractedPeriod(
     val operatingProfitPrevYear: Amount?,
     val netProfit: Amount?,
     val netProfitPrevYear: Amount?,
+    val orderIntake: Amount? = null,
+    val orderIntakePrevYear: Amount? = null,
 )
 
 data class Outlook(val tone: OutlookTone, val quote: String?)

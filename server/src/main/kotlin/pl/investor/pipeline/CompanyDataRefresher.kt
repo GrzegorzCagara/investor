@@ -7,6 +7,7 @@ import pl.investor.history.ValuationPoint
 import pl.investor.history.ValuationRepository
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
+import pl.investor.report.Market
 import pl.investor.settings.SettingRepository
 import pl.investor.source.SourceUnavailableException
 import pl.investor.source.biznesradar.BiznesRadarClient
@@ -23,9 +24,17 @@ class CompanyDataRefresher(
     private val valuations: ValuationRepository,
     private val settings: SettingRepository,
     private val clock: Clock,
+    private val swedish: SwedishCompanyRefresher,
 ) {
 
     fun refresh(company: Company, force: Boolean = false) {
+        if (company.market == Market.SE) swedish.refresh(company, force) else refreshFromBiznesRadar(company, force)
+    }
+
+    fun identified(company: Company): Company =
+        if (company.market == Market.SE) swedish.identified(company) else company
+
+    private fun refreshFromBiznesRadar(company: Company, force: Boolean) {
         val companyId = checkNotNull(company.id)
         val today = clock.instant().toWarsawDate()
         val symbol = company.biznesradarSymbol ?: lookUpSymbolOncePerDay(company, today) ?: return

@@ -4,11 +4,14 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
 import pl.investor.news.NEWS_LISTED_MIN_SCORE
 import pl.investor.report.Market
+import pl.investor.report.ReportKind
 import pl.investor.support.toInstant
 import pl.investor.support.toLocalDate
 import pl.investor.support.toUtc
 import java.sql.ResultSet
 import java.time.Instant
+
+data class ReportDayReaction(val publishedAt: Instant, val reactionPct: Double)
 
 data class PendingOutcome(val reportId: Long, val isin: String, val market: Market, val publishedAt: Instant)
 
@@ -92,6 +95,28 @@ class OutcomeRepository(private val jdbc: JdbcClient) {
                     publishedAt = rs.toInstant("published_at"),
                 )
             }
+            .list()
+
+    fun periodicReportDayReactions(companyId: Long, before: Instant): List<ReportDayReaction> =
+        jdbc.sql(
+            """
+            SELECT r.published_at, o.reaction_pct
+            FROM report r
+            JOIN score s ON s.report_id = r.id
+            JOIN report_outcome o ON o.report_id = r.id
+            WHERE r.company_id = :companyId
+              AND r.event_type = 'RESULTS'
+              AND r.kind IN (:periodicKinds)
+              AND r.status IN ('SCORED', 'PUSH_PENDING')
+              AND r.published_at < :before
+              AND o.reaction_pct IS NOT NULL
+            ORDER BY r.published_at
+            """
+        )
+            .param("companyId", companyId)
+            .param("before", before.toUtc())
+            .param("periodicKinds", ReportKind.periodic.map { it.name })
+            .query { rs, _ -> ReportDayReaction(rs.toInstant("published_at"), rs.getDouble("reaction_pct")) }
             .list()
 
     private fun ResultSet.toOutcome() = Outcome(

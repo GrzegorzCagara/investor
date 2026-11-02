@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository
 import pl.investor.support.toInstant
 import pl.investor.support.toUtc
 import java.sql.ResultSet
+import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
 
@@ -40,6 +41,28 @@ class ReportRepository(private val jdbc: JdbcClient) {
         jdbc.sql("SELECT EXISTS (SELECT 1 FROM report WHERE market = :market AND source_ref = :sourceRef)")
             .param("market", market.name)
             .param("sourceRef", sourceRef)
+            .query(Boolean::class.java)
+            .single()
+
+    fun existsForMarket(market: Market): Boolean =
+        jdbc.sql("SELECT EXISTS (SELECT 1 FROM report WHERE market = :market)")
+            .param("market", market.name)
+            .query(Boolean::class.java)
+            .single()
+
+    fun existsSameRelease(companyId: Long, number: String, publishedAt: Instant, window: Duration): Boolean =
+        jdbc.sql(
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM report
+                WHERE company_id = :companyId AND number = :number AND published_at BETWEEN :from AND :to
+            )
+            """
+        )
+            .param("companyId", companyId)
+            .param("number", number)
+            .param("from", publishedAt.minus(window).toUtc())
+            .param("to", publishedAt.plus(window).toUtc())
             .query(Boolean::class.java)
             .single()
 

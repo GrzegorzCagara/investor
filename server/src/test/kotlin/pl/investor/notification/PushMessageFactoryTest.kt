@@ -73,6 +73,8 @@ class PushMessageFactoryTest {
         assertEquals("Do końca miesiąca raporty GPW/NC są oceniane bez AI", factory.forAiBudgetExhausted(AiPool.GPW).body)
         assertEquals("Do końca miesiąca raporty USA są oceniane bez AI", factory.forAiBudgetExhausted(AiPool.US).body)
         assertEquals("Do końca miesiąca wydarzenia nie są oceniane", factory.forAiBudgetExhausted(AiPool.NEWS).body)
+        assertEquals("Do końca miesiąca raporty ze Szwecji są oceniane bez AI", factory.forAiBudgetExhausted(AiPool.SE).body)
+        assertEquals("Do końca miesiąca wydarzenia ze Szwecji nie są oceniane", factory.forAiBudgetExhausted(AiPool.SE_NEWS).body)
         assertEquals("Limit AI wyczerpany", factory.forAiBudgetExhausted(AiPool.GPW).title)
     }
 }

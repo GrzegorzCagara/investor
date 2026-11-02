@@ -22,6 +22,7 @@ data class EffectivenessUiState(
     val loading: Boolean = true,
     val scoreGroups: List<StatsGroup> = emptyList(),
     val reactionRows: List<StatsRow> = emptyList(),
+    val signalRows: List<StatsRow> = emptyList(),
     val items: List<OutcomeItem> = emptyList(),
     val error: String? = null,
     val now: Instant = Instant.EPOCH,
@@ -49,6 +50,7 @@ class EffectivenessViewModel(private val api: InvestorApi, private val clock: Cl
                         StatsGroup(Formatting.eventTypeLabel(type), buckets.map { it.toRow() })
                     },
                     reactionRows = response.byReaction.map { it.toRow() },
+                    signalRows = response.bySignal.map { it.toRow() },
                     items = response.items,
                     now = clock.instant(),
                 )
@@ -63,6 +65,8 @@ class EffectivenessViewModel(private val api: InvestorApi, private val clock: Cl
     private fun ScoreBucketView.toRow() = StatsRow(label, alerts, horizons.cells())
 
     private fun ReactionBucketView.toRow() = StatsRow(Formatting.reactionLabel(reaction), alerts, horizons.cells())
+
+    private fun SignalBucketView.toRow() = StatsRow(label, alerts, horizons.cells())
 
     private fun List<HorizonStats>.cells(): List<HorizonCell> =
         HORIZONS.map { sessions ->

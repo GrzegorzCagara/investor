@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
+import pl.investor.report.Market
 import pl.investor.source.SourceUnavailableException
 import pl.investor.source.biznesradar.BiznesRadarClient
 import pl.investor.source.biznesradar.SymbolNotFoundException
@@ -15,9 +16,23 @@ class CompanyResolver(private val companies: CompanyRepository, private val bizn
     private val log = LoggerFactory.getLogger(CompanyResolver::class.java)
 
     fun resolve(entry: ListingEntry): Company =
-        entry.isin?.let(companies::findByIsin)
-            ?: companies.findByName(entry.companyName)
-            ?: companies.save(newCompany(entry))
+        if (entry.market == Market.SE) {
+            companies.findByName(entry.companyName, Market.SE) ?: companies.save(swedishCompany(entry))
+        } else {
+            entry.isin?.let { companies.findByIsin(it, entry.market) }
+                ?: companies.findByName(entry.companyName, entry.market)
+                ?: companies.save(newCompany(entry))
+        }
+
+    private fun swedishCompany(entry: ListingEntry) = Company(
+        id = null,
+        name = entry.companyName,
+        isin = null,
+        market = Market.SE,
+        ticker = null,
+        biznesradarSymbol = null,
+        publishesMonthlySales = false,
+    )
 
     private fun newCompany(entry: ListingEntry): Company {
         val draft = Company(

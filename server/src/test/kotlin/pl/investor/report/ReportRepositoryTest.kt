@@ -57,9 +57,10 @@ class ReportRepositoryTest : PostgresTestBase() {
 
     @Test
     fun `companies are found by isin and name`() {
-        assertEquals(companyId, companies.findByIsin("PLXTRDM00011")?.id)
+        assertEquals(companyId, companies.findByIsin("PLXTRDM00011", Market.GPW)?.id)
+        assertNull(companies.findByIsin("PLXTRDM00011", Market.SE))
         assertEquals(companyId, companies.findByName("XTB")?.id)
-        assertNull(companies.findByIsin("NONE"))
+        assertNull(companies.findByIsin("NONE", Market.GPW))
         assertEquals("XTB", companies.findById(companyId).name)
     }
 

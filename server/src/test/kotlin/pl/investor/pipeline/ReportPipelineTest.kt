@@ -125,7 +125,7 @@ class ReportPipelineTest : PostgresTestBase() {
         every { contentClient.fetch(any(), any()) } answers { content(firstArg<ListingEntry>().sourceRef, secondArg()) }
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +91% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
-        refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock)
+        refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, mockk(relaxed = true))
         pipeline = ReportPipeline(
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
@@ -1159,7 +1159,7 @@ class ReportPipelineTest : PostgresTestBase() {
     fun `periodic report whose Bankier article has no attachment links yet waits for attachments`() {
         val http = mockk<pl.investor.source.PoliteHttpClient>()
         val locator = mockk<pl.investor.source.content.BankierReportLocator>()
-        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http))
+        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http), pl.investor.source.nasdaq.NasdaqViewParser())
         every { http.get(Source.GPW_LISTING, any()) } returns fixture("reports/asbis-ps-2026.html")
         every { locator.find(any()) } returns "https://www.bankier.pl/wiadomosc/asbis.html"
         every { http.get(Source.BANKIER, "https://www.bankier.pl/wiadomosc/asbis.html") } returns "<html><body><p>Raport półroczny</p></body></html>"

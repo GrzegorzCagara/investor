@@ -9,7 +9,7 @@ import com.anthropic.models.messages.StopReason
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import pl.investor.extraction.AiBudget
-import pl.investor.extraction.AiPool
+import pl.investor.extraction.resultsPool
 import pl.investor.report.Company
 import pl.investor.scoring.Score
 import pl.investor.scoring.ScoringInput
@@ -27,14 +27,15 @@ class ReasonWriter(
         generate(company, input, score) ?: template.render(company, input, score)
 
     private fun generate(company: Company, input: ScoringInput, score: Score): String? {
-        if (!budget.canSpend(POOL)) return null
+        val pool = company.market.resultsPool()
+        if (!budget.canSpend(pool)) return null
         val message = try {
             claude.messages().create(request(ReasonPrompt.userMessage(company, input, score)))
         } catch (e: AnthropicException) {
             log.warn("Reason generation failed, using the template", e)
             return null
         }
-        budget.record(POOL, message.usage().inputTokens(), message.usage().outputTokens())
+        budget.record(pool, message.usage().inputTokens(), message.usage().outputTokens())
         return message.text()
     }
 
@@ -53,7 +54,6 @@ class ReasonWriter(
             .build()
 
     private companion object {
-        val POOL = AiPool.GPW
         const val MODEL = "claude-haiku-5-5"
         const val MAX_TOKENS = 1000L
     }

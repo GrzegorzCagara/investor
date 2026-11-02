@@ -49,7 +49,7 @@ class ConsensusClient(
     }
 
     private fun slugOf(company: Company): String? {
-        if (company.market == Market.US) return null
+        if (company.market != Market.GPW && company.market != Market.NC) return null
         val id = checkNotNull(company.id) { "Company without id" }
         locator.confirmedSlug(company)?.let { return it }
         slugsByCompanyId[id]?.let { return it }

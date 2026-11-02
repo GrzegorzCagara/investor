@@ -14,7 +14,14 @@ data class ScoreComponents(
     val sum: Double get() = surprise + growth + quality + series + outlook + valuation
 }
 
-data class Score(val total: Double, val components: ScoreComponents, val penalty: Double, val warnings: Set<Warning>)
+data class Score(
+    val total: Double,
+    val components: ScoreComponents,
+    val penalty: Double,
+    val warnings: Set<Warning>,
+    val signals: Set<Signal> = emptySet(),
+    val context: ScoreContext = ScoreContext.EMPTY,
+)
 
 fun Double.roundedHalfUp(): BigDecimal = BigDecimal.valueOf(this).setScale(0, RoundingMode.HALF_UP)
 

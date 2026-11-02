@@ -16,6 +16,9 @@ import pl.investor.history.indexInstrument
 import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.report.Report
+import pl.investor.source.placera.ConsensusEstimate
+import pl.investor.source.placera.ConsensusPreviewRepository
+import pl.investor.support.STOCKHOLM
 import pl.investor.support.toWarsawDate
 import java.math.BigDecimal
 import java.time.Instant
@@ -28,18 +31,24 @@ class ScoringInputAssembler(
     private val quarterResults: QuarterResultRepository,
     private val valuations: ValuationRepository,
     private val quotes: QuoteRepository,
+    private val previews: ConsensusPreviewRepository,
+    private val pastReactions: PastReactionHistory,
 ) {
 
     fun assemble(company: Company, report: Report, verified: VerifiedExtraction?): ScoringInput {
         val extraction = verified?.extraction
+        val currency = company.market.currency
         val results = quarterResults.publishedBefore(checkNotNull(company.id), report.publishedAt.toWarsawDate(), VALUATION_QUARTERS)
-        val primary = extraction?.primaryPeriod() ?: currentQuarter(company, report)?.toExtractedPeriod()?.withPriorYearFrom(results)
+            .takeIf { extraction == null || company.market != Market.SE || extraction.agreesWithHistory(it, currency) }
+            .orEmpty()
+        val primary = extraction?.primaryPeriod() ?: currentQuarter(company, report)?.toExtractedPeriod(currency)?.withPriorYearFrom(results, currency)
         val trend = primary?.let { trend(company, report.publishedAt, it, results) } ?: Trend.EMPTY
-        val comparable = primary?.withPriorYearFrom(results)
+        val comparable = primary?.withPriorYearFrom(results, currency)
+        val revenueYoyPct = comparable?.let { yoyPct(it.revenue?.valueInThousands, it.revenuePrevYear?.valueInThousands) }
         val market = marketData(company, report.publishedAt)
         val valuation = valuation(company, results, market.closeRef)
         return ScoringInput(
-            revenueYoyPct = comparable?.let { yoyPct(it.revenue?.valueInThousands, it.revenuePrevYear?.valueInThousands) },
+            revenueYoyPct = revenueYoyPct,
             previousYoyPcts = trend.previousYoyPcts,
             sur = trend.sur,
             operatingProfitYoyPct = comparable?.let { yoyPct(it.operatingProfit?.valueInThousands, it.operatingProfitPrevYear?.valueInThousands) },
@@ -58,18 +67,51 @@ class ScoringInputAssembler(
             lowLiquidity = market.lowLiquidity,
             aiUsed = verified != null,
             uncertainNumbers = verified?.uncertainFields?.isNotEmpty() ?: false,
+            consensus = extraction?.primaryPeriod()?.let { consensusComparisons(company, report, it) }.orEmpty(),
+            trendReversal = primary?.kind == PeriodKind.QUARTER && revenueYoyPct != null && revenueYoyPct > 0 && trend.precedingQuartersAllDeclined(),
+            ordersYoyPct = extraction?.ordersYoyPct(),
+            ytdChangePct = market.ytdChangePct,
+            pastReactions = pastReactions.before(company, report.publishedAt),
         )
     }
+
+    private fun consensusComparisons(company: Company, report: Report, primary: ExtractedPeriod): List<ConsensusComparison> {
+        if (company.market != Market.SE || primary.kind != PeriodKind.QUARTER) return emptyList()
+        val isin = company.isin ?: return emptyList()
+        val preview = previews.forReport(isin, report.publishedAt.atZone(STOCKHOLM).toLocalDate(), report.publishedAt)
+            ?.takeIf { it.currency == primary.currency }
+            ?: return emptyList()
+        fun comparison(metric: ConsensusMetric, actual: Amount?, estimate: ConsensusEstimate?) =
+            if (actual != null && estimate != null) {
+                ConsensusComparison(metric, actual.valueInThousands, estimate.consensus, preview.currency, preview.source, estimate.analysts)
+            } else {
+                null
+            }
+        return listOfNotNull(
+            comparison(ConsensusMetric.REVENUE, primary.revenue, preview.revenue),
+            comparison(ConsensusMetric.EBIT, primary.operatingProfit, preview.ebit),
+        )
+    }
+
+    private fun Extraction.ordersYoyPct(): Double? =
+        primaryPeriod()?.let { yoyPct(it.orderIntake?.valueInThousands, it.orderIntakePrevYear?.valueInThousands) }
 
     fun currentQuarter(company: Company, report: Report): QuarterResult? {
         val reportDate = report.publishedAt.toWarsawDate()
         return quarterResults.firstPublishedBetween(checkNotNull(company.id), reportDate, reportDate.plusDays(CURRENT_QUARTER_PUBLICATION_DAYS))
     }
 
-    private fun QuarterResult.toExtractedPeriod() = ExtractedPeriod(
+    private fun Extraction.agreesWithHistory(results: List<QuarterResult>, currency: String): Boolean {
+        val quarter = periods.firstOrNull { it.kind == PeriodKind.QUARTER && it.currency == currency && it.revenuePrevYear != null } ?: return false
+        val reported = checkNotNull(quarter.revenuePrevYear).valueInThousands
+        val stored = results.firstOrNull { it.quarterEnd == quarter.periodEnd.minusYears(1) }?.revenue ?: return false
+        return stored.signum() > 0 && (reported - stored).abs() <= stored * HISTORY_TOLERANCE
+    }
+
+    private fun QuarterResult.toExtractedPeriod(currency: String) = ExtractedPeriod(
         kind = PeriodKind.QUARTER,
         periodEnd = quarterEnd,
-        currency = PLN,
+        currency = currency,
         revenue = revenue?.let { Amount(it, BIZNESRADAR_SOURCE) },
         revenuePrevYear = null,
         operatingProfit = operatingProfit?.let { Amount(it, BIZNESRADAR_SOURCE) },
@@ -78,8 +120,8 @@ class ScoringInputAssembler(
         netProfitPrevYear = null,
     )
 
-    private fun ExtractedPeriod.withPriorYearFrom(results: List<QuarterResult>): ExtractedPeriod {
-        if (kind != PeriodKind.QUARTER || currency != PLN) return this
+    private fun ExtractedPeriod.withPriorYearFrom(results: List<QuarterResult>, companyCurrency: String): ExtractedPeriod {
+        if (kind != PeriodKind.QUARTER || currency != companyCurrency) return this
         val yearAgo = results.firstOrNull { it.quarterEnd == periodEnd.minusYears(1) } ?: return this
         return copy(
             revenuePrevYear = revenuePrevYear ?: yearAgo.revenue?.let { Amount(it, BIZNESRADAR_SOURCE) },
@@ -100,7 +142,7 @@ class ScoringInputAssembler(
     private fun trend(company: Company, publishedAt: Instant, primary: ExtractedPeriod, results: List<QuarterResult>): Trend =
         when (primary.kind) {
             PeriodKind.MONTH -> monthlyTrend(company, publishedAt, primary)
-            PeriodKind.QUARTER -> quarterlyTrend(primary, results, anchored = true, withSur = primary.currency == PLN)
+            PeriodKind.QUARTER -> quarterlyTrend(primary, results, anchored = true, withSur = primary.currency == company.market.currency)
             PeriodKind.HALF_YEAR, PeriodKind.YEAR -> quarterlyTrend(primary, results, anchored = false, withSur = false)
         }
 
@@ -125,10 +167,16 @@ class ScoringInputAssembler(
             val yearAgo = byEnd[result.quarterEnd.minusYears(1)]?.revenue
             if (current != null && yearAgo != null) (current - yearAgo).toDouble() else null
         }
+        val byMonth = observations.associateBy { YearMonth.from(it.periodEnd) }
         return Trend(
             previousYoyPcts = observations.mapNotNull { it.yoyPct },
             consecutiveStrong = observations.strongStreak(anchor = primary.periodEnd.takeIf { anchored }, stepMonths = 3),
             sur = if (withSur) surOf(primary, changes) else null,
+            precedingQuarterYoyPcts = if (anchored) {
+                (1L..REVERSAL_QUARTERS).map { byMonth[YearMonth.from(primary.periodEnd).minusMonths(3 * it)]?.yoyPct }
+            } else {
+                emptyList()
+            },
         )
     }
 
@@ -159,7 +207,7 @@ class ScoringInputAssembler(
         return Valuation(
             pe = rescaled(latest?.pe),
             ps = rescaled(latest?.ps),
-            psMedian20q = points.values.mapNotNull { it.ps?.toDouble() }.median(),
+            psMedian20q = points.values.mapNotNull { it.ps?.toDouble() }.takeIf { company.market != Market.SE || it.size >= MIN_SWEDISH_PS_QUARTERS }?.median(),
             ttmNetProfitGrowthPct = ttmNetProfitGrowthPct(results),
         )
     }
@@ -179,17 +227,22 @@ class ScoringInputAssembler(
     private fun marketData(company: Company, publishedAt: Instant): MarketData {
         val isin = company.isin ?: return MarketData.EMPTY
         val stock = quotes.closesUpTo(isin, publishedAt.toWarsawDate(), QUOTE_WINDOW)
-        if (stock.none { ReferenceSession.isClosed(it.date, publishedAt) }) return MarketData.EMPTY
-        val reference = ReferenceSession.lastClosedSessionBefore(publishedAt, stock.map { it.date })
+        if (stock.none { ReferenceSession.isClosed(it.date, publishedAt, company.market) }) return MarketData.EMPTY
+        val reference = ReferenceSession.lastClosedSessionBefore(publishedAt, stock.map { it.date }, company.market)
         val sessions = stock.filter { it.date <= reference }
         val latest = sessions.first()
         val tenSessionsAgo = sessions.getOrNull(PRICE_CHANGE_SESSIONS)
         val turnovers = sessions.take(LIQUIDITY_SESSIONS).mapNotNull { it.turnover }
+        val previousYearEnd = LocalDate.of(reference.year - 1, 12, 31)
+        val yearStartClose = quotes.closesUpTo(isin, previousYearEnd, 1).firstOrNull()
+            ?.takeIf { !it.date.isBefore(previousYearEnd.minusDays(YEAR_END_GAP_DAYS)) }
         return MarketData(
             closeRef = latest.close,
             priceChange10Pct = tenSessionsAgo?.let { changePct(latest.close, it.close) },
             indexChange10Pct = tenSessionsAgo?.let { indexChangePct(company.market, reference, it.date) },
-            lowLiquidity = turnovers.isNotEmpty() && turnovers.sumOf { it }.toDouble() / turnovers.size < LOW_LIQUIDITY_TURNOVER_PLN,
+            lowLiquidity = company.isQuotedInMarketCurrency() && turnovers.isNotEmpty() &&
+                turnovers.sumOf { it }.toDouble() / turnovers.size < company.market.lowLiquidityTurnover,
+            ytdChangePct = yearStartClose?.let { changePct(latest.close, it.close) },
         )
     }
 
@@ -200,6 +253,8 @@ class ScoringInputAssembler(
         val start = closes[from] ?: return null
         return changePct(end, start)
     }
+
+    private fun Company.isQuotedInMarketCurrency(): Boolean = quoteCurrency == null || quoteCurrency == market.currency
 
     private fun changePct(end: BigDecimal, start: BigDecimal): Double? =
         if (start.signum() > 0) (end.toDouble() / start.toDouble() - 1) * 100 else null
@@ -217,7 +272,15 @@ class ScoringInputAssembler(
 
     private data class Observation(val periodEnd: LocalDate, val yoyPct: Double?)
 
-    private data class Trend(val previousYoyPcts: List<Double>, val consecutiveStrong: Int, val sur: Double?) {
+    private data class Trend(
+        val previousYoyPcts: List<Double>,
+        val consecutiveStrong: Int,
+        val sur: Double?,
+        val precedingQuarterYoyPcts: List<Double?> = emptyList(),
+    ) {
+        fun precedingQuartersAllDeclined(): Boolean =
+            precedingQuarterYoyPcts.size == REVERSAL_QUARTERS.toInt() && precedingQuarterYoyPcts.all { it != null && it < 0 }
+
         companion object {
             val EMPTY = Trend(emptyList(), 0, null)
         }
@@ -230,14 +293,14 @@ class ScoringInputAssembler(
         val priceChange10Pct: Double?,
         val indexChange10Pct: Double?,
         val lowLiquidity: Boolean,
+        val ytdChangePct: Double?,
     ) {
         companion object {
-            val EMPTY = MarketData(null, null, null, false)
+            val EMPTY = MarketData(null, null, null, false, null)
         }
     }
 
     private companion object {
-        const val PLN = "PLN"
         const val BIZNESRADAR_SOURCE = "BiznesRadar"
         const val HISTORY_PERIODS = 12
         const val CURRENT_QUARTER_PUBLICATION_DAYS = 2L
@@ -247,7 +310,10 @@ class ScoringInputAssembler(
         const val QUOTE_WINDOW = 25
         const val PRICE_CHANGE_SESSIONS = 10
         const val LIQUIDITY_SESSIONS = 20
-        const val LOW_LIQUIDITY_TURNOVER_PLN = 100_000.0
+        const val MIN_SWEDISH_PS_QUARTERS = 4
+        const val REVERSAL_QUARTERS = 3L
+        const val YEAR_END_GAP_DAYS = 10L
+        val HISTORY_TOLERANCE = BigDecimal("0.05")
     }
 }
 

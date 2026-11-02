@@ -3,6 +3,8 @@ package pl.investor.notification
 import org.springframework.stereotype.Component
 import pl.investor.extraction.OutlookTone
 import pl.investor.report.Company
+import pl.investor.scoring.ConsensusComparison
+import pl.investor.scoring.ConsensusMetric
 import pl.investor.scoring.Score
 import pl.investor.scoring.ScoringInput
 import pl.investor.scoring.roundedHalfUp
@@ -16,10 +18,12 @@ class ReasonTemplate {
     fun render(company: Company, input: ScoringInput, score: Score): String {
         val fragments = listOfNotNull(
             input.revenueYoyPct?.let { "przychody ${it.signedWhole()}% r/r" },
-            input.sur?.let { it.surpriseDescription() },
+            *input.consensus.map { it.consensusDescription() }.toTypedArray(),
+            input.sur?.takeIf { input.consensus.isEmpty() }?.surpriseDescription(),
             input.consecutiveStrongBefore.takeIf { it >= MIN_SERIES }?.let { "${it + 1}. mocny raport z rzędu" },
             input.operatingProfitYoyPct?.let { "zysk operacyjny ${it.signedWhole()}% r/r" },
             input.outlook?.outlookDescription(),
+            input.ordersYoyPct?.let { "zamówienia ${it.signedWhole()}% r/r" },
             valuationFragment(input),
             runUpFragment(input, score),
         )
@@ -30,6 +34,11 @@ class ReasonTemplate {
         this >= 1 -> "wyraźnie ponad dotychczasowy trend"
         this >= 0 -> "zgodnie z trendem"
         else -> "poniżej trendu"
+    }
+
+    private fun ConsensusComparison.consensusDescription() = when (metric) {
+        ConsensusMetric.REVENUE -> "przychody ${differencePct().signedWhole()}% vs konsensus"
+        ConsensusMetric.EBIT -> "zysk operacyjny ${differencePct().signedWhole()}% vs konsensus"
     }
 
     private fun OutlookTone.outlookDescription() = when (this) {

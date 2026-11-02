@@ -40,6 +40,36 @@ class FormattingTest {
         assertEquals("GPW", Formatting.marketLabel(Market.GPW))
         assertEquals("NC", Formatting.marketLabel(Market.NC))
         assertEquals("USA", Formatting.marketLabel(Market.US))
+        assertEquals("SE", Formatting.marketLabel(Market.SE))
+        assertEquals("Szwecja", Formatting.marketName(Market.SE))
+        assertEquals("GPW", Formatting.marketName(Market.GPW))
+        assertEquals("USA", Formatting.marketName(Market.US))
+    }
+
+    @Test
+    fun `detail title adds the listing when known`() {
+        val detail = detail(Market.SE).copy(listing = "Large Cap Stockholm")
+        assertEquals("Mips (SE · Large Cap Stockholm)", Formatting.detailTitle(detail))
+        assertEquals("Mips (GPW)", Formatting.detailTitle(detail(Market.GPW)))
+        assertEquals("Nasdaq · SE · raport kwartalny, 08:00", Formatting.detailHeadline(detail, now))
+    }
+
+    @Test
+    fun `whole percent lines for YTD and orders`() {
+        assertEquals("Kurs od początku roku: −66%", Formatting.ytdLine(-66.0))
+        assertEquals("Zamówienia r/r: +25%", Formatting.ordersLine(25.0))
+        assertEquals("Zamówienia r/r: +1%", Formatting.ordersLine(0.5))
+        assertEquals("0%", Formatting.wholePercent(-0.4))
+        assertEquals("—", Formatting.wholePercent(null))
+    }
+
+    @Test
+    fun `past reaction date and sign`() {
+        assertEquals("16.07.26", Formatting.reactionDate("2026-07-16"))
+        assertEquals("zła-data", Formatting.reactionDate("zła-data"))
+        assertEquals(1, Formatting.sign(27.8))
+        assertEquals(-1, Formatting.sign(-0.5))
+        assertEquals(0, Formatting.sign(-0.04))
     }
 
     @Test
@@ -82,9 +112,26 @@ class FormattingTest {
     @Test
     fun `consensus line lists differences`() {
         assertEquals(
-            "Konsensus PAP: Przychody +0,6%, EBITDA −3,1%",
-            Formatting.consensusLine(
+            listOf("Konsensus PAP: Przychody +0,6%, EBITDA −3,1%"),
+            Formatting.consensusLines(
                 listOf(ConsensusRowView("Przychody", 1696.7, 1686.3, 0.6), ConsensusRowView("EBITDA", 90.0, 92.9, -3.1)),
+            ),
+        )
+        assertEquals(emptyList<String>(), Formatting.consensusLines(emptyList()))
+    }
+
+    @Test
+    fun `sourced consensus rows show amounts in the currency without the PAP prefix`() {
+        assertEquals(
+            listOf(
+                "Sprzedaż vs konsensus FactSet (6 analityków): 215,0 wobec 216,0 mln SEK (−0,5%)",
+                "Zysk operacyjny vs konsensus FactSet (6 analityków): 60,0 wobec 58,0 mln SEK (+3,4%)",
+            ),
+            Formatting.consensusLines(
+                listOf(
+                    ConsensusRowView("Sprzedaż vs konsensus FactSet (6 analityków)", 215.0, 216.0, -0.46, "SEK"),
+                    ConsensusRowView("Zysk operacyjny vs konsensus FactSet (6 analityków)", 60.0, 58.0, 3.4, "SEK"),
+                ),
             ),
         )
     }
@@ -130,6 +177,12 @@ class FormattingTest {
         assertEquals("GPW/NC", Formatting.aiPoolLabel("GPW"))
         assertEquals("USA", Formatting.aiPoolLabel("US"))
         assertEquals("Wydarzenia", Formatting.aiPoolLabel("NEWS"))
+        assertEquals("Szwecja – wyniki", Formatting.aiPoolLabel("SE"))
+        assertEquals("Szwecja – wydarzenia", Formatting.aiPoolLabel("SE_NEWS"))
+        assertEquals("Nasdaq (komunikaty)", Formatting.sourceLabel("NASDAQ_NORDIC"))
+        assertEquals("Avanza", Formatting.sourceLabel("AVANZA"))
+        assertEquals("Yahoo (indeks)", Formatting.sourceLabel("YAHOO"))
+        assertEquals("Placera (konsensus)", Formatting.sourceLabel("PLACERA"))
         assertEquals("Spadek w dniu raportu", Formatting.reactionLabel(Reaction.NEGATIVE))
         assertEquals("Płasko", Formatting.reactionLabel(Reaction.FLAT))
         assertEquals("Wzrost", Formatting.reactionLabel(Reaction.POSITIVE))
@@ -173,4 +226,19 @@ class FormattingTest {
         assertEquals("18,4 mln PLN", Formatting.contractValueLine(NewsView("Umowa", "pozytywny", "18,4 mln PLN", null)))
         assertEquals(null, Formatting.contractValueLine(NewsView("Dywidenda", "pozytywny", null, null)))
     }
+
+    private fun detail(market: Market) = AlertDetail(
+        id = 1,
+        companyName = "Mips",
+        market = market,
+        reportNumber = "Nasdaq",
+        reportKind = ReportKind.QUARTERLY,
+        publishedAt = Instant.parse("2026-09-21T06:00:00Z"),
+        components = emptyList(),
+        penalty = 0.0,
+        warnings = emptyList(),
+        reason = "",
+        revenueHistory = emptyList(),
+        sourceUrl = "https://example.test/r",
+    )
 }

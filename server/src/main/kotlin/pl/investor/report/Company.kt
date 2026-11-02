@@ -9,4 +9,7 @@ data class Company(
     val biznesradarSymbol: String?,
     val publishesMonthlySales: Boolean,
     val shortName: String? = null,
+    val avanzaId: String? = null,
+    val listing: String? = null,
+    val quoteCurrency: String? = null,
 )

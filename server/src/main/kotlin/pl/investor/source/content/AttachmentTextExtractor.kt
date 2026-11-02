@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import pl.investor.source.PoliteHttpClient
 import pl.investor.source.Source
+import pl.investor.source.SourceUnavailableException
 import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.text.Normalizer
 
 data class AttachmentReading(val text: String, val nothingReadable: Boolean)
@@ -33,6 +35,12 @@ class AttachmentTextExtractor(
         val supported = links.filter { AttachmentFormat.of(it) != null }
         if (links.isNotEmpty() && supported.isEmpty()) return AttachmentReading("", nothingReadable = true)
         val outcomes = supported.chosenForReading().map { url -> attachmentOutcome(url, articleUrl) }
+        val texts = outcomes.filterIsInstance<Outcome.Readable>().flatMap { it.texts }
+        return AttachmentReading(joined(texts), nothingReadable = outcomes.isNotEmpty() && outcomes.all { it == Outcome.Unreadable })
+    }
+
+    fun readNasdaqPdfs(urls: List<String>): AttachmentReading {
+        val outcomes = urls.take(MAX_ATTACHMENTS).map(::nasdaqPdfOutcome)
         val texts = outcomes.filterIsInstance<Outcome.Readable>().flatMap { it.texts }
         return AttachmentReading(joined(texts), nothingReadable = outcomes.isNotEmpty() && outcomes.all { it == Outcome.Unreadable })
     }
@@ -100,13 +108,35 @@ class AttachmentTextExtractor(
             null
         }
 
+    private fun nasdaqPdfOutcome(url: String): Outcome {
+        val bytes = try {
+            http.getBytes(Source.NASDAQ_NORDIC, url, emptyMap())
+        } catch (e: SourceUnavailableException) {
+            log.warn("Attachment {} not available yet: {}", url, e.message)
+            return Outcome.NotYetReadable
+        } catch (e: IOException) {
+            log.warn("Attachment {} not available yet: {}", url, e.message)
+            return Outcome.NotYetReadable
+        }
+        val text = bytes.takeIf { it.size <= MAX_ATTACHMENT_BYTES }?.let { pdf ->
+            runCatching { relevantPages(pdf, PageOrder.LEADING_PAGES_FIRST, NORDIC_KEYWORDS) }
+                .onFailure { log.warn("Attachment {} is not a readable PDF: {}", url, it.message) }
+                .getOrNull()
+        }
+        return text?.takeIf { it.isNotBlank() }?.let { Outcome.Readable(listOf(it)) } ?: Outcome.Unreadable
+    }
+
     private fun documentText(bytes: ByteArray, format: AttachmentFormat, order: PageOrder): String = when (format) {
         AttachmentFormat.PDF -> relevantPages(bytes, order)
         AttachmentFormat.XHTML -> relevantXhtmlPages(bytes, order)
         AttachmentFormat.RAR, AttachmentFormat.ZIP -> error("Nested $format archives are not unpacked")
     }
 
-    internal fun relevantPages(pdf: ByteArray, order: PageOrder = PageOrder.LEADING_PAGES_FIRST): String =
+    internal fun relevantPages(
+        pdf: ByteArray,
+        order: PageOrder = PageOrder.LEADING_PAGES_FIRST,
+        keywords: List<String> = POLISH_KEYWORDS,
+    ): String =
         Loader.loadPDF(pdf).use { document ->
             val stripper = PDFTextStripper()
             (1..document.numberOfPages)
@@ -115,17 +145,21 @@ class AttachmentTextExtractor(
                     stripper.endPage = page
                     stripper.getText(document)
                 }
-                .relevant(order)
+                .relevant(order, keywords)
         }
 
-    internal fun relevantXhtmlPages(xhtml: ByteArray, order: PageOrder = PageOrder.LEADING_PAGES_FIRST): String {
+    internal fun relevantXhtmlPages(
+        xhtml: ByteArray,
+        order: PageOrder = PageOrder.LEADING_PAGES_FIRST,
+        keywords: List<String> = POLISH_KEYWORDS,
+    ): String {
         val document = Jsoup.parse(ByteArrayInputStream(xhtml), null, "")
         document.select("style, script").remove()
-        return document.select(XHTML_PAGE).ifEmpty { listOf(document.body()) }.map { it.text() }.relevant(order)
+        return document.select(XHTML_PAGE).ifEmpty { listOf(document.body()) }.map { it.text() }.relevant(order, keywords)
     }
 
-    private fun List<String>.relevant(order: PageOrder): String {
-        val (keywordPages, otherPages) = withIndex().partition { it.value.hasKeyword() }
+    private fun List<String>.relevant(order: PageOrder, keywords: List<String>): String {
+        val (keywordPages, otherPages) = withIndex().partition { it.value.hasKeywordOf(keywords) }
         val leadingPages = otherPages.filter { it.index < ALWAYS_KEPT_PAGES }
         val kept = when (order) {
             PageOrder.LEADING_PAGES_FIRST -> (keywordPages + leadingPages).sortedBy { it.index }
@@ -134,9 +168,9 @@ class AttachmentTextExtractor(
         return kept.joinToString(" ") { it.value.normalizeSpaces() }
     }
 
-    private fun String.hasKeyword(): Boolean {
+    private fun String.hasKeywordOf(keywords: List<String>): Boolean {
         val folded = foldDiacritics()
-        return KEYWORDS.any { it in folded }
+        return keywords.any { it in folded }
     }
 
     private fun String.foldDiacritics() =
@@ -153,9 +187,13 @@ class AttachmentTextExtractor(
         val ENGLISH_FILE = Regex("(^|[_\\-. ])(EN|ENG|English)([_\\-. ]|$)", RegexOption.IGNORE_CASE)
         val WHITESPACE = Regex("[\\s\\u00A0]+")
         val DIACRITICS = Regex("\\p{M}+")
-        val KEYWORDS = listOf(
+        val POLISH_KEYWORDS = listOf(
             "przychod", "sprzedaz", "rachunek zyskow", "wybrane dane", "zysk netto", "ebitda",
             "revenue", "net profit", "prognoz", "perspektyw", "portfel zamowien",
+        )
+        val NORDIC_KEYWORDS = listOf(
+            "nettoomsattning", "net sales", "revenue", "rorelseresultat", "operating profit", "ebit",
+            "orderingang", "order intake", "resultat efter skatt", "net profit",
         )
     }
 }

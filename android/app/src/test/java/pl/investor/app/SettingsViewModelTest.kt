@@ -75,7 +75,7 @@ class SettingsViewModelTest {
         assertEquals(
             SettingsForm(
                 threshold = "70",
-                enabledMarkets = setOf(Market.GPW, Market.US),
+                enabledMarkets = setOf(Market.GPW, Market.US, Market.SE),
                 enabledEventTypes = setOf(EventType.RESULTS, EventType.NEWS),
                 quietEnabled = false,
                 quietFrom = "22:00",

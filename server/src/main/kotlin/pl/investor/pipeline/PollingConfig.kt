@@ -10,6 +10,8 @@ import pl.investor.report.ReportRepository
 import pl.investor.settings.SettingRepository
 import pl.investor.source.gpw.EspiListingClient
 import pl.investor.source.gpw.ListingPoller
+import pl.investor.source.nasdaq.NasdaqNordicListingClient
+import pl.investor.source.nasdaq.NasdaqNordicPoller
 import java.time.Clock
 
 @Configuration
@@ -23,6 +25,14 @@ class PollingConfig {
         clock: Clock,
         pipeline: ReportPipeline,
     ) = ListingPoller(client, reports, settings, clock, pipeline::process)
+
+    @Bean
+    fun nasdaqNordicPoller(
+        client: NasdaqNordicListingClient,
+        reports: ReportRepository,
+        clock: Clock,
+        pipeline: ReportPipeline,
+    ) = NasdaqNordicPoller(client, reports, clock, pipeline::process)
 }
 
 @Component
@@ -37,8 +47,18 @@ class ListingPolling(private val poller: ListingPoller) {
                 .onFailure { log.error("Polling {} listing failed", market, it) }
         }
     }
+}
 
-    private companion object {
-        const val POLL_INTERVAL_MS = 60_000L
+@Component
+class NasdaqPolling(private val poller: NasdaqNordicPoller) {
+
+    private val log = LoggerFactory.getLogger(NasdaqPolling::class.java)
+
+    @Scheduled(fixedDelay = POLL_INTERVAL_MS)
+    fun poll() {
+        runCatching { poller.poll() }
+            .onFailure { log.error("Polling {} listing failed", Market.SE, it) }
     }
 }
+
+private const val POLL_INTERVAL_MS = 60_000L

@@ -46,6 +46,21 @@ class SourceHealthCheckerTest : PostgresTestBase() {
     }
 
     @Test
+    fun `Nasdaq Nordic outage is reported only inside the Swedish windows`() {
+        now = Instant.parse("2026-09-21T15:20:00Z")
+        tracker.recordSuccess(Source.NASDAQ_NORDIC, Instant.parse("2026-09-21T14:00:00Z"))
+        tracker.recordSuccess(Source.AVANZA, Instant.parse("2026-09-21T14:00:00Z"))
+
+        checker().check()
+        verify(exactly = 0) { notifier.send(any()) }
+
+        now = Instant.parse("2026-09-21T15:40:00Z")
+        checker().check()
+        verify(exactly = 1) { notifier.send(match { it.title == "Źródło NASDAQ_NORDIC nie działa" }) }
+        verify(exactly = 0) { notifier.send(match { it.title == "Źródło AVANZA nie działa" }) }
+    }
+
+    @Test
     fun `outage outside the publication windows is not reported`() {
         now = Instant.parse("2026-09-21T11:00:00Z")
         tracker.recordSuccess(Source.GPW_LISTING, Instant.parse("2026-09-21T09:00:00Z"))

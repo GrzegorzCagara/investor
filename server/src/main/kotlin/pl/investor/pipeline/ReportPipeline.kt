@@ -6,6 +6,8 @@ import pl.investor.extraction.AiAuthenticationException
 import pl.investor.extraction.AiBudget
 import pl.investor.extraction.AiBudgetExhaustedException
 import pl.investor.extraction.AiPool
+import pl.investor.extraction.newsPool
+import pl.investor.extraction.resultsPool
 import pl.investor.extraction.AiUnavailableException
 import pl.investor.extraction.ClaudeExtractor
 import pl.investor.extraction.ExtractionPrompt
@@ -33,6 +35,7 @@ import pl.investor.notification.ReasonWriter
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.EventType
+import pl.investor.report.Market
 import pl.investor.report.Report
 import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
@@ -50,8 +53,10 @@ import pl.investor.source.SourceUnavailableException
 import pl.investor.source.content.ReportContent
 import pl.investor.source.content.ReportContentClient
 import pl.investor.source.gpw.ListingEntry
+import pl.investor.source.nasdaq.isIgnoredNasdaqCategory
 import pl.investor.support.toWarsawDate
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.concurrent.ConcurrentHashMap
@@ -94,7 +99,12 @@ class ReportPipeline(
             return
         }
         val report = try {
-            reports.saveIfNew(newReport(entry, company)) ?: return
+            val draft = newReport(entry, company)
+            if (isCopyOfKnownRelease(entry, company)) {
+                reports.saveIfNew(draft.copy(status = ReportStatus.IRRELEVANT))
+                return
+            }
+            reports.saveIfNew(draft) ?: return
         } catch (e: Exception) {
             log.error("Saving report {} failed, it will be retried on the next poll", entry.sourceRef, e)
             return
@@ -107,6 +117,8 @@ class ReportPipeline(
     private fun route(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean) {
         val title = entry.title?.takeIf { it.isNotBlank() }
         when {
+            entry.isIgnoredNasdaqCategory() -> setStatus(report, ReportStatus.IRRELEVANT)
+            isCoveredOnPolishMarket(company) -> setStatus(report, ReportStatus.IRRELEVANT)
             title?.let(ResultsKeywordFilter::isCorrection) == true -> setStatus(report, ReportStatus.CORRECTION_SKIPPED)
             report.eventType == EventType.NEWS -> assessNews(report, company, entry, content = null)
             entry.kind.isPeriodic -> analyze(report, company, entry, allowWithoutAttachments)
@@ -115,6 +127,18 @@ class ReportPipeline(
             else -> assessNewsUnlessRoutine(report, company, entry, content = null)
         }
     }
+
+    private fun isCoveredOnPolishMarket(company: Company): Boolean {
+        if (company.market != Market.SE) return false
+        val isin = runCatching { refresher.identified(company) }
+            .onFailure { log.warn("Identifying {} failed, it will be retried", company.name, it) }
+            .getOrDefault(company)
+            .isin
+        return isin != null && companies.existsInMarkets(isin, POLISH_MARKETS)
+    }
+
+    private fun isCopyOfKnownRelease(entry: ListingEntry, company: Company): Boolean =
+        entry.market == Market.SE && reports.existsSameRelease(checkNotNull(company.id), entry.number, entry.publishedAt, SAME_RELEASE_WINDOW)
 
     fun reprocess(reportId: Long, allowWithoutAttachments: Boolean): Boolean = exclusively(reportId) {
         val report = reports.findById(reportId)
@@ -151,8 +175,7 @@ class ReportPipeline(
     fun retryPendingData(reportId: Long): Boolean = exclusively(reportId) {
         val report = reports.findById(reportId)
         guarded(report) {
-            val company = companies.findById(report.companyId)
-            refreshQuietly(company, force = true)
+            val company = refreshedQuietly(companies.findById(report.companyId), force = true)
             if (assembler.currentQuarter(company, report) != null) {
                 scoreAndNotify(report, company, extractions.find(reportId))
             }
@@ -207,7 +230,7 @@ class ReportPipeline(
         if (periodic && holdForAttachments(report, firstContent, allowWithoutAttachments)) return null
         val first = extractFrom(report, company, firstContent) ?: return null
         val extraction = first.verified.extraction
-        if (periodic || extraction.category != ReportCategory.RESULTS || extraction.primaryPeriod() != null || !firstContent.hasSupportedAttachments) return first
+        if (periodic || extraction.category != ReportCategory.RESULTS || extraction.primaryPeriod() != null || !firstContent.hasReadableAttachments) return first
         val withAttachments = contentClient.fetch(entry, includeAttachments = true)
         if (withAttachments.attachmentsPending) {
             if (!allowWithoutAttachments) setStatus(report, ReportStatus.PENDING_ATTACHMENTS)
@@ -228,7 +251,7 @@ class ReportPipeline(
     }
 
     private fun extractFrom(report: Report, company: Company, content: ReportContent): Extracted? {
-        if (!budget.canSpend(AiPool.GPW)) {
+        if (!budget.canSpend(report.market.resultsPool())) {
             scoreWithoutAi(report, company)
             return null
         }
@@ -270,16 +293,16 @@ class ReportPipeline(
             scoreAndNotifyNews(news, company, it)
             return
         }
-        if (!budget.canSpend(AiPool.NEWS)) {
+        if (!budget.canSpend(news.market.newsPool())) {
             newsWithoutAi(news)
             return
         }
         val body = content ?: contentClient.fetch(entry, includeAttachments = false)
-        refreshQuietly(company)
-        val input = NewsInput(company.name, report.market, entry.title.orEmpty(), body, trailingRevenue(company, report))
+        val refreshed = refreshedQuietly(company)
+        val input = NewsInput(refreshed.name, report.market, entry.title.orEmpty(), body, trailingRevenue(refreshed, report))
         val assessment = callingAi(news, onBudgetExhausted = { newsWithoutAi(news) }) { newsAssessor.assess(input) } ?: return
         newsAssessments.save(id, assessment, clock.instant())
-        scoreAndNotifyNews(news, company, assessment)
+        scoreAndNotifyNews(news, refreshed, assessment)
     }
 
     private fun scoreAndNotifyNews(report: Report, company: Company, assessment: NewsAssessment) {
@@ -301,7 +324,7 @@ class ReportPipeline(
             !pushLog.newsPushExists(checkNotNull(report.id))
 
     private fun newsWithoutAi(report: Report) {
-        notifyBudgetExhaustedOnce(AiPool.NEWS)
+        notifyBudgetExhaustedOnce(report.market.newsPool())
         setStatus(report, ReportStatus.UNSCORED_NO_AI)
     }
 
@@ -319,7 +342,7 @@ class ReportPipeline(
     }
 
     private fun extractAndVerify(content: ReportContent, company: Company): VerifiedExtraction =
-        verifier.verify(extractor.extract(content, company.name, AiPool.GPW), ExtractionPrompt.reportInput(content))
+        verifier.verify(extractor.extract(content, company.name, company.market.resultsPool()), ExtractionPrompt.reportInput(content), company.market)
 
     private fun saveRevenuePeriods(report: Report, company: Company, verified: VerifiedExtraction) {
         verified.extraction.periods.forEach { period ->
@@ -340,8 +363,8 @@ class ReportPipeline(
     }
 
     private fun scoreWithoutAi(report: Report, company: Company) {
-        notifyBudgetExhaustedOnce(AiPool.GPW)
-        refreshQuietly(company)
+        notifyBudgetExhaustedOnce(report.market.resultsPool())
+        refreshedQuietly(company)
         val hasStructuredDataFromToday = report.kind.isPeriodic &&
             quarterResults.publishedOn(checkNotNull(company.id), report.publishedAt.toWarsawDate()) != null
         if (hasStructuredDataFromToday) {
@@ -351,8 +374,8 @@ class ReportPipeline(
         }
     }
 
-    private fun scoreAndNotify(report: Report, company: Company, verified: VerifiedExtraction?) {
-        refreshQuietly(company)
+    private fun scoreAndNotify(report: Report, stale: Company, verified: VerifiedExtraction?) {
+        val company = refreshedQuietly(stale)
         val input = assembler.assemble(company, report, verified)
         val score = ScoreCalculator.score(input)
         val reason = reasonWriter.write(company, input, score)
@@ -408,12 +431,13 @@ class ReportPipeline(
         }
     }
 
-    private fun refreshQuietly(company: Company, force: Boolean = false) {
+    private fun refreshedQuietly(company: Company, force: Boolean = false): Company {
         try {
             refresher.refresh(company, force)
         } catch (e: Exception) {
-            log.warn("Refreshing BiznesRadar data of {} failed, scoring with what is stored", company.name, e)
+            log.warn("Refreshing financial data of {} failed, scoring with what is stored", company.name, e)
         }
+        return companies.findById(checkNotNull(company.id))
     }
 
     private fun setStatus(report: Report, status: ReportStatus) = reports.updateStatus(checkNotNull(report.id), status, clock.instant())
@@ -449,6 +473,8 @@ class ReportPipeline(
     private data class Extracted(val verified: VerifiedExtraction, val content: ReportContent)
 
     private companion object {
+        val SAME_RELEASE_WINDOW: Duration = Duration.ofMinutes(15)
+        val POLISH_MARKETS = listOf(Market.GPW, Market.NC)
         val NO_COMPONENTS = ScoreComponents(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 }

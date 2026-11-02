@@ -8,6 +8,7 @@ import pl.investor.report.EventType
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.report.ReportStatus
+import pl.investor.scoring.Signal
 import pl.investor.support.toInstant
 import pl.investor.support.toLocalDate
 import pl.investor.support.toUtc
@@ -27,7 +28,10 @@ data class AlertRow(
     val status: ReportStatus,
     val total: Double?,
     val reason: String?,
+    val listing: String? = null,
 )
+
+data class SignalOutcome(val signals: Set<Signal>, val outcome: Outcome)
 
 @Repository
 class AlertRepository(private val jdbc: JdbcClient) {
@@ -80,6 +84,24 @@ class AlertRepository(private val jdbc: JdbcClient) {
             .query { rs, _ -> rs.toScoredOutcome() }
             .list()
 
+    fun signalOutcomes(): List<SignalOutcome> =
+        jdbc.sql(
+            """
+            SELECT array_to_string(s.signals, ',') AS signals, o.base_date, o.reaction_pct, o.reaction_index_pct, o.volume_multiple,
+                o.return5_pct, o.index5_pct, o.return20_pct, o.index20_pct, o.return60_pct, o.index60_pct
+            $FROM
+            JOIN report_outcome o ON o.report_id = r.id
+            WHERE $SCORED AND r.event_type = 'RESULTS' AND cardinality(s.signals) > 0
+            """
+        )
+            .query { rs, _ ->
+                SignalOutcome(
+                    signals = rs.getString("signals").split(",").filter { it.isNotEmpty() }.map(Signal::valueOf).toSet(),
+                    outcome = checkNotNull(rs.toOutcome()),
+                )
+            }
+            .list()
+
     fun scoredBefore(companyId: Long, before: Instant, limit: Int): List<AlertRow> =
         jdbc.sql("$SELECT WHERE $SCORED AND $NEWS_LISTED AND r.company_id = :companyId AND r.published_at < :before ORDER BY r.published_at DESC, r.id DESC LIMIT :limit")
             .param("companyId", companyId)
@@ -95,21 +117,23 @@ class AlertRepository(private val jdbc: JdbcClient) {
         eventType = EventType.valueOf(getString("event_type")),
         publishedAt = toInstant("published_at"),
         total = getDouble("total"),
-        outcome = toLocalDate("base_date")?.let { baseDate ->
-            Outcome(
-                baseDate = baseDate,
-                reactionPct = doubleOrNull("reaction_pct"),
-                reactionIndexPct = doubleOrNull("reaction_index_pct"),
-                volumeMultiple = doubleOrNull("volume_multiple"),
-                return5Pct = doubleOrNull("return5_pct"),
-                index5Pct = doubleOrNull("index5_pct"),
-                return20Pct = doubleOrNull("return20_pct"),
-                index20Pct = doubleOrNull("index20_pct"),
-                return60Pct = doubleOrNull("return60_pct"),
-                index60Pct = doubleOrNull("index60_pct"),
-            )
-        },
+        outcome = toOutcome(),
     )
+
+    private fun ResultSet.toOutcome(): Outcome? = toLocalDate("base_date")?.let { baseDate ->
+        Outcome(
+            baseDate = baseDate,
+            reactionPct = doubleOrNull("reaction_pct"),
+            reactionIndexPct = doubleOrNull("reaction_index_pct"),
+            volumeMultiple = doubleOrNull("volume_multiple"),
+            return5Pct = doubleOrNull("return5_pct"),
+            index5Pct = doubleOrNull("index5_pct"),
+            return20Pct = doubleOrNull("return20_pct"),
+            index20Pct = doubleOrNull("index20_pct"),
+            return60Pct = doubleOrNull("return60_pct"),
+            index60Pct = doubleOrNull("index60_pct"),
+        )
+    }
 
     private fun ResultSet.doubleOrNull(column: String): Double? = getDouble(column).takeUnless { wasNull() }
 
@@ -126,6 +150,7 @@ class AlertRepository(private val jdbc: JdbcClient) {
         status = ReportStatus.valueOf(getString("status")),
         total = getDouble("total").takeUnless { wasNull() },
         reason = getString("reason"),
+        listing = getString("listing"),
     )
 
     private companion object {
@@ -139,7 +164,7 @@ class AlertRepository(private val jdbc: JdbcClient) {
             ReportStatus.PENDING_DATA,
         )
         val LISTED = LISTED_STATUSES.joinToString(",") { "'${it.name}'" }
-        const val COLUMNS = "r.id, r.company_id, c.name, c.short_name, r.market, r.event_type, r.number, r.kind, r.published_at, r.detail_url, r.status, s.total, s.reason"
+        const val COLUMNS = "r.id, r.company_id, c.name, c.short_name, c.listing, r.market, r.event_type, r.number, r.kind, r.published_at, r.detail_url, r.status, s.total, s.reason"
         const val FROM = "FROM report r JOIN company c ON c.id = r.company_id LEFT JOIN score s ON s.report_id = r.id"
         const val SELECT = "SELECT $COLUMNS $FROM"
         const val SCORED = "r.status IN ('SCORED', 'PUSH_PENDING') AND s.total IS NOT NULL"

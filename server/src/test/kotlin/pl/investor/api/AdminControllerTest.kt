@@ -96,4 +96,26 @@ class AdminControllerTest {
         }
         awaitAccepted()
     }
+
+    @Test
+    fun `quote history backfill fills missing sessions of the last 915 days and shares the guard`() {
+        val range = mutableListOf<Pair<LocalDate, LocalDate>>()
+        val release = CountDownLatch(1)
+        val done = CountDownLatch(1)
+        every { dailyQuotes.backfillMissing(any(), any()) } answers {
+            range += firstArg<LocalDate>() to secondArg<LocalDate>()
+            release.await(5, TimeUnit.SECONDS)
+            done.countDown()
+        }
+
+        mvc.perform(post("/api/admin/backfill-quote-history")).andExpect(status().isAccepted)
+        mvc.perform(post("/api/admin/backfill")).andExpect(status().isConflict)
+        release.countDown()
+
+        assertTrue(done.await(5, TimeUnit.SECONDS))
+        assertEquals(listOf(LocalDate.of(2024, 4, 28) to LocalDate.of(2026, 10, 30)), range)
+        every { monthlySales.runAll(13) } returns 0
+        every { dailyQuotes.backfill(any(), any()) } returns Unit
+        awaitAccepted()
+    }
 }

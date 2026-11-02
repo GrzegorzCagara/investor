@@ -30,19 +30,29 @@ class AdminController(
     private val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "admin-backfill").apply { isDaemon = true } }
 
     @PostMapping("/backfill")
-    fun backfill(): ResponseEntity<Void> {
+    fun backfill(): ResponseEntity<Void> = launch("Backfill") {
+        runCatching { monthlySales.runAll(MONTHS) }.onFailure { log.error("Monthly sales backfill failed", it) }
+        val today = clock.instant().toWarsawDate()
+        runCatching { dailyQuotes.backfill(today.minusDays(QUOTE_DAYS), today) }.onFailure { log.error("Quotes backfill failed", it) }
+        runCatching { outcomes.refresh(recomputeAll = true) }.onFailure { log.error("Outcomes refresh failed", it) }
+    }
+
+    @PostMapping("/backfill-quote-history")
+    fun backfillQuoteHistory(): ResponseEntity<Void> = launch("Quote history backfill") {
+        val today = clock.instant().toWarsawDate()
+        runCatching { dailyQuotes.backfillMissing(today.minusDays(QUOTE_HISTORY_DAYS), today) }.onFailure { log.error("Quote history backfill failed", it) }
+    }
+
+    private fun launch(name: String, task: () -> Unit): ResponseEntity<Void> {
         if (!running.compareAndSet(false, true)) return ResponseEntity.status(HttpStatus.CONFLICT).build()
         executor.execute {
             val started = clock.instant()
-            log.info("Backfill started")
+            log.info("{} started", name)
             try {
-                runCatching { monthlySales.runAll(MONTHS) }.onFailure { log.error("Monthly sales backfill failed", it) }
-                val today = clock.instant().toWarsawDate()
-                runCatching { dailyQuotes.backfill(today.minusDays(QUOTE_DAYS), today) }.onFailure { log.error("Quotes backfill failed", it) }
-                runCatching { outcomes.refresh(recomputeAll = true) }.onFailure { log.error("Outcomes refresh failed", it) }
+                task()
             } finally {
                 running.set(false)
-                log.info("Backfill finished in {} min", Duration.between(started, clock.instant()).toMinutes())
+                log.info("{} finished in {} min", name, Duration.between(started, clock.instant()).toMinutes())
             }
         }
         return ResponseEntity.accepted().build()
@@ -56,5 +66,6 @@ class AdminController(
     private companion object {
         const val MONTHS = 13
         const val QUOTE_DAYS = 165L
+        const val QUOTE_HISTORY_DAYS = 915L
     }
 }

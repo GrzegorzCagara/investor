@@ -1,6 +1,7 @@
 package pl.investor.outcome
 
 import pl.investor.history.DailyQuote
+import pl.investor.report.Market
 import pl.investor.support.WARSAW
 import java.math.BigDecimal
 import java.time.DayOfWeek
@@ -42,7 +43,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-08-07")
         val stock = quotes("S", sessions, closes("2026-08-04" to 50.0, "2026-08-05" to 100.0, "2026-08-06" to 97.2))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, emptyList()))
 
         assertEquals(LocalDate.parse("2026-08-06"), outcome.baseDate)
         assertEquals(-2.8, outcome.reactionPct!!, 1e-9)
@@ -53,7 +54,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-07-31")
         val stock = quotes("S", sessions, closes("2026-07-28" to 50.0, "2026-07-29" to 100.0, "2026-07-30" to 105.0))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(warsaw("2026-07-29T17:14:57"), sessions, stock, emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, warsaw("2026-07-29T17:14:57"), sessions, stock, emptyList()))
 
         assertEquals(LocalDate.parse("2026-07-30"), outcome.baseDate)
         assertEquals(5.0, outcome.reactionPct!!, 1e-9)
@@ -63,7 +64,7 @@ class OutcomeCalculatorTest {
     fun `report during a session has that session as base`() {
         val sessions = calendar("2026-08-01", "2026-09-16")
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(warsaw("2026-09-15T12:00:00"), sessions, quotes("S", sessions), emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, warsaw("2026-09-15T12:00:00"), sessions, quotes("S", sessions), emptyList()))
 
         assertEquals(LocalDate.parse("2026-09-15"), outcome.baseDate)
     }
@@ -74,7 +75,7 @@ class OutcomeCalculatorTest {
         val stock = quotes("S", sessions, closes("2026-08-05" to 100.0, "2026-08-06" to 97.2))
         val index = quotes("WIG", sessions, closes("2026-08-05" to 2000.0, "2026-08-06" to 2020.0, default = 2000.0))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, index))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, index))
 
         assertEquals(-2.8, outcome.reactionPct!!, 1e-9)
         assertEquals(1.0, outcome.reactionIndexPct!!, 1e-9)
@@ -85,7 +86,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-08-06")
         val stock = quotes("S", sessions.filter(without("2026-08-05")), closes("2026-08-04" to 80.0, "2026-08-06" to 88.0))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, emptyList()))
 
         assertEquals(10.0, outcome.reactionPct!!, 1e-9)
     }
@@ -96,7 +97,7 @@ class OutcomeCalculatorTest {
         val volumes = mapOf(LocalDate.parse("2026-08-06") to 300L, LocalDate.parse("2026-07-08") to 1_000_000L)
         val stock = quotes("S", sessions.filter(without("2026-07-20")), volume = { volumes[it] ?: 100 })
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, emptyList()))
 
         assertEquals(300.0 / 95.0, outcome.volumeMultiple!!, 1e-9)
     }
@@ -106,7 +107,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-08-06")
         val stock = quotes("S", sessions, volume = { if (it == LocalDate.parse("2026-08-06")) 300 else 0 })
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, emptyList()))
 
         assertNull(outcome.volumeMultiple)
     }
@@ -116,7 +117,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-08-14")
         val stock = quotes("S", sessions.filter(without("2026-08-06")))
 
-        assertNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, quotes("WIG", sessions)))
+        assertNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, quotes("WIG", sessions)))
     }
 
     @Test
@@ -125,7 +126,7 @@ class OutcomeCalculatorTest {
         val stock = quotes("S", sessions, closes("2026-08-06" to 100.0, "2026-08-13" to 110.0))
         val index = quotes("WIG", sessions, closes("2026-08-06" to 2000.0, "2026-08-13" to 1900.0, default = 2000.0))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, index))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, index))
 
         assertEquals(10.0, outcome.return5Pct!!, 1e-9)
         assertEquals(-5.0, outcome.index5Pct!!, 1e-9)
@@ -141,7 +142,7 @@ class OutcomeCalculatorTest {
         val stock = quotes("S", sessions, closes("2026-08-06" to 100.0, "2026-09-03" to 120.0, "2026-10-29" to 150.0))
         val index = quotes("WIG", sessions, closes("2026-10-29" to 110.0))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, index))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, index))
 
         assertEquals(20.0, outcome.return20Pct!!, 1e-9)
         assertEquals(50.0, outcome.return60Pct!!, 1e-9)
@@ -154,7 +155,7 @@ class OutcomeCalculatorTest {
         val stock = quotes("S", calendar("2026-07-01", "2026-09-10"), closes("2026-08-13" to 110.0, "2026-08-14" to 120.0, "2026-09-03" to 140.0, "2026-09-04" to 150.0))
         val index = quotes("WIG", wig)
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, wig, stock, index))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, wig, stock, index))
 
         assertEquals(10.0, outcome.return5Pct!!, 1e-9)
         assertEquals(40.0, outcome.return20Pct!!, 1e-9)
@@ -166,7 +167,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-09-10")
         val stock = quotes("S", sessions.filter(without("2026-08-13")))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, quotes("WIG", sessions)))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, quotes("WIG", sessions)))
 
         assertNull(outcome.return5Pct)
         assertNull(outcome.index5Pct)
@@ -178,7 +179,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-11-30")
         val index = quotes("WIG", sessions.filter(without("2026-10-29")))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, quotes("S", sessions), index))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, quotes("S", sessions), index))
 
         assertNull(outcome.return60Pct)
         assertNull(outcome.index60Pct)
@@ -190,7 +191,7 @@ class OutcomeCalculatorTest {
         val sessions = calendar("2026-07-01", "2026-08-14")
         val stock = quotes("S", sessions, closes("2026-08-05" to 100.0, "2026-08-06" to 97.2))
 
-        val outcome = assertNotNull(OutcomeCalculator.calculate(midnightReport, sessions, stock, emptyList()))
+        val outcome = assertNotNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, stock, emptyList()))
 
         assertEquals(-2.8, outcome.reactionPct!!, 1e-9)
         assertNull(outcome.reactionIndexPct)
@@ -202,13 +203,13 @@ class OutcomeCalculatorTest {
     fun `no base session in the calendar yet gives no outcome`() {
         val sessions = calendar("2026-07-01", "2026-08-05")
 
-        assertNull(OutcomeCalculator.calculate(midnightReport, sessions, quotes("S", sessions), emptyList()))
+        assertNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, quotes("S", sessions), emptyList()))
     }
 
     @Test
     fun `no session closed before publication gives no outcome`() {
         val sessions = calendar("2026-08-06", "2026-08-21")
 
-        assertNull(OutcomeCalculator.calculate(midnightReport, sessions, quotes("S", sessions), quotes("WIG", sessions)))
+        assertNull(OutcomeCalculator.calculate(Market.GPW, midnightReport, sessions, quotes("S", sessions), quotes("WIG", sessions)))
     }
 }

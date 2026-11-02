@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.RestController
 class EffectivenessController(private val alerts: AlertRepository) {
 
     @GetMapping
-    fun effectiveness(): EffectivenessResponse = EffectivenessCalculator.calculate(alerts.scoredOutcomes())
+    fun effectiveness(): EffectivenessResponse = EffectivenessCalculator.calculate(alerts.scoredOutcomes(), alerts.signalOutcomes())
 }

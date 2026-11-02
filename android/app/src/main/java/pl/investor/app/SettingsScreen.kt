@@ -66,7 +66,7 @@ private fun SettingsFormSection(form: SettingsForm, state: SettingsUiState, view
 
     SectionTitle("Rynki")
     Market.entries.forEach { market ->
-        SwitchRow(Formatting.marketLabel(market), market in form.enabledMarkets, editable) { viewModel.onMarketChange(market, it) }
+        SwitchRow(Formatting.marketName(market), market in form.enabledMarkets, editable) { viewModel.onMarketChange(market, it) }
     }
 
     SectionTitle("Rodzaje zdarzeń")

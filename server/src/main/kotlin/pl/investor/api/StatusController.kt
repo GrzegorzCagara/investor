@@ -31,8 +31,8 @@ class StatusController(
         val month = YearMonth.now(clock)
         return StatusResponse(
             sources = health.snapshot().map { it.toView() },
-            aiSpentUsd = AiPool.entries.associateWith { budget.spentUsd(it, month) },
-            aiLimitUsd = AiPool.entries.associateWith { it.limitUsd },
+            aiSpentUsd = VISIBLE_POOLS.associateWith { budget.spentUsd(it, month) },
+            aiLimitUsd = VISIBLE_POOLS.associateWith { it.limitUsd },
             medianLatencySeconds7d = pushLog.medianResultsLatencySeconds(clock.instant().minus(LATENCY_WINDOW)),
             fcmConfigured = firebase.ifAvailable != null,
             latestQuoteDate = quotes.latestDate(SESSION_CALENDAR),
@@ -41,5 +41,6 @@ class StatusController(
 
     private companion object {
         val LATENCY_WINDOW: Duration = Duration.ofDays(7)
+        val VISIBLE_POOLS = AiPool.entries.filter { it.limitUsd.signum() > 0 }
     }
 }

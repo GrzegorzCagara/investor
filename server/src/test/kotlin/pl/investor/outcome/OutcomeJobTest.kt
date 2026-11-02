@@ -77,6 +77,20 @@ class OutcomeJobTest : PostgresTestBase() {
     }
 
     @Test
+    fun `Swedish report before the Stockholm close reacts the same day against OMXSPI`() {
+        data.quotes("OMXSPI", "2026-05-01", "2026-10-30") { if (it >= reactionDay) 1030.0 else 1000.0 }
+        data.quotes("SE0000000001", "2026-05-01", "2026-10-30") { if (it >= reactionDay) 105.0 else 100.0 }
+        val id = data.report(data.company("SE CO", "SE0000000001", Market.SE), Market.SE, Instant.parse("2026-09-15T15:20:00Z"))
+
+        job.refresh()
+
+        val outcome = assertNotNull(outcomes.find(id))
+        assertEquals(reactionDay, outcome.baseDate)
+        assertEquals(5.0, outcome.reactionPct!!, 1e-4)
+        assertEquals(3.0, outcome.reactionIndexPct!!, 1e-4)
+    }
+
+    @Test
     fun `report older than 120 days is ignored`() {
         val id = data.report(data.company("GPW CO", "PLGPW0000001", Market.GPW), Market.GPW, Instant.parse("2026-06-15T10:00:00Z"))
 

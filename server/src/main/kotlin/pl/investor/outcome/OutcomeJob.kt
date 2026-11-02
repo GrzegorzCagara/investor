@@ -5,8 +5,8 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import pl.investor.history.DailyQuote
 import pl.investor.history.QuoteRepository
-import pl.investor.history.SESSION_CALENDAR
 import pl.investor.history.indexInstrument
+import pl.investor.history.sessionCalendar
 import pl.investor.support.toWarsawDate
 import java.time.Clock
 import java.time.Duration
@@ -41,9 +41,9 @@ class OutcomeJob(
     private fun refresh(report: PendingOutcome, today: LocalDate, instrument: (String) -> List<DailyQuote>) {
         val index = report.market.indexInstrument() ?: return
         val from = report.quotesFrom()
-        val sessions = instrument(SESSION_CALENDAR).filter { it.date >= from }.map { it.date }
+        val sessions = instrument(report.market.sessionCalendar()).filter { it.date >= from }.map { it.date }
         val indexQuotes = instrument(index).filter { it.date >= from }
-        OutcomeCalculator.calculate(report.publishedAt, sessions, quotes.between(report.isin, from, today), indexQuotes)
+        OutcomeCalculator.calculate(report.market, report.publishedAt, sessions, quotes.between(report.isin, from, today), indexQuotes)
             ?.let { outcomes.save(report.reportId, it, clock.instant()) }
     }
 

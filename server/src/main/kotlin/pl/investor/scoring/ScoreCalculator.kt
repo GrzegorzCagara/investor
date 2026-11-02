@@ -1,21 +1,32 @@
 package pl.investor.scoring
 
 import pl.investor.extraction.OutlookTone
+import java.math.BigDecimal
 import kotlin.math.min
 
 private const val NEUTRAL_QUALITY = 7.5
 private const val NEUTRAL_VALUATION = 7.5
 private const val NEUTRAL_SURPRISE = 15.0
 private const val CONFIRMED_SERIES = 3
+private const val ORDERS_SIGNIFICANT_PCT = 20.0
+private const val LOW_EXPECTATIONS_YTD_PCT = -30.0
+private const val RECENT_REACTIONS = 3
+private const val RECENT_NEGATIVE_REACTIONS = 2
+private const val REACTION_HISTORY = 8
+private const val CONSISTENT_REACTIONS = 6
+private val MIN_EBIT_CONSENSUS = BigDecimal(1000)
 
 private fun unit(value: Double) = value.coerceIn(0.0, 1.0)
 
 fun surprisePoints(sur: Double?): Double = sur?.let { 30 * unit(it / 2.0) } ?: 15.0
 
-fun growthPoints(yoy: Double?, previous: List<Double>): Double {
+fun consensusSurprisePoints(ebitSurprisePct: Double?, revenueSurprisePct: Double?): Double =
+    30 * unit(0.4 + (ebitSurprisePct ?: 0.0) / 50 + (revenueSurprisePct ?: 0.0) / 25)
+
+fun growthPoints(yoy: Double?, previous: List<Double>, reversal: Boolean = false): Double {
     if (yoy == null) return 10.0
     val accelerating = previous.isNotEmpty() && yoy - previous.take(4).average() >= 10
-    return 16 * unit(yoy / 50) + if (accelerating) 4 else 0
+    return 16 * unit(yoy / 50) + if (accelerating || reversal) 4 else 0
 }
 
 fun qualityPoints(revenueYoy: Double?, operatingYoy: Double?, marginChangePp: Double?, revenueOnly: Boolean): Double = when {
@@ -35,11 +46,30 @@ fun seriesPoints(consecutiveStrong: Int): Double = when {
     else -> 10.0
 }
 
-fun outlookPoints(tone: OutlookTone?): Double = when (tone) {
-    OutlookTone.POSITIVE -> 10.0
-    OutlookTone.NEGATIVE -> 0.0
-    OutlookTone.NONE, null -> 5.0
+fun outlookPoints(tone: OutlookTone?, ordersYoyPct: Double? = null): Double = when {
+    tone == OutlookTone.POSITIVE -> 10.0
+    tone == OutlookTone.NEGATIVE -> 0.0
+    ordersYoyPct != null && ordersYoyPct >= ORDERS_SIGNIFICANT_PCT -> 10.0
+    ordersYoyPct != null && ordersYoyPct <= -ORDERS_SIGNIFICANT_PCT -> 0.0
+    else -> 5.0
 }
+
+fun ebitSurprisePct(comparison: ConsensusComparison?): Double? =
+    comparison?.takeIf { it.consensus.abs() >= MIN_EBIT_CONSENSUS }?.differencePct()?.coerceIn(-100.0, 100.0)
+
+fun revenueSurprisePct(comparison: ConsensusComparison?): Double? =
+    comparison?.takeIf { it.consensus.signum() > 0 }?.differencePct()?.coerceIn(-50.0, 50.0)
+
+fun signals(input: ScoringInput): Set<Signal> = buildSet {
+    if (input.trendReversal) add(Signal.TREND_REVERSAL)
+    if (input.ordersYoyPct != null && input.ordersYoyPct >= ORDERS_SIGNIFICANT_PCT) add(Signal.ORDERS_UP)
+    if (hasLowExpectations(input.ytdChangePct, input.pastReactions)) add(Signal.LOW_EXPECTATIONS)
+    if (input.pastReactions.take(REACTION_HISTORY).count { it.pct > 0 } >= CONSISTENT_REACTIONS) add(Signal.CONSISTENT_REACTION)
+}
+
+private fun hasLowExpectations(ytdChangePct: Double?, pastReactions: List<PastReaction>) =
+    ytdChangePct != null && ytdChangePct <= LOW_EXPECTATIONS_YTD_PCT &&
+        pastReactions.take(RECENT_REACTIONS).count { it.pct < 0 } >= RECENT_NEGATIVE_REACTIONS
 
 private fun hasPeg(pe: Double?, growth: Double?) = pe != null && growth != null && pe > 0 && growth > 0
 
@@ -69,16 +99,30 @@ fun oneOffSurprisePoints(surprisePoints: Double, oneOff: Boolean): Double =
 object ScoreCalculator {
     fun score(raw: ScoringInput): Score {
         val input = raw.finiteOnly()
+        val consensusSurprise = input.consensusSurprisePoints()
         val components = ScoreComponents(
-            surprise = oneOffSurprisePoints(surprisePoints(input.sur), input.oneOff),
-            growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts),
+            surprise = oneOffSurprisePoints(consensusSurprise ?: surprisePoints(input.sur), input.oneOff),
+            growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal),
             quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly),
             series = seriesPoints(input.consecutiveStrongBefore),
-            outlook = outlookPoints(input.outlook),
+            outlook = outlookPoints(input.outlook, input.ordersYoyPct),
             valuation = valuationPoints(input.pe, input.ttmNetProfitGrowthPct, input.ps, input.psMedian20q, input.cyclical),
         )
         val penalty = runUpPenalty(input.priceChange10Pct, input.indexChange10Pct, components.surprise, input.consecutiveStrongBefore, components.valuation)
-        return Score((components.sum - penalty).coerceIn(0.0, 100.0), components, penalty, warnings(input))
+        return Score(
+            total = (components.sum - penalty).coerceIn(0.0, 100.0),
+            components = components,
+            penalty = penalty,
+            warnings = warnings(input, hasConsensus = consensusSurprise != null),
+            signals = signals(input),
+            context = ScoreContext(input.ytdChangePct, input.ordersYoyPct, input.pastReactions, input.consensus),
+        )
+    }
+
+    private fun ScoringInput.consensusSurprisePoints(): Double? {
+        val ebit = ebitSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.EBIT })
+        val revenue = revenueSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.REVENUE })
+        return if (ebit == null && revenue == null) null else consensusSurprisePoints(ebit, revenue)
     }
 
     private fun Double?.finiteOrNull() = takeIf { it != null && it.isFinite() }
@@ -95,18 +139,21 @@ object ScoreCalculator {
         psMedian20q = psMedian20q.finiteOrNull(),
         priceChange10Pct = priceChange10Pct.finiteOrNull(),
         indexChange10Pct = indexChange10Pct.finiteOrNull(),
+        ordersYoyPct = ordersYoyPct.finiteOrNull(),
+        ytdChangePct = ytdChangePct.finiteOrNull(),
+        pastReactions = pastReactions.filter { it.pct.isFinite() },
     )
 
-    private fun hasMissingData(input: ScoringInput) = input.sur == null || input.revenueYoyPct == null ||
+    private fun hasMissingData(input: ScoringInput, hasConsensus: Boolean) = (input.sur == null && !hasConsensus) || input.revenueYoyPct == null ||
         !qualityIsKnown(input) ||
         !(hasPeg(input.pe, input.ttmNetProfitGrowthPct) || hasPsRatio(input.ps, input.psMedian20q))
 
-    private fun warnings(input: ScoringInput): Set<Warning> = buildSet {
-        add(Warning.NO_CONSENSUS)
+    private fun warnings(input: ScoringInput, hasConsensus: Boolean): Set<Warning> = buildSet {
+        if (!hasConsensus) add(Warning.NO_CONSENSUS)
         if (input.oneOff) add(Warning.ONE_OFF_QUARTER)
         if (input.cyclical) add(Warning.CYCLICAL_INDUSTRY)
         if (input.lowLiquidity) add(Warning.LOW_LIQUIDITY)
-        if (hasMissingData(input)) add(Warning.MISSING_DATA)
+        if (hasMissingData(input, hasConsensus)) add(Warning.MISSING_DATA)
         if (!input.aiUsed) add(Warning.NO_AI)
         if (input.uncertainNumbers) add(Warning.UNCERTAIN_NUMBERS)
         if (hasRunUp(input.priceChange10Pct, input.indexChange10Pct)) add(Warning.RUN_UP)

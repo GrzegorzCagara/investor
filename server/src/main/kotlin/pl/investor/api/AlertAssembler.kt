@@ -16,6 +16,8 @@ import pl.investor.outcome.OutcomeRepository
 import pl.investor.report.EventType
 import pl.investor.report.Market
 import pl.investor.report.ReportStatus
+import pl.investor.scoring.ConsensusComparison
+import pl.investor.scoring.ConsensusMetric
 import pl.investor.scoring.ReferenceSession
 import pl.investor.scoring.ScoreComponents
 import pl.investor.scoring.ScoreRepository
@@ -25,6 +27,7 @@ import pl.investor.scoring.roundedHalfUp
 import pl.investor.settings.PushThreshold
 import pl.investor.source.consensus.ConsensusRepository
 import pl.investor.support.toWarsawDate
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -66,11 +69,12 @@ class AlertAssembler(
         val news = row.takeIf { it.eventType == EventType.NEWS }?.let { newsAssessments.find(it.id) }
         val extraction = extractions.find(row.id)?.extraction.takeIf { row.eventType == EventType.RESULTS }
         val outlook = extraction?.outlook
+        val context = stored?.score?.context?.takeIf { row.eventType == EventType.RESULTS }
         return AlertDetail(
             id = row.id,
             companyName = row.companyName,
             market = row.market,
-            reportNumber = row.reportNumber,
+            reportNumber = row.displayedNumber(),
             reportKind = row.reportKind,
             publishedAt = row.publishedAt,
             score = row.score(),
@@ -82,12 +86,37 @@ class AlertAssembler(
             revenueHistory = extraction?.primaryPeriod()?.let { revenueHistory(row, it.kind) }.orEmpty(),
             sourceUrl = row.detailUrl,
             reaction = outcomes.find(row.id)?.reactionView(row.market),
-            consensus = consensusNotes.find(row.id)?.rows.orEmpty().map { ConsensusRowView(it.label, it.actual, it.consensus, it.differencePct) },
+            consensus = context?.consensus?.takeIf { it.isNotEmpty() }?.map { it.view() }
+                ?: consensusNotes.find(row.id)?.rows.orEmpty().map { ConsensusRowView(it.label, it.actual, it.consensus, it.differencePct) },
             companyHistory = scoredOutcomes(alerts.scoredBefore(row.companyId, row.publishedAt, COMPANY_HISTORY_SIZE)).map { it.toOutcomeItem() },
             eventType = row.eventType,
             news = news?.view(),
+            listing = row.listing,
+            ytdChangePct = context?.ytdChangePct,
+            ordersYoyPct = context?.ordersYoyPct,
+            pastReactions = context?.pastReactions.orEmpty().map { PastReactionView(it.date, it.pct) },
+            signals = stored?.score?.signals.orEmpty().sortedBy { it.ordinal }.map { it.label },
         )
     }
+
+    private fun AlertRow.displayedNumber(): String = if (market == Market.SE) SWEDISH_REPORT_NUMBER else reportNumber
+
+    private fun ConsensusComparison.view() = ConsensusRowView(
+        label = "${metric.label()} vs konsensus $source${analysts?.let { " (${it.analystsText()})" }.orEmpty()}",
+        actual = actual.inMillions(),
+        consensus = consensus.inMillions(),
+        differencePct = differencePct(),
+        currency = currency,
+    )
+
+    private fun ConsensusMetric.label() = when (this) {
+        ConsensusMetric.REVENUE -> "Sprzedaż"
+        ConsensusMetric.EBIT -> "Zysk operacyjny"
+    }
+
+    private fun Int.analystsText() = if (this == 1) "1 analityka" else "$this analityków"
+
+    private fun BigDecimal.inMillions(): BigDecimal = divide(THOUSAND).stripTrailingZeros().let { if (it.scale() < 0) it.setScale(0) else it }
 
     private fun scoredOutcomes(rows: List<AlertRow>): List<ScoredOutcome> {
         val byReport = outcomes.findAll(rows.map { it.id })
@@ -102,7 +131,7 @@ class AlertAssembler(
 
     private fun Outcome.reactionView(market: Market): ReactionView? {
         val stockPct = reactionPct ?: return null
-        if (!ReferenceSession.isClosed(baseDate, clock.instant())) return null
+        if (!ReferenceSession.isClosed(baseDate, clock.instant(), market)) return null
         return ReactionView(stockPct, reactionIndexPct, market.indexInstrument(), volumeMultiple, reactionCategory(stockPct, reactionIndexPct))
     }
 
@@ -110,7 +139,7 @@ class AlertAssembler(
         PeriodKind.MONTH -> revenuePeriods.publishedBefore(row.companyId, kind, row.publishedAt.plusMillis(1), HISTORY_SIZE)
             .map { RevenuePoint(it.periodEnd.format(MONTH_LABEL), it.revenue.toDouble(), it.currency) }
         PeriodKind.QUARTER -> quarterResults.publishedBefore(row.companyId, row.publishedAt.toWarsawDate().plusDays(1), HISTORY_SIZE)
-            .mapNotNull { result -> result.revenue?.let { RevenuePoint(result.quarterEnd.quarterLabel(), it.toDouble(), PLN) } }
+            .mapNotNull { result -> result.revenue?.let { RevenuePoint(result.quarterEnd.quarterLabel(), it.toDouble(), row.market.currency) } }
         PeriodKind.HALF_YEAR, PeriodKind.YEAR -> emptyList()
     }.reversed()
 
@@ -134,7 +163,7 @@ class AlertAssembler(
         ComponentView("Wzrost przychodów", growth, 20.0),
         ComponentView("Jakość: zysk i marża", quality, 15.0),
         ComponentView("Seria mocnych raportów", series, 10.0),
-        ComponentView("Zapowiedzi zarządu", outlook, 10.0),
+        ComponentView("Zapowiedzi i zamówienia", outlook, 10.0),
         ComponentView("Wycena („czy już w cenie”)", valuation, 15.0),
     )
 
@@ -142,8 +171,9 @@ class AlertAssembler(
 
     private companion object {
         const val HISTORY_SIZE = 8
+        const val SWEDISH_REPORT_NUMBER = "Nasdaq"
+        val THOUSAND = BigDecimal(1000)
         const val COMPANY_HISTORY_SIZE = 5
-        const val PLN = "PLN"
         val SCORED_STATUSES = setOf(ReportStatus.SCORED, ReportStatus.PUSH_PENDING)
         val MONTH_LABEL: DateTimeFormatter = DateTimeFormatter.ofPattern("MM.yyyy")
     }

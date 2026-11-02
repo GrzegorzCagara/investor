@@ -2,6 +2,7 @@ package pl.investor.report
 
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
+import pl.investor.source.avanza.AvanzaIdentity
 import java.sql.ResultSet
 
 @Repository
@@ -10,8 +11,8 @@ class CompanyRepository(private val jdbc: JdbcClient) {
     fun save(company: Company): Company {
         val id = jdbc.sql(
             """
-            INSERT INTO company (name, isin, market, ticker, biznesradar_symbol, publishes_monthly_sales, short_name)
-            VALUES (:name, :isin, :market, :ticker, :biznesradarSymbol, :publishesMonthlySales, :shortName)
+            INSERT INTO company (name, isin, market, ticker, biznesradar_symbol, publishes_monthly_sales, short_name, avanza_id, listing, quote_currency)
+            VALUES (:name, :isin, :market, :ticker, :biznesradarSymbol, :publishesMonthlySales, :shortName, :avanzaId, :listing, :quoteCurrency)
             RETURNING id
             """
         )
@@ -22,6 +23,9 @@ class CompanyRepository(private val jdbc: JdbcClient) {
             .param("biznesradarSymbol", company.biznesradarSymbol)
             .param("publishesMonthlySales", company.publishesMonthlySales)
             .param("shortName", company.shortName)
+            .param("avanzaId", company.avanzaId)
+            .param("listing", company.listing)
+            .param("quoteCurrency", company.quoteCurrency)
             .query(Long::class.java)
             .single()
         return company.copy(id = id)
@@ -41,16 +45,47 @@ class CompanyRepository(private val jdbc: JdbcClient) {
             .update()
     }
 
-    fun findByIsin(isin: String): Company? =
-        jdbc.sql("SELECT * FROM company WHERE isin = :isin")
+    fun updateAvanzaIdentity(id: Long, identity: AvanzaIdentity) {
+        jdbc.sql(
+            """
+            UPDATE company SET avanza_id = :avanzaId, ticker = :ticker, listing = :listing, quote_currency = :quoteCurrency,
+                short_name = COALESCE(short_name, :shortName),
+                isin = CASE
+                    WHEN EXISTS (SELECT 1 FROM company other WHERE other.isin = :isin AND other.market = company.market AND other.id <> :id) THEN isin
+                    ELSE :isin
+                END
+            WHERE id = :id
+            """
+        )
+            .param("avanzaId", identity.avanzaId)
+            .param("ticker", identity.ticker)
+            .param("listing", identity.listing)
+            .param("shortName", identity.shortName)
+            .param("quoteCurrency", identity.quoteCurrency)
+            .param("isin", identity.isin)
+            .param("id", id)
+            .update()
+    }
+
+    fun existsInMarkets(isin: String, markets: Collection<Market>): Boolean =
+        jdbc.sql("SELECT EXISTS (SELECT 1 FROM company WHERE isin = :isin AND market IN (:markets))")
             .param("isin", isin)
+            .param("markets", markets.map { it.name })
+            .query(Boolean::class.java)
+            .single()
+
+    fun findByIsin(isin: String, market: Market): Company? =
+        jdbc.sql("SELECT * FROM company WHERE isin = :isin AND market = :market")
+            .param("isin", isin)
+            .param("market", market.name)
             .query { rs, _ -> rs.toCompany() }
             .optional()
             .orElse(null)
 
-    fun findByName(name: String): Company? =
-        jdbc.sql("SELECT * FROM company WHERE name = :name ORDER BY id LIMIT 1")
+    fun findByName(name: String, market: Market? = null): Company? =
+        jdbc.sql("SELECT * FROM company WHERE name = :name AND (CAST(:market AS TEXT) IS NULL OR market = :market) ORDER BY id LIMIT 1")
             .param("name", name)
+            .param("market", market?.name)
             .query { rs, _ -> rs.toCompany() }
             .optional()
             .orElse(null)
@@ -70,5 +105,8 @@ class CompanyRepository(private val jdbc: JdbcClient) {
         biznesradarSymbol = getString("biznesradar_symbol"),
         publishesMonthlySales = getBoolean("publishes_monthly_sales"),
         shortName = getString("short_name"),
+        avanzaId = getString("avanza_id"),
+        listing = getString("listing"),
+        quoteCurrency = getString("quote_currency"),
     )
 }

@@ -39,7 +39,7 @@ class NewsAssessorTest {
         market = Market.GPW,
         title = "Zawarcie istotnej umowy z Polską Grupą Zbrojeniową S.A.",
         content = ReportContent(body, emptyList(), emptyList()),
-        trailingRevenuePln = revenue,
+        trailingRevenue = revenue,
     )
 
     @BeforeEach
@@ -182,7 +182,7 @@ class NewsAssessorTest {
         assertEquals(ContractCurrency.OTHER, result.contractCurrency)
         assertEquals(0, BigDecimal("120000").compareTo(result.contractValue))
         assertNull(result.revenueSharePct)
-        assertTrue("\"PLN\",\"EUR\",\"USD\",\"GBP\",\"CHF\",\"CZK\",\"BGN\",\"OTHER\"" in server.takeRequest().body.readUtf8())
+        assertTrue("\"PLN\",\"SEK\",\"EUR\",\"USD\",\"GBP\",\"CHF\",\"CZK\",\"BGN\",\"NOK\",\"DKK\",\"OTHER\"" in server.takeRequest().body.readUtf8())
     }
 
     @Test

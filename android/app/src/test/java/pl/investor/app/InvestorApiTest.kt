@@ -89,6 +89,58 @@ class InvestorApiTest {
         assertNull(detail.outlookQuote)
         assertEquals(EventType.RESULTS, detail.eventType)
         assertNull(detail.news)
+        assertNull(detail.listing)
+        assertNull(detail.ytdChangePct)
+        assertNull(detail.ordersYoyPct)
+        assertTrue(detail.pastReactions.isEmpty())
+        assertTrue(detail.signals.isEmpty())
+    }
+
+    @Test
+    fun `swedish detail parses listing, context, signals and sourced consensus`() = runBlocking {
+        enqueueJson(
+            """{"id":90,"companyName":"Mips","market":"SE","reportNumber":"Nasdaq","reportKind":"QUARTERLY",""" +
+                """"publishedAt":"2026-10-23T05:30:00Z","score":74,"components":[{"label":"Zapowiedzi i zamówienia","points":10.0,"max":10.0}],""" +
+                """"penalty":0.0,"warnings":[],"reason":"Zysk operacyjny powyżej konsensusu.","outlookQuote":null,""" +
+                """"revenueHistory":[{"label":"Q3 2026","value":215000.0,"currency":"SEK"}],"sourceUrl":"https://example.test/se",""" +
+                """"reaction":{"stockPct":5.2,"indexPct":0.3,"indexName":"OMXSPI","volumeMultiple":null,"category":"POSITIVE"},""" +
+                """"consensus":[{"label":"Sprzedaż vs konsensus FactSet (6 analityków)","actual":215,"consensus":216,"differencePct":-0.46,"currency":"SEK"}],""" +
+                """"companyHistory":[],"eventType":"RESULTS","news":null,"listing":"Large Cap Stockholm","ytdChangePct":-66.0,""" +
+                """"ordersYoyPct":25.0,"pastReactions":[{"date":"2026-07-16","pct":27.8},{"date":"2026-04-24","pct":-3.1}],""" +
+                """"signals":["Odwrócenie trendu","Regularne wzrosty po raportach"]}""",
+        )
+
+        val detail = api().alert(90)
+
+        assertEquals(Market.SE, detail.market)
+        assertEquals("Nasdaq", detail.reportNumber)
+        assertEquals("Large Cap Stockholm", detail.listing)
+        assertEquals(-66.0, detail.ytdChangePct!!, 0.0)
+        assertEquals(25.0, detail.ordersYoyPct!!, 0.0)
+        assertEquals(listOf(PastReactionView("2026-07-16", 27.8), PastReactionView("2026-04-24", -3.1)), detail.pastReactions)
+        assertEquals(listOf("Odwrócenie trendu", "Regularne wzrosty po raportach"), detail.signals)
+        assertEquals(
+            listOf(ConsensusRowView("Sprzedaż vs konsensus FactSet (6 analityków)", 215.0, 216.0, -0.46, "SEK")),
+            detail.consensus,
+        )
+        assertEquals("SEK", detail.revenueHistory.single().currency)
+        assertEquals("OMXSPI", detail.reaction?.indexName)
+    }
+
+    @Test
+    fun `detail with null context fields parses`() = runBlocking {
+        enqueueJson(
+            "{$DETAIL_BASE," +
+                """"listing":null,"ytdChangePct":null,"ordersYoyPct":null,"pastReactions":[],"signals":[]}""",
+        )
+
+        val detail = api().alert(42)
+
+        assertNull(detail.listing)
+        assertNull(detail.ytdChangePct)
+        assertNull(detail.ordersYoyPct)
+        assertTrue(detail.pastReactions.isEmpty())
+        assertTrue(detail.signals.isEmpty())
     }
 
     @Test
@@ -155,6 +207,7 @@ class InvestorApiTest {
 
         assertEquals(ReactionView(0.4, 1.0, "WIG", 2.5, Reaction.FLAT), detail.reaction)
         assertEquals(listOf(ConsensusRowView("Przychody", 1696.7, 1686.3, 0.6)), detail.consensus)
+        assertNull(detail.consensus.single().currency)
         assertEquals(
             OutcomeItem(40, "ASBIS", Market.GPW, EventType.RESULTS, Instant.parse("2026-05-14T15:30:00Z"), 82, excess5Pct = 10.0),
             detail.companyHistory.single(),
@@ -204,6 +257,34 @@ class InvestorApiTest {
         assertEquals(listOf(Reaction.NEGATIVE, Reaction.FLAT, Reaction.POSITIVE), response.byReaction.map { it.reaction })
         assertNull(response.items.first().excess60Pct)
         assertNull(response.items.last().reactionPct)
+        assertTrue(response.bySignal.isEmpty())
+    }
+
+    @Test
+    fun `effectiveness parses signal buckets`() = runBlocking {
+        enqueueJson(EffectivenessViewModelTest.SIGNALS_JSON)
+
+        val response = api().effectiveness()
+
+        assertEquals(Signal.entries.toList(), response.bySignal.map { it.signal })
+        val reversal = response.bySignal.first()
+        assertEquals("Odwrócenie trendu", reversal.label)
+        assertEquals(2, reversal.alerts)
+        assertEquals(1.0, reversal.horizons.first().avgExcessPct!!, 0.0)
+        assertNull(reversal.horizons.last().avgExcessPct)
+    }
+
+    @Test
+    fun `ranking can be filtered to Sweden`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":90,"companyName":"Mips","market":"SE","eventType":"RESULTS","publishedAt":"2026-10-23T05:30:00Z",""" +
+                """"score":74,"belowThreshold":false,"summary":"Zysk powyżej konsensusu.","status":"SCORED"}]}""",
+        )
+
+        val se = api().ranking(Market.SE)
+
+        assertEquals(Market.SE, se.items.single().market)
+        assertEquals("/api/ranking?market=SE", server.takeRequest().path)
     }
 
     @Test

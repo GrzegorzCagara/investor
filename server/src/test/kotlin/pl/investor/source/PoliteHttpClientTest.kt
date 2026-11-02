@@ -192,4 +192,28 @@ class PoliteHttpClientTest {
         assertEquals(polishText, client.get(Source.GPW_LISTING, url()))
         verify(exactly = 1) { tracker.recordSuccess(Source.GPW_LISTING, any()) }
     }
+
+    @Test
+    fun `percent-encoded query values are sent without double encoding`() {
+        server.enqueue(MockResponse.Builder().body("ok").build())
+
+        client.get(Source.NASDAQ_NORDIC, url("/q") + "?market=Main%20Market%2C%20Stockholm&mask=yyyy-MM-dd+HH%3Amm%3Ass&symbol=%5EOMXSPI")
+
+        val requested = server.takeRequest().url
+        assertEquals("Main Market, Stockholm", requested.queryParameter("market"))
+        assertEquals("^OMXSPI", requested.queryParameter("symbol"))
+        assertEquals("yyyy-MM-dd HH:mm:ss", requested.queryParameter("mask"))
+    }
+
+    @Test
+    fun `json is posted with the json content type`() {
+        server.enqueue(MockResponse.Builder().body("{}").build())
+
+        client.postJson(Source.AVANZA, url("/search"), """{"query":"Mips"}""")
+
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertTrue(request.headers["Content-Type"].orEmpty().startsWith("application/json"))
+        assertEquals("""{"query":"Mips"}""", request.body?.utf8())
+    }
 }

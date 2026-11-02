@@ -1,0 +1,3581 @@
+{
+  "results" : {
+    "item" : [ {
+      "disclosureId" : 1474273,
+      "categoryId" : 55,
+      "headline" : "Teqnion acquires Tecflo Limited",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b39fadbf0e3ef9f6ed49f03be5b576e58&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 15:38:00",
+      "published" : "2026-11-02 15:38:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PM-Teqnion-acquires-Tecflo-Limited.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a3fa25ad669c1f69bd7f513a79409730a"
+      } ],
+      "company" : "Teqnion AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474266,
+      "categoryId" : 55,
+      "headline" : "Klimator prisas i USA för produkten Klimator AHEAD för väglagsstyrd saltning",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b148ae647b795c2b8e0e02c38f1013c0f&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 15:15:00",
+      "published" : "2026-11-02 15:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Klimator prisas i USA for produkten Klimator AHEAD for vaglagsstyrd saltning.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1bfada37e6f530c2fe2950f92d1ec90e"
+      } ],
+      "company" : "Klimator AB ",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474259,
+      "categoryId" : 498,
+      "headline" : "Nomination Committee appointed for Dicot Pharma AB",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6387991388f0ca5aa40d19e932be5485&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 15:00:00",
+      "published" : "2026-11-02 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Nomination Committee appointed for Dicot Pharma AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a5c4fe4040ced6a4fddc12b96b0049903"
+      } ],
+      "company" : "Dicot Pharma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474250,
+      "categoryId" : 108,
+      "headline" : "Aixia Secures Strategic SEK 35 Million Network Infrastructure Order for AI Factories",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bfa912d93807245b7493c010fd1596684&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 14:54:00",
+      "published" : "2026-11-02 14:54:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Aixia Secures Strategic SEK 35 Million Network Infrastructure Order for AI Factories.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aba660627479699792f8f5830edc7e2b1"
+      } ],
+      "company" : "White Pearl Technology Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474231,
+      "categoryId" : 55,
+      "headline" : "Qualisys Releases Prisma Pose - Markerless Motion Capture for Biomechanics Labs",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b054b959fe5c9fb56efd8a67ed12b37e4&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 14:00:00",
+      "published" : "2026-11-02 14:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Qualisys Releases Prisma Pose - Markerless Motion Capture for Biomechanics Labs.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a2a532afb524d78ff69d4a86d227a45b6"
+      } ],
+      "company" : "Qualisys Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474222,
+      "categoryId" : 498,
+      "headline" : "Goldsky appoints Teemu Törmälehto as new Nordic Exploration Manager",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0b63b2b6604fc31c881d9e49b9984ae5&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 13:15:00",
+      "published" : "2026-11-02 13:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Goldsky_1102_FINAL.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae06e930b67010101efc8628c84637b5c"
+      } ],
+      "company" : "Goldsky Resources Corp.",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474219,
+      "categoryId" : 55,
+      "headline" : "Aira for Fortnox is live",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5f96818524316834d71734e1252571da&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 13:02:00",
+      "published" : "2026-11-02 13:02:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Aira for Fortnox is live.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7fd9d40da93484f686a99dbcbe1a6ac6"
+      } ],
+      "company" : "AI Revenue Assistant Software Stockholm AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474209,
+      "categoryId" : 108,
+      "headline" : "Cell Impact utvärderar nanokristallint titan för icke namngivna kunder",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b796423f66728bf25849b1245f02917f2&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 12:50:46",
+      "published" : "2026-11-02 12:50:46",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "11023247.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a753cb148e6b6304cccaecff22e3a5e21"
+      } ],
+      "company" : "Cell Impact AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474208,
+      "categoryId" : 108,
+      "headline" : "Cell Impact to evaluate NC titanium for undisclosed customers",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba5ce7d9cd4e3d60614fd316ac25caea5&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 12:50:46",
+      "published" : "2026-11-02 12:50:46",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "11023253.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad2d49578fdbdbc8b0978ebcfed5fe1fb"
+      } ],
+      "company" : "Cell Impact AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474207,
+      "categoryId" : 55,
+      "headline" : "PILA PHARMA: TO PARTICIPATE AT BIO EUROPE, A PHARMA PARTNERING CONFERENCE IN COLOGNE, NOVEMBER 9-11, TO EXPAND PARTNERSHIP DIALOGUE AS CLINICAL DEVELOPMENT PROGRESSES",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0d94d5fdff31aefb4ed1a7856beee9b5&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 12:45:00",
+      "published" : "2026-11-02 12:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PILA PHARMA TO PARTICIPATE AT BIO EUROPE A PHARMA PARTNERING CONFERENCE IN COLOGNE NOVEMBER 9-11 TO EXPAND PARTNERSHIP DIALOGUE AS CLINICAL DEVELOPMENT PROGRESSES.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a40c929b78a046bb0f152d8b0676db07b"
+      } ],
+      "company" : "Pila Pharma AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474203,
+      "categoryId" : 55,
+      "headline" : "NanoCap Group - november 2026, vecka 45",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc538ec908c6c276efcb01abf9b245048&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 12:30:00",
+      "published" : "2026-11-02 12:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "11023280.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae606ac540d0f1933877c9511d40b6389"
+      } ],
+      "company" : "NanoCap Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474189,
+      "categoryId" : 55,
+      "headline" : "SpectraCure genomför första patientbehandlingen i Köln",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b08ea098bdf84bd974c0a6c982879e3f7&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 12:00:00",
+      "published" : "2026-11-02 12:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "SpectraCure genomfor forsta patientbehandlingen i Koln.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa5953f472fdf81bd7017ce5b769b5789"
+      } ],
+      "company" : "SpectraCure AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474168,
+      "categoryId" : 498,
+      "headline" : "Disruptive Pharma presenterar valberedningen för 2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5d6a15c4abecd2a305c8058ae1a585b1&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 11:15:00",
+      "published" : "2026-11-02 11:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Disruptive Pharma presenterar valberedningen for 2027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a843d613248a7b632c8a350faad6abf85"
+      } ],
+      "company" : "Disruptive Pharma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474157,
+      "categoryId" : 108,
+      "headline" : "Dala Vind har slutfört förvärvet av Falu Energi & Vattens vindkraftstillgångar",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb9f7c8f3baf231eb89825e18355d1e1c&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 11:00:00",
+      "published" : "2026-11-02 11:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Dala Vind har slutfort forvarvet av Falu Energi  Vattens vindkraftstillgangar.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a050fd07f54655d6fa3ad17d911230f50"
+      } ],
+      "company" : "Siljansvik AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474144,
+      "categoryId" : 109,
+      "headline" : "Notice of Change of Chief Financial Officer",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=baf03a2d5c6ed89afa9c9b67cd495ffa4&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 10:30:00",
+      "published" : "2026-11-02 10:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "GiG Software PLC",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474139,
+      "categoryId" : 116,
+      "headline" : "KOMMUNIKÉ FRÅN EXTRA BOLAGSSTÄMMA I GAMING CORPS AB (PUBL)",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Decisions of general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b48f4892b5367ca5cab0566b3d9494c9e&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 10:26:00",
+      "published" : "2026-11-02 10:26:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "KOMMUNIKE FRAN EXTRA BOLAGSSTAMMA I GAMING CORPS AB PUBL.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a2df281b3e0488da507615ed018e70847"
+      } ],
+      "company" : "Gaming Corps AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474134,
+      "categoryId" : 55,
+      "headline" : "AAC Clyde Space scales maritime data services with two additional Sedna satellites",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b3c3dea67a75da188ec9cf59d6953fb83&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 10:00:00",
+      "published" : "2026-11-02 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "AAC-Clyde-Space-scales-maritime-data-services-with-two-additi.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab509ed0986a33e3698bf03312a1fc231"
+      } ],
+      "company" : "AAC Clyde Space AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474132,
+      "categoryId" : 55,
+      "headline" : "CAG Syntell tar internationell SysML-expertis till Stockholm - arrangerar workshop med Tim Weilkiens",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b7ab3a04761e916489e53ab081e012ac8&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 10:00:00",
+      "published" : "2026-11-02 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "11023119.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae005a759a9d0b2bab18d427b69107765"
+      } ],
+      "company" : "CAG Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474120,
+      "categoryId" : 55,
+      "headline" : "Alzinova takes further step toward Phase 2a ADVANCE study with submitted FDA amendment for ALZ-101",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd797b2a40d2b462e8b217d4b22c73c76&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 09:30:00",
+      "published" : "2026-11-02 09:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Alzinova takes further step toward Phase 2a ADVANCE study with submitted FDA amendment for ALZ-101.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a3e155383d8c12f3111ea65d30f3225f3"
+      } ],
+      "company" : "Alzinova AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474119,
+      "categoryId" : 55,
+      "headline" : "Physitrack Releases its Agentic AI EMR to Clinics Worldwide, Rated #3 EMR by G2",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b02f01c85422d554604808d387b46af6e&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 09:30:00",
+      "published" : "2026-11-02 09:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Physitrack Releases its Agentic AI EMR to Clinics Worldwide Rated 3 EMR by G2.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1f7173c1920aab6c2abdbbe43109300d"
+      } ],
+      "company" : "Physitrack PLC",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474113,
+      "categoryId" : 55,
+      "headline" : "Cereno Scientific Sees Strong Investigator Engagement as EPIMODE Phase IIb Trial Advances",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b57bc736809d5f70fc7d6777e5d5bdeb0&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 09:07:00",
+      "published" : "2026-11-02 09:07:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PDF.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a30b455e878bdb4da0a4a76243d1caefd"
+      } ],
+      "company" : "Cereno Scientific AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474107,
+      "categoryId" : 108,
+      "headline" : "CombinedX ingår avtal om att avyttra Enqore",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5899c75fd495519e8d733593a2d3dba3&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 09:00:00",
+      "published" : "2026-11-02 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "11023076.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a599f7de7846ee05c1a7e231a15119633"
+      } ],
+      "company" : "CombinedX AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474104,
+      "categoryId" : 55,
+      "headline" : "Invitation to presentation of KB Components' report for the third quarter 2026",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=baf07c39518046092d23bbb16744abb93&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 09:00:00",
+      "published" : "2026-11-02 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to presentation of KB Components report for the third quarter 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a57a9297d7b284344304f8687316a2158"
+      } ],
+      "company" : "KB Components AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474095,
+      "categoryId" : 108,
+      "headline" : "Kambi Group plc repurchase of shares during 26 October - 30 October 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5eb949baead3fcfef7df4d0d2e85637e&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 08:45:00",
+      "published" : "2026-11-02 08:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kambi Group plc repurchase of shares during 26 October - 30 October 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a6a7e17873ad5c6b37cd207838cf7930c"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "Buyback Appendix 26 October - 30 October 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a86c24d3fdd38e31894071584dba273d6"
+      } ],
+      "company" : "Kambi Group Plc",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474079,
+      "categoryId" : 498,
+      "headline" : "Syntetiskt återköp av aktier under oktober 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b13ce45958aa5c9a72e94aacc37dde443&lang=sv&src=listed",
+      "releaseTime" : "2026-11-02 08:30:00",
+      "published" : "2026-11-02 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Guldbrev Holding AB Syntetiskt Aterkop Av Aktier Under Oktober 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/adf8bcf6a8258c43b4be464f01459e2c4"
+      } ],
+      "company" : "Guldbrev Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474078,
+      "categoryId" : 498,
+      "headline" : "Physitrack PLC — Transactions under Share Buy-back Programme",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b72f8e05c891957517b9924181b3bdd4d&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 08:30:00",
+      "published" : "2026-11-02 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Physitrack PLC - Transactions under Share Buy-back Programme.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa750ece57f33d684ae22704f614ada88"
+      } ],
+      "company" : "Physitrack PLC",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474077,
+      "categoryId" : 55,
+      "headline" : "SenzaGen subsidiary secures SEK 2.8 million order from existing customer",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8dd8a2a76826e688fe654d2a03867f21&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 08:30:00",
+      "published" : "2026-11-02 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "SenzaGen subsidiary secures SEK 2.8 million order from existing customer.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa53609378a32d3b5a66633eefe2a752a"
+      } ],
+      "company" : "SenzaGen AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474070,
+      "categoryId" : 108,
+      "headline" : "Hennes Bay Resource Grows to 936,000t Copper Equivalent; a 72% increase",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bdd11e7129344e90fa46aab39d78d4bf8&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 08:00:00",
+      "published" : "2026-11-02 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Press-Release-Arctic-Minerals-Hennes-Bay-MRE-Update.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a4c6069641db253290d9e8136c3328e56"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "ARCT_Hennes_Bay_MRE.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a961faa00bb000e85c5bd14d2e92f0046"
+      } ],
+      "company" : "Arctic Minerals AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474066,
+      "categoryId" : 498,
+      "headline" : "ShaMaran Announces Investor Town Hall Meeting in Stockholm",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b536a86ac16ec85f2fbdbd86c6324e5c2&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 08:00:00",
+      "published" : "2026-11-02 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "ShaMaranPetroleum_1102.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a3ea862b2d4a946f92fcd941e2b0eb10e"
+      } ],
+      "company" : "ShaMaran Petroleum Ltd",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474043,
+      "categoryId" : 498,
+      "headline" : "Checkin.com Group: Webcast of Quarterly Report Q3 2026 Thursday November 5th 15.00 CET",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b88304f17568a6dec072da5e64ded1ded&lang=en&src=listed",
+      "releaseTime" : "2026-11-02 07:00:00",
+      "published" : "2026-11-02 07:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Checkin.com Group Webcast of Quarterly Report Q3 2026 Thursday November 5th 15.00 CET.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a6c05f3634b344074495d52aa3a134fc0"
+      } ],
+      "company" : "Checkin.com Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1474036,
+      "categoryId" : 55,
+      "headline" : "Qben Infra completes divestment of Qben Real Estate Norway AS",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b7b7408524b2929796152ec556779edbb&lang=en&src=listed",
+      "releaseTime" : "2026-11-01 09:12:00",
+      "published" : "2026-11-01 09:12:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Qben Infra completes divestment of Qben Real Estate Norway AS.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a90a7b8aecca90f74da9aaf427a3d316f"
+      } ],
+      "company" : "Qben Infra AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1474032,
+      "categoryId" : 109,
+      "headline" : "Neovici Holding AB (publ) clarifies Board and management responsibilities",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b24b81ac9f02146470dabc5e49825d219&lang=en&src=listed",
+      "releaseTime" : "2026-10-31 08:30:00",
+      "published" : "2026-10-31 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Neovici Holding AB publ clarifies Board and management responsibilities.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a9706b5838d63365301c5016b1732db37"
+      } ],
+      "company" : "Neovici Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473991,
+      "categoryId" : 108,
+      "headline" : "Enorama Pharma AB (publ) häver avtalet om överlåtelse av nikotintuggummiverksamheten med Aflofarm",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b9762227e4d0267a4e9f130f203bf4ee8&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 20:30:00",
+      "published" : "2026-10-30 20:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Enorama Pharma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473988,
+      "categoryId" : 108,
+      "headline" : "Gaming Corps AB (publ) meddelar utfall i riktad emission av aktier",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf3322c307dcd11278c613a558e03d7eb&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 18:40:00",
+      "published" : "2026-10-30 18:40:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Gaming Corps AB publ meddelar utfall i riktad emission av aktier.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad686b0b66051ac854af21f2dabff27d5"
+      } ],
+      "company" : "Gaming Corps AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473972,
+      "categoryId" : 498,
+      "headline" : "New Nordics valberedning inför årsstämma 2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be339e055e841018e9a8c1481c643c26c&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 17:10:54",
+      "published" : "2026-10-30 17:10:54",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "New_Nordic_Pressrelease_2026-10-30.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a55d5c63b3c2c7755fbaf9c5e55342858"
+      } ],
+      "company" : "New Nordic Healthbrands AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473903,
+      "categoryId" : 109,
+      "headline" : "Carl Caap to leave role as CFO of Desenio Group AB (publ)",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf30343b83983bf96efaa67454d57b57d&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 16:00:00",
+      "published" : "2026-10-30 16:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Carl Caap to leave role as CFO of Desenio Group AB publ.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a93f5f82b5e93e3d1aa65a6d979332977"
+      } ],
+      "company" : "Desenio Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473896,
+      "categoryId" : 497,
+      "headline" : "Maximum Entertainment Announces Request to Lift Restrictions on the Company's Bank Account",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be87f47cd8fd420a8945a081793f1992b&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 15:37:00",
+      "published" : "2026-10-30 15:37:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Maximum Entertainment Announces Request to Lift Restrictions on the Companys Bank Account.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a6bbf52285fa941adc9e154c3c684390f"
+      } ],
+      "company" : "Maximum Entertainment AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473887,
+      "categoryId" : 498,
+      "headline" : "RoosGruppen blir ny majoritetsägare i JumpYard, grundarna fortsätter att utveckla bolaget",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0e37211e9af5f06517a833352872c2d2&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 15:00:00",
+      "published" : "2026-10-30 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "JY Holding AB (publ)",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473886,
+      "categoryId" : 498,
+      "headline" : "RoosGruppen becomes new majority owner of JumpYard, founders to continue developing the company",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b91137330b352c68a36ee902c9e551a08&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 15:00:00",
+      "published" : "2026-10-30 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "JY Holding AB (publ)",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473883,
+      "categoryId" : 498,
+      "headline" : "WeSports Group's Nomination Committee for the 2027 Annual General Meeting",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba3df41e9239b2ed738dbe2191d27d6a3&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 15:00:00",
+      "published" : "2026-10-30 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "WeSports Groups Nomination Committee for the 2027 Annual General Meeting.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8886da9170420e928738a3c9328b09e4"
+      } ],
+      "company" : "WS WeSports Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473882,
+      "categoryId" : 55,
+      "headline" : "WPTG invites to presentation of Q3 2026 interim report",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bce09d063c5793cf2ff0d2f42b7a5a258&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 15:00:00",
+      "published" : "2026-10-30 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "WPTG invites to presentation of Q3 2026 interim report.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a818eaf370b1582a22d69c30b85bb7586"
+      } ],
+      "company" : "White Pearl Technology Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473878,
+      "categoryId" : 497,
+      "headline" : "Ortelius has paid all outstanding fees to Nasdaq",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b54a9dde613652eeb6f23080f97922354&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 14:33:00",
+      "published" : "2026-10-30 14:33:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Ortelius has paid all outstanding fees to Nasdaq.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae3ed27dced09939f7a0c8d2e8d3cb715"
+      } ],
+      "company" : "Ortelius International AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473863,
+      "categoryId" : 497,
+      "headline" : "Swedish Tax Agency proposes revocation of F-tax approval for subsidiary Ortelius DT AB",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8c7d981b80da165fbb8c386f74c7ff9a&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 13:55:00",
+      "published" : "2026-10-30 13:55:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Swedish Tax Agency proposes revocation of F-tax approval for subsidiary Ortelius DT AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7709a3e33be072b3c961e45c54dfc7a9"
+      } ],
+      "company" : "Ortelius International AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473860,
+      "categoryId" : 55,
+      "headline" : "Recording of Minesto's webinar Q3 update",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b373fb124f1901ece36466cef5d3b1377&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 13:47:22",
+      "published" : "2026-10-30 13:47:22",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Minesto AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473859,
+      "categoryId" : 55,
+      "headline" : "Inspelning av Minestos webinar Q3-uppdatering",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bca915cfab60aa54a0787e86881e24520&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 13:47:22",
+      "published" : "2026-10-30 13:47:22",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Minesto AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473844,
+      "categoryId" : 498,
+      "headline" : "Qben Infra's subsidiary Laje AS has been selected by Glitre Nett as preferred bidder for the Rollag transformer substation contract",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b61aee932a3b9ad94b7527a77ecf641b3&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 13:05:00",
+      "published" : "2026-10-30 13:05:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Qben Infras subsidiary Laje AS has been selected by Glitre Nett as preferred bidder for the Rollag transformer substation contract.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7da848666060bde0a15fcb73ff7a0954"
+      } ],
+      "company" : "Qben Infra AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473824,
+      "categoryId" : 55,
+      "headline" : "Paxman Secures First UK Orders for Neuropathy System Ahead of Commercial Launch to Address the Significant Unmet Clinical Need of Chemotherapy-Induced Peripheral Neuropathy (CIPN)",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4ca140ad055db6836a16eff1b396939e&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 12:00:00",
+      "published" : "2026-10-30 12:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Paxman Secures First UK Orders for Neuropathy System Ahead of Commercial Launch to Address the Significant Unmet Clinical Need of Chemotherapy-Induced Peripheral Neuropathy CIPN.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a70e6d1569847c643f20ad444431f34ce"
+      } ],
+      "company" : "Paxman AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473821,
+      "categoryId" : 108,
+      "headline" : "Climeon's Nomination Committee Ahead of the 2027 Annual General Meeting",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc5a6586e65b988e35de2aea4b9328492&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 11:42:00",
+      "published" : "2026-10-30 11:42:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Climeons Nomination Committee Ahead of the 2027 Annual General Meeting.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a0ee9ea9a0bd7e0ada2e3bec7a6aa2d53"
+      } ],
+      "company" : "Climeon AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473820,
+      "categoryId" : 498,
+      "headline" : "Valberedning för ByggPartnerGruppen utsedd",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b14879a844a98a6cee5e119969ebeb9f7&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 11:30:00",
+      "published" : "2026-10-30 11:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Valberedning for ByggPartnerGruppen utsedd.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a360f06a0fe1c20cc7dc773d69aeaa70c"
+      } ],
+      "company" : "ByggPartner Gruppen AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473849,
+      "categoryId" : 499,
+      "headline" : "Primrock Power AB (publ) Publishes Fourth Quarter Report 2025/26",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Financial statement release",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b40c3bb41924eee815337fdd638eb0906&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 11:05:00",
+      "published" : "2026-10-30 11:05:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Primrock Power AB 2025 26 Q4 Jun Aug Esigned.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a3a6e3e5bd4a80f6ecb9483345cc1c7e7"
+      } ],
+      "company" : "Primrock Power AB (publ)",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473816,
+      "categoryId" : 498,
+      "headline" : "High Coast Distillery AB (publ) utser valberedning",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b57f19e75cd524eab00f1f909db6f7176&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 11:05:00",
+      "published" : "2026-10-30 11:05:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "High Coast Distillery AB publ utser valberedning.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aef3271cffda35d562027960472d7b15f"
+      } ],
+      "company" : "High Coast Distillery AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473814,
+      "categoryId" : 104,
+      "headline" : "Kallelse till årsstämma i Cedergrenska AB",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Notice to general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b10454c1f628b25cdd218978025eae36f&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 11:02:00",
+      "published" : "2026-10-30 11:02:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kallelse Till Arsstamma I Cedergrenska AB 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab8b649b717594f6d374aa9e6b7d4046b"
+      } ],
+      "company" : "Cedergrenska AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473809,
+      "categoryId" : 55,
+      "headline" : "Invitation to Fractal Gaming Group's interim report for the third quarter of 2026",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc7ec45c7d0c9e87916176f61e1d96900&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 11:00:00",
+      "published" : "2026-10-30 11:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation To Fractal Gaming Groups Interim Report For The Third Quarter Of 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a080fdd50fffc840f98bd2d9fdced633f"
+      } ],
+      "company" : "Fractal Gaming Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473806,
+      "categoryId" : 55,
+      "headline" : "Invitation to Haypp Group's presentation of its Third Quarter 2026 report",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b7534e811ec02790b21e7b8891a2b9c06&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 11:00:00",
+      "published" : "2026-10-30 11:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to Haypp Groups presentation of its Third Quarter 2026 report.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab9c9c893ba4e7cb8bf01e019bfd0a2e2"
+      } ],
+      "company" : "Haypp Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473804,
+      "categoryId" : 55,
+      "headline" : "Investerarbrev - Milstolpar nådda och blicken framåt",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba208e40448cd6e186649c740441a05bb&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 11:00:00",
+      "published" : "2026-10-30 11:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Manadsbrev Oktober 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aad504716c4588eb031da54a5cb998386"
+      } ],
+      "company" : "Gasporox AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473802,
+      "categoryId" : 55,
+      "headline" : "Sweden Buyersclub AB förvärvar varumärket Babyland och planerar storefront för barnartiklar",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b57f8fad344c1c7e47bb787332876c520&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 10:40:33",
+      "published" : "2026-10-30 10:40:33",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10302440.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8367978b3340738d87c52aaede7a9d51"
+      } ],
+      "company" : "Sweden BuyersClub AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473790,
+      "categoryId" : 108,
+      "headline" : "Hernö Gin AB meddelar idag att styrelseledamoten Thomas Larsson har valt att lämna sin post i bolagets styrelse",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bcde5bceeef00e1948c6c3624cb782571&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 10:00:00",
+      "published" : "2026-10-30 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Herno Gin AB meddelar idag att styrelseledamoten Thomas Larsson har valt att lamna sin post i bolagets styrelse.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ac7f566e279be55f1be1e9f7c2f088584"
+      } ],
+      "company" : "Hernö Gin AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473789,
+      "categoryId" : 55,
+      "headline" : "Invitation to the presentation of Axvik Group's interim report for January-September 2026",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bfde9a56631b7614f093ab02f7d87b04b&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 10:00:00",
+      "published" : "2026-10-30 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to the presentation of Axvik Groups interim report for January-September 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a49500d920a564e669865da6df9684d5a"
+      } ],
+      "company" : "Axvik Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473784,
+      "categoryId" : 55,
+      "headline" : "Inbjudan till presentation av Svevik Industris delårsrapport för tredje kvartalet 2026 fredag den 6 november kl. 10.00",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bbb320629a99153a5cb3ce2f906b19396&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 09:30:00",
+      "published" : "2026-10-30 09:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Inbjudan till presentation av Svevik Industris delarsrapport for tredje kvartalet 2026 fredag den 6 november kl. 10.00.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a2089a9a7c8a5cffa35cd5cf9917e7985"
+      } ],
+      "company" : "Svevik Industri AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473768,
+      "categoryId" : 501,
+      "headline" : "Lyckegård Group AB offentliggör kvartalsrapport 3 för 2026 - växer 16 % och bygger kapacitet inför 2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b2ff8f5fa0903427ae8e32f003e02541b&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:55:00",
+      "published" : "2026-10-30 08:55:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kvartalsrapport 3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1b1ffa36d3f78d547959028f88d8e887"
+      } ],
+      "company" : "Lyckegård Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473764,
+      "categoryId" : 109,
+      "headline" : "Generic välkomnar Magnus Sjölander som ny Chief Commercial Officer",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb26681adf8edca5c256d71b1691d6e40&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:45:00",
+      "published" : "2026-10-30 08:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Generic valkomnar Magnus Sjolander som ny Chief Commercial Officer.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aaeaed789ed7f715618d430dde813aa2e"
+      } ],
+      "company" : "Generic AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473757,
+      "categoryId" : 55,
+      "headline" : "Klaria avancerar samarbetet med BDO:s M&A-avdelning inom life science genom lansering i Europa och färdigställd strategisk USA-plan",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bdb005101156f98244c7cb4564684c0a4&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10292254.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aca66d0b30bbb60a12cf36954a7fd5bb6"
+      } ],
+      "company" : "Klaria Pharma Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473755,
+      "categoryId" : 501,
+      "headline" : "Kvartalsrapport tre 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b31425e9e8c9ba2b2c7dc2e0a31f7e275&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10302337.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a02dee328b0a4bea62922a0a2b04f14ac"
+      } ],
+      "company" : "Tourn International AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473754,
+      "categoryId" : 55,
+      "headline" : "Klaria advances collaboration with BDO's Life Science M&A team through launch in Europe and completed strategic US plan",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd54b5a01dd72db33d461aa10f0b92549&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10292255.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a82e83babaeb7eaf8412b0d4bf9d57c6f"
+      } ],
+      "company" : "Klaria Pharma Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473753,
+      "categoryId" : 498,
+      "headline" : "LÖNSAM TILLVÄXT - FÖRSÄLJNING STEG MED 15 %",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b868b164693195c64a01479e3bb3aca76&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10292198.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aaea318fed5f2a079fe441562df939947"
+      } ],
+      "company" : "Drillcon AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473752,
+      "categoryId" : 501,
+      "headline" : "Västra Hamnen Corporate Finance AB - Delårsrapport juli - september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6f24e3d06b1116d9a3511d4a7846f558&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Delarsrapport juli - september 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/af3954241da72c9485559722ed54ba065"
+      } ],
+      "company" : "Västra Hamnen Corporate Finance AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473749,
+      "categoryId" : 55,
+      "headline" : "Invitation to the presentation of SenzaGen's Q3 2026 interim report",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba87affb8e27670e97c97d7bf9ffaa9d3&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to the presentation of SenzaGens Q3 2026 interim report.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a5117141db02443c1dc065762d67056a0"
+      } ],
+      "company" : "SenzaGen AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473748,
+      "categoryId" : 55,
+      "headline" : "Alpcot lanserar Model Portfolio Services 2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4c9aac63b5466ff3b695c03346efc41b&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:30:00",
+      "published" : "2026-10-30 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Alpcot lanserar Model Portfolio Services 2027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a710c562668057be17624d696f5280ea5"
+      } ],
+      "company" : "Alpcot Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473746,
+      "categoryId" : 55,
+      "headline" : "Elicera Therapeutics medgrundare får anslag på totalt 4 MSEK från Vetenskapsrådet för forskning om CAR-T-celler mot solida tumörer",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be1a1266432e557ceb3c7a38975ba43d9&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:24:33",
+      "published" : "2026-10-30 08:24:33",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10302344.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a538b3b344d642569bb42eae457574bb0"
+      } ],
+      "company" : "Elicera Therapeutics AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473745,
+      "categoryId" : 55,
+      "headline" : "Elicera Therapeutics co-founder receives grant totaling SEK 4 million from the Swedish Research Council for research on CAR-T cells against solid tumors",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be19213c1da38ee794d247e15c593462f&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 08:24:33",
+      "published" : "2026-10-30 08:24:33",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10302345.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad4d9f0f6555d2fe5ab6d269528482d96"
+      } ],
+      "company" : "Elicera Therapeutics AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473743,
+      "categoryId" : 55,
+      "headline" : "TOURN publicerar kvartalsrapport TRE 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0dc4679e7eaca97ec7f2154ee970e2cc&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:15:00",
+      "published" : "2026-10-30 08:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Tourn International AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473742,
+      "categoryId" : 117,
+      "headline" : "Online Brands Nordic AB avser att ta nästa steg mot Nasdaq Stockholm Small Cap",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Corporate Action",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc02b4621f5547a1120c318f05ae981f2&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:13:00",
+      "published" : "2026-10-30 08:13:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Online Brands Nordic AB avser att ta nasta steg mot Nasdaq Stockholm Small Cap.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/af6bc16c6b1cea8c2da345e05b550eebc"
+      } ],
+      "company" : "Online Brands Nordic AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473734,
+      "categoryId" : 501,
+      "headline" : "New Nordic Healthbrands AB (publ) Interim Report Q3 January - September 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bbe4d69540879fcfcc50457b71a9115a0&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 08:00:00",
+      "published" : "2026-10-30 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "New_Nordic_Pressrelease_2026-10-30.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad9c00d01820dad0cc6a386f9cda34533"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "New-Nordic_Interim_Report_Q3_2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a5590c4ced577512cfe9a061acf23483f"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "New_Nordic_Delarsrapport_Q3_2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7bfc44bd131c92cff80bd1a4eda646eb"
+      } ],
+      "company" : "New Nordic Healthbrands AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473728,
+      "categoryId" : 55,
+      "headline" : "Invitation to Oneflow's Q3 2026 presentation on 6 November",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bdf7fdd471d8d7b7233c45e9ea2005761&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 08:00:00",
+      "published" : "2026-10-30 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Oneflow AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473724,
+      "categoryId" : 55,
+      "headline" : "Inbjudan till Oneflows Q3 2026 presentation den 6 november",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b09426644dac9cd0ad736aef9f37c1300&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:00:00",
+      "published" : "2026-10-30 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Oneflow AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473721,
+      "categoryId" : 501,
+      "headline" : "ONLINE BRANDS NORDIC AB - Delårsrapport Q3 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd436f305e8b052d58a5eb98904c721f0&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:00:00",
+      "published" : "2026-10-30 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Online Brands Nordic Delarsrapport Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a36f4bcdf9c8a4374efedee2bb4fa9b4d"
+      } ],
+      "company" : "Online Brands Nordic AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473716,
+      "categoryId" : 501,
+      "headline" : "Opter kvartalsrapport Q3 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b3e1bac58183058432778b19c49e321a1&lang=sv&src=listed",
+      "releaseTime" : "2026-10-30 08:00:00",
+      "published" : "2026-10-30 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kvartalsrapport Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a592fd2ba7dfacddf27f66ea516c09915"
+      } ],
+      "company" : "Opter AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473700,
+      "categoryId" : 55,
+      "headline" : "Summa Defencen tytäryhtiön Uudenkaupungin Työveneen rakentama SWATH-alus CASTOR saapui Saksaan ennen luovutusta.",
+      "language" : "fi",
+      "languages" : [ "fi" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb98565f0f0008c71d3bc14bbe9fa14a0&lang=fi&src=listed",
+      "releaseTime" : "2026-10-30 07:30:00",
+      "published" : "2026-10-30 07:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Summa Defence Oyj",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473695,
+      "categoryId" : 55,
+      "headline" : "SWATH vessel CASTOR built by Summa Defence subsidiary Uudenkaupungin Työvene arrives in Germany ahead of handover.",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b9e909503f19d77fef7f551f17d27a502&lang=en&src=listed",
+      "releaseTime" : "2026-10-30 07:30:00",
+      "published" : "2026-10-30 07:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Summa Defence Oyj",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473620,
+      "categoryId" : 108,
+      "headline" : "Realfiction announces final outcome of the rights issue",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6c9cf62f04eb652f8810564f750e55b0&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 18:00:00",
+      "published" : "2026-10-29 18:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Realfiction announces final outcome of the rights issue.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7eff8164daf9eb722d42417400292c3b"
+      } ],
+      "company" : "Realfiction Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473618,
+      "categoryId" : 55,
+      "headline" : "BlincVision's CFO Dan Wahrenberg to leave the company",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bafb235c1f1da649658f36076cf6bf8eb&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 17:45:00",
+      "published" : "2026-10-29 17:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "BlincVisions CFO Dan Wahrenberg to leave the company.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/afdfe4fcec07c3df97aeb0393304df795"
+      } ],
+      "company" : "BlincVision AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473568,
+      "categoryId" : 110,
+      "headline" : "Bioextrax offentliggör slutligt utfall i företrädesemissionen och den riktade emissionen",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Total number of voting rights and capital",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be52851dd0d640112d4147bd21971a241&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 15:49:00",
+      "published" : "2026-10-29 15:49:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Bioextrax offentliggor slutligt utfall i foretradesemissionen och den riktade emissionen.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa521eb60e05ecc947bed214df1bda277"
+      } ],
+      "company" : "Bioextrax AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473559,
+      "categoryId" : 55,
+      "headline" : "Invitation to WS WeSports Group's Presentation of the Interim Report January - September 2026",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b74584219b77d1bd7cd2668fc169536a2&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 15:00:00",
+      "published" : "2026-10-29 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to WS WeSports Groups Presentation of the Interim Report January - September 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a0aad65b100ba0e1ce0d4afa159a2b1e4"
+      } ],
+      "company" : "WS WeSports Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473558,
+      "categoryId" : 55,
+      "headline" : "Invitation to W5 Solutions' Interim Report Presentation for January-September 2026",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8aaec120f07288c0101a30d7079f0d15&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 15:00:00",
+      "published" : "2026-10-29 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to W5 Solutions Interim Report Presentation for January-September 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a25a46d4ec4cf27604f7529dcf4497357"
+      } ],
+      "company" : "W5 Solutions AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473548,
+      "categoryId" : 55,
+      "headline" : "Members of AVTECH's Board of Directors and management, together with employees, acquire a total of 257,879 shares",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b678fdf2519739aa20bc48218a86aac9c&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 14:18:00",
+      "published" : "2026-10-29 14:18:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Members of AVTECHs Board of Directors and management together with employees acquire a total of 257879 shares.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/af05dedb0ff8c18fca9afd498ea592c63"
+      } ],
+      "company" : "Avtech Sweden AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473546,
+      "categoryId" : 55,
+      "headline" : "Teqnion acquires Odlings Group",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb3d4f282df83bed0c871c1ea45178625&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 14:08:00",
+      "published" : "2026-10-29 14:08:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PM-Teqnion-acquires-Odlings-Group.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/adee188dfa3bec5abaa0adae5bf46cf49"
+      } ],
+      "company" : "Teqnion AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473545,
+      "categoryId" : 231,
+      "headline" : "CEO acquires additional shares in eEducation Albert AB",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Managers' Transactions",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8214d78ad99ea2dd90f36dd1025a4631&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 14:05:00",
+      "published" : "2026-10-29 14:05:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "CEO acquires additional shares in eEducation Albert AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7dd25f2fabca5cb4c378dcb1bf9cb9dc"
+      } ],
+      "company" : "eEducation Albert AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473528,
+      "categoryId" : 104,
+      "headline" : "Kallelse till årsstämma i Diamyd Medical AB",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Notice to general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba5c5ca182d201ecce31dba17fdc368b8&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 14:00:00",
+      "published" : "2026-10-29 14:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10281313.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab793c79d752d4b919bf507d0e5996011"
+      } ],
+      "company" : "Diamyd Medical AB (publ)",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473501,
+      "categoryId" : 55,
+      "headline" : "Luxbright får första kundorder på Nova",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b032cdc027c9e8a51a3c712cbb3fa7670&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 11:30:00",
+      "published" : "2026-10-29 11:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Luxbright far forsta kundorder pa Nova.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aba04d57d7afada0eeee21977ff564f7c"
+      } ],
+      "company" : "Luxbright AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473493,
+      "categoryId" : 55,
+      "headline" : "Unibap Space Solutions: Inbjudan till presentation av delårsrapport Q3 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b353a59b022ddb10b31188fb46b997617&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 11:00:00",
+      "published" : "2026-10-29 11:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Unibap-Space-Solutions-Inbjudan-till-presentation-av-delarsra.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1502a24e5271bf6283e094e7d95cf2a6"
+      } ],
+      "company" : "Unibap Space Solutions AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473478,
+      "categoryId" : 116,
+      "headline" : "Kommuniké från extra bolagsstämma i BrightBid Group",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Decisions of general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8fefa3e6f66a541ac588fdb61d8a1c29&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 10:14:00",
+      "published" : "2026-10-29 10:14:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kommunike fran extra bolagsstamma i BrightBid Group.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae3c716f0d01430df3ab5e6fdb56a0add"
+      } ],
+      "company" : "BrightBid Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473474,
+      "categoryId" : 55,
+      "headline" : "SaltX completes installation of its first Multiplasma reactor to scale up EAC technology",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0a1dcf4045100b0bec88ceceb0c0f59d&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 10:00:00",
+      "published" : "2026-10-29 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291697.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab8a3b89a7ad6a8fcf5b095b69873ac41"
+      } ],
+      "company" : "SaltX Technology Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473472,
+      "categoryId" : 55,
+      "headline" : "SaltX slutför installationen av sin första Multiplasma-reaktor för uppskalning av EAC-teknologin",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b99411832581ac2536c811b72c9bb7f38&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 10:00:00",
+      "published" : "2026-10-29 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291696.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/af10853fc721e364d7d04a22b2ba595b7"
+      } ],
+      "company" : "SaltX Technology Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473468,
+      "categoryId" : 55,
+      "headline" : "Flooding Remains a Major Risk for Travelers Worldwide",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4f2c1c8e6dcf394eb903b51e5ccb5a89&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 09:32:33",
+      "published" : "2026-10-29 09:32:33",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291769.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae01e95cfb1183b219270ba3dde15a8a5"
+      } ],
+      "company" : "Safeture AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473464,
+      "categoryId" : 55,
+      "headline" : "SIMRIS GROUP APPOINTS EXPERIENCED ADC CLINICAL DEVELOPMENT LEADER DR. ANDRÁS STRASSZ AS CHIEF MEDICAL OFFICER",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0b27ff88b93bb694456ff488dcc0c20e&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 09:30:00",
+      "published" : "2026-10-29 09:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "SIMRIS GROUP APPOINTS EXPERIENCED ADC CLINICAL DEVELOPMENT LEADER DR. ANDRAS STRASSZ AS CHIEF MEDICAL OFFICER.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7f4edca85cbe33d9efcc9aaf8ee548dd"
+      } ],
+      "company" : "Simris Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473458,
+      "categoryId" : 501,
+      "headline" : "Delårsredogörelse 1 januari-30 september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4b30112f0de386eae841d0910cc604fd&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 09:01:29",
+      "published" : "2026-10-29 09:01:29",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PM 291026 Delarsredogorelse 1 jan-30 sept 2026_Minesto AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad999fd11c46be44ff36d999cb7e3bac4"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291724.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a224ce6f7f1e0213c732378aad78d93aa"
+      } ],
+      "company" : "Minesto AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473457,
+      "categoryId" : 501,
+      "headline" : "Interim Management Statement 1 January-30 September 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be1115a3e604a5fd99bf4a303b10f9253&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 09:01:29",
+      "published" : "2026-10-29 09:01:29",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291725.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/abdb45755d8530ba5f73c84cb6cfc81aa"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "PR 261029 Interim Management Statement 1 Jan-30 Sept 2026_Minesto.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a5963b16094efd9d925dfbe7f730facaf"
+      } ],
+      "company" : "Minesto AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473450,
+      "categoryId" : 108,
+      "headline" : "CLS utsett som industripartner i ett femårigt forskningsprogram finansierat av NIH i USA för att vidareutveckla MR-ledd laserterapi för spinala metastaser",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4a6307fb30dbfc8c6de5bec61b2130c5&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 08:30:00",
+      "published" : "2026-10-29 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291701.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8b585888fc80f5aa4f4c14a1b28fd733"
+      } ],
+      "company" : "Clinical Laserthermia Systems AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473448,
+      "categoryId" : 108,
+      "headline" : "CLS awarded as Industry Partner in NIH-Funded Five-Year Research Program in U.S to Advance MR-Guided Laser Therapy for Spinal Metastases",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b9d997916dec4854293381d0f13e17159&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 08:30:00",
+      "published" : "2026-10-29 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10291717.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a89452233eace6f2f6e2cde0e317043a2"
+      } ],
+      "company" : "Clinical Laserthermia Systems AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473446,
+      "categoryId" : 501,
+      "headline" : "Quarterly report Q3/2026 ColdZyme enters new markets",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b7148699dab10c732d716071431c063bb&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 08:30:00",
+      "published" : "2026-10-29 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Interim Report Q3 2026 Enzymatica.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/acbded415bb209c128176d82a7b32f4c0"
+      } ],
+      "company" : "Enzymatica AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473444,
+      "categoryId" : 501,
+      "headline" : "DELÅRSRAPPORT TREDJE KVARTALET 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba0f55eadc0beb70930c2e66810b004fe&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 08:30:00",
+      "published" : "2026-10-29 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "DistIT Delarsrapport Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7589fd7dce0e68194cab2c141be6d20b"
+      } ],
+      "company" : "DistIT AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473440,
+      "categoryId" : 501,
+      "headline" : "Delårsrapport Januari - September 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bacece69cab99c9ee91900f2dccb16a38&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 08:30:00",
+      "published" : "2026-10-29 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Saxlund Kvartalsrapport Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/abef75791f8e674692e8a7770813f438b"
+      } ],
+      "company" : "Saxlund Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473439,
+      "categoryId" : 108,
+      "headline" : "Quarterly Report Scandinavian Enviro Systems AB (publ)",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb9234de1e4c908832f6acb5db68a3eda&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 08:27:00",
+      "published" : "2026-10-29 08:27:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Q3 2026 Scandinavian Enviro Systems AB publ ENG.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a9d1a9301ad259760350bd1df9103ea98"
+      } ],
+      "company" : "Scandinavian Enviro Systems AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473427,
+      "categoryId" : 500,
+      "headline" : "USWE SPORTS AB DELÅRSRAPPORT ANDRA KVARTALET 2026/2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Half year financial report",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bcba7d021f49a8c7a5f969bf100121b78&lang=sv&src=listed",
+      "releaseTime" : "2026-10-29 08:00:00",
+      "published" : "2026-10-29 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "USWE Sports Delarsrapport Q2.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aaf169271ef45bebbb748b91f36b93c10"
+      } ],
+      "company" : "USWE Sports AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473423,
+      "categoryId" : 153,
+      "headline" : "Eltel Interim report January-September 2026",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd9f93e7769f5478438a5948e48a23c57&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 08:00:00",
+      "published" : "2026-10-29 08:00:00",
+      "market" : "Main Market, Stockholm",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Eltel Interim Report July September 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aec65ebaeed30ccc6989f0c5e224d1382"
+      } ],
+      "company" : "Eltel AB",
+      "cnsTypeId" : "6"
+    }, {
+      "disclosureId" : 1473408,
+      "categoryId" : 501,
+      "headline" : "FlexQube's report for the third quarter of 2026",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b7ece57953ddea72106de31de4a5920b2&lang=en&src=listed",
+      "releaseTime" : "2026-10-29 08:00:00",
+      "published" : "2026-10-29 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Q3 2026 Report ENG.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad3f8deb8543abb6d4dd91d37221eb260"
+      } ],
+      "company" : "FlexQube AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473319,
+      "categoryId" : 55,
+      "headline" : "Invitation to a webcast presentation regarding SenzaGen's acquisition of Alcyomics",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf693b71cbceaa11a4ff7920626218fa4&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 19:42:00",
+      "published" : "2026-10-28 19:42:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to a webcast presentation regarding SenzaGens acquisition of Alcyomics.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a75e0cdcf85477bff939f9b95af58d369"
+      } ],
+      "company" : "SenzaGen AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473318,
+      "categoryId" : 497,
+      "headline" : "SenzaGen acquires Alcyomics, a leading UK-based provider of non-animal immunotoxicology solutions for drug development",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b9d0dcc2ef3ec773a44136f13435d6b53&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 19:40:00",
+      "published" : "2026-10-28 19:40:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "SenzaGen acquires Alcyomics a leading UK-based provider of non-animal immunotoxicology solutions for drug development.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a3f9bcc54f64904c2041064ac97490ee1"
+      } ],
+      "company" : "SenzaGen AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473310,
+      "categoryId" : 108,
+      "headline" : "Realfiction announces preliminary outcome of the rights issue",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b14eafe7593a7b0f34b7accc1c0bf52ce&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 17:55:00",
+      "published" : "2026-10-28 17:55:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Realfiction announces preliminary outcome of the rights issue.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a717617632f4ddf89b41feee31910e68a"
+      } ],
+      "company" : "Realfiction Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473301,
+      "categoryId" : 436,
+      "headline" : "Nomination Committee appointed for Nordisk Bergteknik AB (publ)'s Annual General Meeting 2027",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb9fe324165054a18e8fcd2397314b6e9&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 17:00:00",
+      "published" : "2026-10-28 17:00:00",
+      "market" : "Main Market, Stockholm",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Nomination Committee appointed for Nordisk Bergteknik AB publs Annual General Meeting 2027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a0c06647b9b7f34ecb8bd048a7c0dba5c"
+      } ],
+      "company" : "Nordisk Bergteknik AB",
+      "cnsTypeId" : "6"
+    }, {
+      "disclosureId" : 1473259,
+      "categoryId" : 116,
+      "headline" : "Report from Extraordinary General Meeting in Qben Infra AB",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Decisions of general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd2e6603c2161d80f9426ef1438584a6b&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 16:16:00",
+      "published" : "2026-10-28 16:16:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Report from Extraordinary General Meeting in Qben Infra AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/adffc274b3f008ae4898f298f410b67b2"
+      } ],
+      "company" : "Qben Infra AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473246,
+      "categoryId" : 108,
+      "headline" : "Nimbus Group's Nomination Committee for the 2027 Annual General Meeting",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b9d5c270f09c38a372189573fec1ccca7&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 15:30:00",
+      "published" : "2026-10-28 15:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Nimbus Groups Nomination Committee for the 2027 Annual General Meeting.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a2f37916395a5d59a1c2e8d921d2ff5ba"
+      } ],
+      "company" : "Nimbus Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473245,
+      "categoryId" : 498,
+      "headline" : "Nasdaq has approved Magle Chemoswed Holding AB's application for delisting",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6eae2692db979ddcddf567c5b3e8089e&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 15:29:00",
+      "published" : "2026-10-28 15:29:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Nasdaq has approved Magle Chemoswed Holding ABs application for delisting.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ace11419beee16e947bb803c7ed0efd95"
+      } ],
+      "company" : "Magle Chemoswed Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473241,
+      "categoryId" : 108,
+      "headline" : "Delårsrapport Skåne-möllan jan-sept 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be5544f4943671489b9ecf84998095672&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 15:00:00",
+      "published" : "2026-10-28 15:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10270506.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a25fe8c3ee0611f79bb70538756154094"
+      } ],
+      "company" : "Skåne-möllan AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473232,
+      "categoryId" : 102,
+      "headline" : "Desenio Group AB (publ) publishes 2025 Annual Report in ESEF format",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Annual financial report",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb7a594a1ac669a719508171907eaf5d5&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 14:30:00",
+      "published" : "2026-10-28 14:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Desenio Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473231,
+      "categoryId" : 55,
+      "headline" : "Conference call regarding interim report Q3",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b2a38aa57d39d4a202ebccaaef16e5305&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 14:30:00",
+      "published" : "2026-10-28 14:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Conference call regarding interim report Q3.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8a1dd7af3d523f79f2aa6701ce3d0087"
+      } ],
+      "company" : "Surgical Science Sweden AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473227,
+      "categoryId" : 497,
+      "headline" : "Nordic Iron Ore Postpones Quarterly Report Due to Ongoing Financing Process",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b2731251a42d680b273a521d637a7984d&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 14:25:00",
+      "published" : "2026-10-28 14:25:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Nordic Iron Ore Postpones Quarterly Report Due to Ongoing Financing Process.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a9d10cc41fdbfb47b776befaf626e4871"
+      } ],
+      "company" : "Nordic Iron Ore AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473217,
+      "categoryId" : 104,
+      "headline" : "Notice to attend an extraordinary general meeting in ExpreS2ion Biotech Holding AB (publ)",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Notice to general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b24f2d2bee5c002042cd5b7973a973541&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 13:31:00",
+      "published" : "2026-10-28 13:31:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Notice to attend an extraordinary general meeting in ExpreS2ion Biotech Holding AB publ.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa9dd67891e47b650e84d680cf7044728"
+      } ],
+      "company" : "ExpreS2ion Biotech Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473214,
+      "categoryId" : 104,
+      "headline" : "Kallelse till extra bolagsstämma i ExpreS2ion Biotech Holding AB (publ)",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Notice to general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4e8b7601a2bfee780634d6237bf5107d&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 13:30:00",
+      "published" : "2026-10-28 13:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kallelse till extra bolagsstamma i ExpreS2ion Biotech Holding AB publ.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a6d693234d5466ac711907143515db73d"
+      } ],
+      "company" : "ExpreS2ion Biotech Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473210,
+      "categoryId" : 55,
+      "headline" : "AAC Clyde Space expands global capacity to accelerate its next phase of growth",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b9fc46dc31b530f3c4528689af416aa00&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 13:00:00",
+      "published" : "2026-10-28 13:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "AAC-Clyde-Space-expands-global-capacity-to-accelerate-its-nex.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab1777dc522df276556e87413610e0af7"
+      } ],
+      "company" : "AAC Clyde Space AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473205,
+      "categoryId" : 55,
+      "headline" : "Inbjudan till presentation av Adtractions delårsrapport januari-september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b3867977ae59809016a0cafa8626c30f7&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 13:00:00",
+      "published" : "2026-10-28 13:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Inbjudan till presentation av Adtractions delarsrapport januari-september 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8ef3c54f27ac69036fac5d4488f4bf46"
+      } ],
+      "company" : "Adtraction Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473204,
+      "categoryId" : 55,
+      "headline" : "NOSA signs agreement with SEDA S.p.A. and strengthens its presence in the Italian healthcare market",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bfcb4bbf183fa81633b1f810f38118ff0&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 12:59:00",
+      "published" : "2026-10-28 12:59:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "NOSA signs agreement with SEDA S.p.A. and strengthens its presence in the Italian healthcare market.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa67caaaaf973edc28b4c18820221a7f4"
+      } ],
+      "company" : "Nosa Plugs AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473202,
+      "categoryId" : 108,
+      "headline" : "Realfiction announces discontinuation of glasses-free multi-user 3D development project by industrial customer",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b2517a63df345c2e875d41200e52c294d&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 12:47:00",
+      "published" : "2026-10-28 12:47:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Realfiction announces discontinuation of glasses-free multi-user 3D development project by industrial customer.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a27a773adcfda41d910f22f49db37d99a"
+      } ],
+      "company" : "Realfiction Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473199,
+      "categoryId" : 498,
+      "headline" : "BrainCool byter Certified Adviser till Redeye Nordic Growth AB",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba7c81d02df2d7c5aa3c4d9b1e3c51f27&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 12:45:00",
+      "published" : "2026-10-28 12:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "BrainCool byter Certified Adviser till Redeye Nordic Growth AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a546fbb9d6326428c579da309ea17194d"
+      } ],
+      "company" : "Braincool AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473192,
+      "categoryId" : 108,
+      "headline" : "Jonas Brisland avgår som CFO för Enorama Pharma AB (publ)",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b1995578281838768c7a4c77d19cfe1db&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 12:40:00",
+      "published" : "2026-10-28 12:40:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Enorama Pharma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473184,
+      "categoryId" : 116,
+      "headline" : "Cereno Scientific AB (publ) publishes report from the Extraordinary General Meeting",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Decisions of general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf23455a565d6635cfd9d2194669ba079&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 12:23:00",
+      "published" : "2026-10-28 12:23:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PDF.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a943e9be6e3d9b7d48a23ad6e386a11d3"
+      } ],
+      "company" : "Cereno Scientific AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473174,
+      "categoryId" : 55,
+      "headline" : "Initiator Pharma completes dosing of the last patient in Phase 2a study of pudafensine in vulvodynia",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b1182e616f68305989df81520b6e602d8&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 12:00:00",
+      "published" : "2026-10-28 12:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Initiator Pharma completes dosing of the last patient in Phase 2a study of pudafensine in vulvodynia.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a61441e9a3786485995dcabf41eb416d1"
+      } ],
+      "company" : "Initiator Pharma A/S",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473158,
+      "categoryId" : 501,
+      "headline" : "Avensia AB Delårsrapport januari-september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b3b23b1f24c1fbb5177b70b306a7712de&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 11:00:00",
+      "published" : "2026-10-28 11:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Avensia Delarsrapport Januari September 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a41358e0989aa2d7eb5fbf1a7f7c31b06"
+      } ],
+      "company" : "Avensia AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473157,
+      "categoryId" : 231,
+      "headline" : "CEO acquires shares in eEducation Albert AB",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Managers' Transactions",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba819b0ecc78034cb9128a4d63b6b304e&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 10:50:00",
+      "published" : "2026-10-28 10:50:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "CEO acquires shares in eEducation Albert AB.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a6972d2e36ee1914ff44d37da60fb6452"
+      } ],
+      "company" : "eEducation Albert AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473150,
+      "categoryId" : 55,
+      "headline" : "Westpay widens its addressable market: more than 90 POS partners now offer its payment services",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b073d7dd704e8ffe698df1781a9f630e0&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 10:15:00",
+      "published" : "2026-10-28 10:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Westpay widens its addressable market more than 90 POS partners now offer its payment services.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a66b8c909acc64986c9349e22ef37d459"
+      } ],
+      "company" : "Westpay AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473137,
+      "categoryId" : 55,
+      "headline" : "Invitation to presentation of the Q3 2026 interim report",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b18b2a998e806c12fefe894a1b4b8b062&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 10:00:00",
+      "published" : "2026-10-28 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to presentation of the Q3 2026 interim report.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae2fe10f22dffdc57acf46dcf2027cf89"
+      } ],
+      "company" : "Alcadon Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473136,
+      "categoryId" : 55,
+      "headline" : "Qualisys OnTraq enters the NFL - markerless testing for elite athletes",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd12a7e5257c3a3a07ea130ec26d13a40&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 10:00:00",
+      "published" : "2026-10-28 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Qualisys OnTraq enters the NFL - markerless testing for elite athletes.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a53542c43f095933912e5cd2ec2db27dd"
+      } ],
+      "company" : "Qualisys Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473135,
+      "categoryId" : 55,
+      "headline" : "Truls Möregårdh invests in Enzymatica and becomes ColdZyme ambassador",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb562870ec2b75f050d178f840f6c71b5&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 10:00:00",
+      "published" : "2026-10-28 10:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Truls Moregardh invests in Enzymatica and becomes ColdZyme ambassador.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a071d55055f39453ce53596b4a9258a7c"
+      } ],
+      "company" : "Enzymatica AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473132,
+      "categoryId" : 498,
+      "headline" : "Magle Chemoswed Holding AB (publ) has today submitted an application for delisting of the Company's shares from Nasdaq First North Growth Market",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b50dcf4c783e66c5e0f928f498f3e471a&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 09:34:00",
+      "published" : "2026-10-28 09:34:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Magle Chemoswed Holding AB publ has today submitted an application for delisting of the Companys shares from Nasdaq First North Growth Market.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a6f42dde71af765144350119648041807"
+      } ],
+      "company" : "Magle Chemoswed Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473129,
+      "categoryId" : 55,
+      "headline" : "Kutsu NYABin Q3-osavuosikatsauksen tiedotustilaisuuteen",
+      "language" : "fi",
+      "languages" : [ "fi" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf7fd117dcd71b1f11be36cfbb0ca4630&lang=fi&src=listed",
+      "releaseTime" : "2026-10-28 09:00:00",
+      "published" : "2026-10-28 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "NYAB AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473128,
+      "categoryId" : 55,
+      "headline" : "Inbjudan till presentation av NYAB:s delårsrapport Q3 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b81b8bbce296e057d9ba7c18918aa9187&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 09:00:00",
+      "published" : "2026-10-28 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "NYAB AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473126,
+      "categoryId" : 55,
+      "headline" : "Invitation to the presentation of NYAB's Interim Report Q3 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf1eaa5120fe570c9f59d23a4c78013cd&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 09:00:00",
+      "published" : "2026-10-28 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "NYAB AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473123,
+      "categoryId" : 108,
+      "headline" : "Valberedning utsedd inför årsstämman 2027 i Ogunsen AB (publ)",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be3e8bef4d327a6a7b7624910706bc045&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:59:00",
+      "published" : "2026-10-28 08:59:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Valberedning utsedd infor arsstamman 2027 i Ogunsen AB publ.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8c5bbd4873476204d998e0254083d97e"
+      } ],
+      "company" : "Ogunsen AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473119,
+      "categoryId" : 501,
+      "headline" : "Botnia Gold Q3 2026: 256 kg guld producerat - produktionsplanen förlängs till 2029",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5d8ea0025ad904a806ec5305346297af&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:38:00",
+      "published" : "2026-10-28 08:38:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Botnia Gold Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a827d4be439bb1f14afe874bf676a0c03"
+      } ],
+      "company" : "Botnia Gold AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473118,
+      "categoryId" : 497,
+      "headline" : "Positiva borrresultat i Vargbäcken stärker underlaget för fortsatt utveckling",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf1e309f1748328a3bc4a2e30fcc6f0a0&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:34:00",
+      "published" : "2026-10-28 08:34:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "PERC Table1 Borrprogram VB 2026 Final.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a43189ba6cf0efe7254e3328e44671007"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "Vargbacken Borrhal.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a4a59d57eb4b61e92bfe64ec73700d565"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "Positiva borrresultat i Vargbacken starker underlaget for fortsatt utveckling.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a174e9ffd649942cce1a8c1eb77f8753d"
+      } ],
+      "company" : "Botnia Gold AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473117,
+      "categoryId" : 497,
+      "headline" : "Botnia Gold förlänger produktionsplanen i Fäbodtjärn till 2029",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b06dae23ed20be0d43eed650891710eb6&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:33:00",
+      "published" : "2026-10-28 08:33:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Botnia Gold forlanger produktionsplanen i Fabodtjarn till 2029.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ac189d7abd3f4fc4aea585d4ba6bb3deb"
+      } ],
+      "company" : "Botnia Gold AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473116,
+      "categoryId" : 109,
+      "headline" : "SeaTwirl appoints Jan-Ola Allbäck as Chief Commercial Officer",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=baef25c37caf6137b0e8d7ed3daf71670&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:30:00",
+      "published" : "2026-10-28 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "image/jpeg",
+        "fileName" : "jan-ola-allback.jpg",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8fbc83a0d0af41eda84c47f04e6d39d0"
+      }, {
+        "mimetype" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "fileName" : "Jan-Ola-Allback-new-Chief-Commercial-Officer.docx",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a11e59e8d6d162e56f62308112875d7e6"
+      } ],
+      "company" : "SeaTwirl AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473115,
+      "categoryId" : 108,
+      "headline" : "Fortsatt tillväxt och stärkt lönsamhet under tredje kvartalet",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b383f08dd1e8a2263685ec9f29619d921&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:30:00",
+      "published" : "2026-10-28 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10270675.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/accc8381caaae6267d9ce555dc0b5281e"
+      } ],
+      "company" : "Nordic Flanges Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473113,
+      "categoryId" : 501,
+      "headline" : "VO2 rapporterar delårsrapport för Q3 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b27d6a6bc12687d0afa8c918542d60d27&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:30:00",
+      "published" : "2026-10-28 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "2026-10-28 PM VO2 delarsrapport Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a734c6f5e92aea510e40f0f94c8e3cd2f"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "10270565.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1a56d5ff81aab6f3726edfb87d87eb63"
+      } ],
+      "company" : "VO2 Cap Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473111,
+      "categoryId" : 498,
+      "headline" : "NYAB AB: Nomination Committee for the Annual General Meeting 2027 has been appointed",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b7a6b02cdb9de82497703e3547986d67c&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:30:00",
+      "published" : "2026-10-28 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10238933.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/af5b342be9b68334650aad905dba58112"
+      } ],
+      "company" : "NYAB AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473107,
+      "categoryId" : 498,
+      "headline" : "NYAB AB: Valberedning inför årsstämman 2027 har utsetts",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bf3325b022a325aadf91f3b6cdd63fb33&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:30:00",
+      "published" : "2026-10-28 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10238934.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ac071bb245d392a7333db3f70c280eab9"
+      } ],
+      "company" : "NYAB AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473102,
+      "categoryId" : 104,
+      "headline" : "Kallelse till extra bolagsstämma i Case Group AB (publ)",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Notice to general meeting",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5859d51f747d9dd7f3949f830d57b64a&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:05:00",
+      "published" : "2026-10-28 08:05:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Kallelse till extra bolagsstamma i Case Group AB publ.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a980e488f5c74005ac80a326696758657"
+      } ],
+      "company" : "Case Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473091,
+      "categoryId" : 501,
+      "headline" : "Case Group: Delårsrapport för perioden juli-september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b71a9575bc6cd6c0b021382a23581b1b0&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Q3 2026 Case Group.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a0f03cca74a008b8ecd3cf517f1ad71b1"
+      } ],
+      "company" : "Case Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473088,
+      "categoryId" : 501,
+      "headline" : "Dicot Pharma presents interim report Q3 2026 and invites to a webcast",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8896bceff8672528dbb55d23880ec460&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Dicot Pharma AB Q3 2026 ENG.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a2b48e218d2ca9d2fa8398dc110390baa"
+      } ],
+      "company" : "Dicot Pharma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473085,
+      "categoryId" : 501,
+      "headline" : "Interim Report 2026 January-September",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc67f72a35203344cd80bf60309205917&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "TagMaster Q3 2026 ENG.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8b32d421278aea84213a6f762698b2e5"
+      } ],
+      "company" : "TagMaster AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473084,
+      "categoryId" : 501,
+      "headline" : "Q3 2026 Financial Results",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b2bdbade069519805192f4f8f311d7963&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10270861.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1723e5ffb73ad214b3400240f43e10da"
+      } ],
+      "company" : "GiG Software PLC",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473078,
+      "categoryId" : 108,
+      "headline" : "Axolot Solutions Holding AB (publ) - Delårsrapport januari - september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bafe56086b1459f0f1485bb3d27a74c7c&lang=sv&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10270832.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a39aa9a4891a9297905850bee883ac1a5"
+      } ],
+      "company" : "Axolot Solutions Holding AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473077,
+      "categoryId" : 499,
+      "headline" : "Newbury Pharmaceuticals year-end report September 2025 - August 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Financial statement release",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be87411c7be4497c428038f37d08d6c0e&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Newbury Pharmaceuticals Year End Report September 2025 August 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a32c4c137144e5b8c7e64b9fd4c549452"
+      } ],
+      "company" : "Newbury Pharmaceuticals AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473076,
+      "categoryId" : 501,
+      "headline" : "Flexion Q3 Trading Update: 30 September 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6edc3c2ea21f0c339cb5c1b4c755e7aa&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 08:00:00",
+      "published" : "2026-10-28 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Flexion Q3 2026 Trading Update.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad8892163e18fec076d00ee6c15e77c4a"
+      } ],
+      "company" : "Flexion Mobile Plc",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473058,
+      "categoryId" : 501,
+      "headline" : "BlincVision AB - Interim report January - September 2026",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd4b9277b024b00aae0036aa834940326&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 07:30:00",
+      "published" : "2026-10-28 07:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "BlincVision Q3 Report 2026 ENG.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a928b8145422aeba57b3d3cc1b5b513da"
+      } ],
+      "company" : "BlincVision AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473055,
+      "categoryId" : 501,
+      "headline" : "Albert Group Q3 report 2026: From reset to investment.",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b727fcfb5a93f967b128f4bc6f481a9f2&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 07:30:00",
+      "published" : "2026-10-28 07:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Albert Group Q3 Report 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aea14f37ab37a9779675244fbf1ad303c"
+      } ],
+      "company" : "eEducation Albert AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473054,
+      "categoryId" : 108,
+      "headline" : "LEADING EDGE MATERIALS COMMENCES ENVIRONMENTAL IMPACT ASSESSMENT FOR NORRA KÄRR",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba74355c9d91370b2cf57fdf28b7646ea&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 07:30:00",
+      "published" : "2026-10-28 07:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "20261027_GMAB_Ecogain_EIA_Press_Release.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a1b87f21ce5080a57decdb4284a2114c5"
+      } ],
+      "company" : "Leading Edge Materials Corp.",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473043,
+      "categoryId" : 108,
+      "headline" : "District Reports on Geochemical Results from Sågtjärn Uranium Property in Sweden",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b4b8e230f77e14d11c86e58f0e779cf3c&lang=en&src=listed",
+      "releaseTime" : "2026-10-28 07:00:00",
+      "published" : "2026-10-28 07:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10280901.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a983b5bd24f8c590c5cb05ac5f8f7b8c1"
+      } ],
+      "company" : "DIstrict Metals Corp.",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473007,
+      "categoryId" : 55,
+      "headline" : "Guideline Geo wins 1.7 MUSD order from a strategic partner in the defense sector",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5296c5e5c5fb6de4863c1fdbd4a4956a&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 18:44:47",
+      "published" : "2026-10-27 18:44:47",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "GGEO Press release Rayonix.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ae25e125b8263656274428c0f13d62917"
+      } ],
+      "company" : "Guideline Geo AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1473006,
+      "categoryId" : 108,
+      "headline" : "Guideline Geo vinner en order värd 1,7 MUSD från en strategisk partner inom försvarssektorn",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6763135b0188a33ec4bfcaa0da7474c7&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 18:30:00",
+      "published" : "2026-10-27 18:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "GGEO Pressmeddelande Rayonix.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a87c0e529121501e9111f130ac34721d0"
+      } ],
+      "company" : "Guideline Geo AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1473005,
+      "categoryId" : 109,
+      "headline" : "AlzeCure Pharma announces change of CEO ahead of next phase of development",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b558e0b8837cd85f607b1f7ef8b6ac258&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 18:30:00",
+      "published" : "2026-10-27 18:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "AlzeCure Pharma announces change of CEO ahead of next phase of development.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a29d217d8a455ed089c9d4d3c7d06b2bb"
+      } ],
+      "company" : "AlzeCure Pharma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472991,
+      "categoryId" : 55,
+      "headline" : "Newbury Pharmaceuticals Secures Generic Approval for Prukalopride Newbury",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b3666e85096bcd7c47122a89334bcc12a&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 17:00:00",
+      "published" : "2026-10-27 17:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Newbury Pharmaceuticals Secures Generic Approval for Prukalopride Newbury.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ac68e786847b01987a30b41cd6ff5e042"
+      } ],
+      "company" : "Newbury Pharmaceuticals AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472928,
+      "categoryId" : 55,
+      "headline" : "Devyser extends its transplant test to heart and lung patients",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8bf5c3fb9bce094067942a753e29a1be&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 14:00:00",
+      "published" : "2026-10-27 14:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Devyser extends its transplant test to heart and lung patients.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a84ea62e05624e4af61cb63bfe01d91b9"
+      } ],
+      "company" : "Devyser Diagnostics AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472927,
+      "categoryId" : 55,
+      "headline" : "Clavister Achieves Major Milestone in TCNS Project and Receives 65 MSEK Payment",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bae68a703ffd9006a184b14800a319ec5&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 14:00:00",
+      "published" : "2026-10-27 14:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Clavister Achieves Major Milestone in TCNS Project and Receives 65 MSEK Payment.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a59fa1f44fcb7d356f21421788a344185"
+      } ],
+      "company" : "Clavister AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472926,
+      "categoryId" : 55,
+      "headline" : "Aixia Strengthens Long-Term Customer Partnership with Initial SEK 5 Million Network Infrastructure Order",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b1fdfbd7718f4cfef4e2dcef7a3b67c7d&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 14:00:00",
+      "published" : "2026-10-27 14:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Aixia Strengthens Long-Term Customer Partnership with Initial SEK 5 Million Network Infrastructure Order.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aaa851fa791190edf497c4db12a3086b5"
+      } ],
+      "company" : "White Pearl Technology Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472908,
+      "categoryId" : 109,
+      "headline" : "Guðmundur Pálmason steps down from Enzymatica's Board of Directors",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b73acbfb093e954b763e9541ba4240cc5&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 13:05:00",
+      "published" : "2026-10-27 13:05:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Gumundur Palmason steps down from Enzymaticas Board of Directors.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a2ef77b7b9fa0b3da40d41184ebacb8cc"
+      } ],
+      "company" : "Enzymatica AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472902,
+      "categoryId" : 108,
+      "headline" : "Change of base rate margin for some exchange traded products",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5a14b2885f54de35665a91c15004e708&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 12:41:38",
+      "published" : "2026-10-27 12:41:38",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Borsmeddelande Tobii.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a9b9d2561b80eaffd5135d0b18e794d9e"
+      } ],
+      "company" : "Nordea Bank  AB (publ)",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472899,
+      "categoryId" : 498,
+      "headline" : "Goldsky drills 12.6 m @ 233.6 g/t gold uncut (14.2 g/t at a 50 g/t top cut) at Raja and 17.35 m @ 16.5 g/t gold at Palokas - 2026 infill drilling supports the Rajapalot Mineral Resource, Finland",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b0b21f6482402a9e2fa9fd5fcba7eccb7&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 12:15:00",
+      "published" : "2026-10-27 12:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "GoldskyResourcesCorp_1027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a71fc0dd30eed3c646b95ff3741c860a7"
+      } ],
+      "company" : "Goldsky Resources Corp.",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472888,
+      "categoryId" : 55,
+      "headline" : "ENVAR NEWSLETTER FROM THE CEO",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b489551bc145b67028cc4640b17e9a000&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 11:15:00",
+      "published" : "2026-10-27 11:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "ENVAR NEWSLETTER FROM THE CEO.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a802ff44151445f6b174777ec9b708b46"
+      } ],
+      "company" : "Envar Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472887,
+      "categoryId" : 55,
+      "headline" : "XMReality utökar sin affär med Dina Försäkringar när Dina Nord tecknar avtal",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc123ce73ee45ff333f2a36eacafb37b0&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 11:15:00",
+      "published" : "2026-10-27 11:15:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "XMReality utokar sin affar med Dina Forsakringar nar Dina Nord tecknar avtal.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a0264ef8034bac60446e7c77cfb4acd68"
+      } ],
+      "company" : "XMReality AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472867,
+      "categoryId" : 55,
+      "headline" : "Invitation to Minesto's webinar: Q3 update by CEO",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bb3984bc97556228b12820bf0b7583200&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 10:10:29",
+      "published" : "2026-10-27 10:10:29",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Minesto AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472866,
+      "categoryId" : 55,
+      "headline" : "Inbjudan till Minestos webinar: Q3-uppdatering från vd",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be408e51275f9af5f91b560ebeb43c496&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 10:10:29",
+      "published" : "2026-10-27 10:10:29",
+      "market" : "First North Sweden",
+      "attachment" : [ ],
+      "company" : "Minesto AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472835,
+      "categoryId" : 55,
+      "headline" : "Svenska Aerogel's CEO comments on the third quarter of 2026",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bab90db70cc9324d8cea2cf8a3ce04dbe&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 09:17:00",
+      "published" : "2026-10-27 09:17:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Svenska Aerogels CEO comments on the third quarter of 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab4f19850f6b88415501a096cac163e87"
+      } ],
+      "company" : "Svenska Aerogel Holding AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472834,
+      "categoryId" : 55,
+      "headline" : "Triangular Group Insights Joins Safeture's Partner Network",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd7595cb025153d7f984e5519d87ccc18&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 09:00:00",
+      "published" : "2026-10-27 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10269836.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7a844522ddaa9a3d353108224d697304"
+      } ],
+      "company" : "Safeture AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472823,
+      "categoryId" : 55,
+      "headline" : "Enzymatica appoints Katja Margell as Director of Investor Relations & Corporate Affairs",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bcedfd767cdb9eb6de038223478264e96&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 09:00:00",
+      "published" : "2026-10-27 09:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Enzymatica appoints Katja Margell as Director of Investor Relations  Corporate Affairs.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a5d3ba6f526e61a627815a9142295dc1f"
+      } ],
+      "company" : "Enzymatica AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472816,
+      "categoryId" : 501,
+      "headline" : "Delårsrapport Q3 2026 - Stark start för Observit-InSupport",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b973476c81980705b0789e22b8753e663&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:50:00",
+      "published" : "2026-10-27 08:50:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Observit Q3 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a5b5d3af66e82cc59371e60e6a035305e"
+      } ],
+      "company" : "Observit AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472811,
+      "categoryId" : 55,
+      "headline" : "Hela: of Mice and Magic bland de 0,3 procent mest spelade demos under Steam Next Fest",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be6a495e268010d49ce27af62eec4b792&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:40:40",
+      "published" : "2026-10-27 08:40:40",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10260213.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a42344808952e590538a6a194a52655dc"
+      } ],
+      "company" : "Kinda Brave Entertainment Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472807,
+      "categoryId" : 501,
+      "headline" : "Neem's Hill AB (publ) publishes Interim report Q3 2026",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b056776fbffa41c433e5378ff8e34d879&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:30:00",
+      "published" : "2026-10-27 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10270246.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a28e4936c71a740311c7da603a1ba7218"
+      } ],
+      "company" : "Neem's Hill AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472803,
+      "categoryId" : 55,
+      "headline" : "Flexion launches Pines Peak from Vizor on alternative app stores",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b3b698dc99dbbfe43e61db4e8ae6f3f97&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:30:00",
+      "published" : "2026-10-27 08:30:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Flexion launches Pines Peak from Vizor on alternative app stores.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/afa40891849de2f8b67950e555bc5200e"
+      } ],
+      "company" : "Flexion Mobile Plc",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472802,
+      "categoryId" : 55,
+      "headline" : "Valberedning för Botnia Gold inför årsstämman 2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bbc0c404decd0e17286a9a036603ab9e1&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:26:00",
+      "published" : "2026-10-27 08:26:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Valberedning for Botnia Gold infor arsstamman 2027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aca20ca16070f94c9978ced788d304cf0"
+      } ],
+      "company" : "Botnia Gold AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472799,
+      "categoryId" : 108,
+      "headline" : "BrightBid Group sänker årliga löpande kostnader med cirka 8 MSEK",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bd0d12118abcebe7ef2631a7fb7e7c1ca&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:20:00",
+      "published" : "2026-10-27 08:20:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "BrightBid Group sanker arliga lopande kostnader med cirka 8 MSEK.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a340fcdb774215b533fb3cf69d80a68bb"
+      } ],
+      "company" : "BrightBid Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472798,
+      "categoryId" : 109,
+      "headline" : "Billy Degerfeldt tillträder som CFO för BrightBid Group",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Changes in board/management/certified adviser/auditor/liquidity provider",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be0dc7cdb10ab1d996dd29a3efd970677&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:10:00",
+      "published" : "2026-10-27 08:10:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Billy Degerfeldt tilltrader som CFO for BrightBid Group.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aafad25bc1247d790e4a2cf9b7eba3878"
+      } ],
+      "company" : "BrightBid Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472789,
+      "categoryId" : 55,
+      "headline" : "Implantica meddelar att ledande amerikansk kirurg deltar i utbildningsoperationer med RefluxStop®",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5944919ff3d33c556f83abddba31cb9e&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10260207.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad9d2f466409e749c0406c74c88b27651"
+      } ],
+      "company" : "Implantica AG",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472785,
+      "categoryId" : 55,
+      "headline" : "Crunchfish brings Governed Offline Payments to CB+DC Conference 2026 in Amsterdam",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b04ae740adb2e4143c4684f6385b4cda5&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "271027 - Crunchfish brings Governed Offline Payments to CBDC Conference 2026 in Amsterdam.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/acd7bfe8f00d33fc5b2f74b2aa4bcb266"
+      } ],
+      "company" : "Crunchfish AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472782,
+      "categoryId" : 55,
+      "headline" : "Implantica announces leading U.S. surgeon participates in RefluxStop® training surgeries",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bee1b651983fd7b900b35686068146fd2&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10260203.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a56e8d8436616604c0019034a0c47b95b"
+      } ],
+      "company" : "Implantica AG",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472776,
+      "categoryId" : 501,
+      "headline" : "DevPort AB (publ) redovisar delårsrapport för januari-september 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b1040f8fc3707c1311d8db1d360d2f56f&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Pressmeddelande - DevPort AB publ - Delarsrapport januari-september 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ad73553306345a2ae24df8a1765781ff9"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "10260102.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a621cdf1d7482576de8310d9daa91ecd6"
+      } ],
+      "company" : "DevPort AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472773,
+      "categoryId" : 55,
+      "headline" : "Heimstaden AB - Q3 2026 Results",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b185bb17c928dcaee2a928f3369a5300a&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Press Release Heimstaden AB Q3 Results 27102026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aa8361bb301a33ad357e94d93f3770a1b"
+      }, {
+        "mimetype" : "application/pdf",
+        "fileName" : "Heimstaden AB - Q3 2026 Report.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a77b0ea5fe0d71cedd12f4437316e0c9b"
+      } ],
+      "company" : "Heimstaden AB (publ)",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472772,
+      "categoryId" : 55,
+      "headline" : "Invitation to the Presentation of 4C Group's Interim Report, January - September 2026",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6446cafce4126069bdab4c6fe76bb4b2&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to the Presentation of 4C Groups Interim Report January - September 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a99fc4a3e13c5ecde245fc5a532cff0fa"
+      } ],
+      "company" : "4C Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472771,
+      "categoryId" : 436,
+      "headline" : "Eltel's Nomination Committee composition for the AGM 2027",
+      "language" : "en",
+      "languages" : [ "sv", "en" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be107de81e2124a71c8529ffb07e73947&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "Main Market, Stockholm",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Eltels Nomination Committee composition for the AGM 2027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aedafaf6ac918f1c850124c64e932fc5f"
+      } ],
+      "company" : "Eltel AB",
+      "cnsTypeId" : "6"
+    }, {
+      "disclosureId" : 1472770,
+      "categoryId" : 498,
+      "headline" : "Divio sets out to become Europe's leading cloud platform with a new platform built for the AI era",
+      "language" : "en",
+      "languages" : [ "en", "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b5de1d7b1e1131a7c78f0dce41550b342&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Divio sets out to become Europes leading cloud platform with a new platform built for the AI era.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7956e0a6e04965ac885875198617dda5"
+      } ],
+      "company" : "Divio Technologies AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472763,
+      "categoryId" : 55,
+      "headline" : "Invitation to presentation of Coffee Stain Group's Q2 report",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bc6c14f3409dd8578c4bc1be53f4e3761&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Invitation to presentation of Coffee Stain Groups Q2 report.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a8181a9fa6f3e5895232f525fe68c6900"
+      } ],
+      "company" : "Coffee Stain Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472762,
+      "categoryId" : 501,
+      "headline" : "Delårsrapport 3, Effektivare arbetssätt och fokus på kassaflöde",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Interim report (Q1 and Q3)",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=bae5f4cb509bee84663c2bbdffadbfa28&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "BrightBid Group 2026 Q3 Final.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ab8c082ed3ee90c197ac545815492338d"
+      } ],
+      "company" : "BrightBid Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472760,
+      "categoryId" : 498,
+      "headline" : "Imorgon är sista dag för teckning i Bioextrax pågående företrädesemission",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b933a776d6becc032c580c8d925a526fa&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Imorgon ar sista dag for teckning i Bioextrax pagaende foretradesemission.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/aeebccf0727693e6736a4cca900243401"
+      } ],
+      "company" : "Bioextrax AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472758,
+      "categoryId" : 498,
+      "headline" : "Valberedning inför Doxas årsstämma 2027",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=ba5007f23c4099bb80b1413a7f26c240e&lang=sv&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Valberedning infor Doxas arsstamma 2027.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a84c388ba4ae0bf623b9ec2f436469698"
+      } ],
+      "company" : "Doxa AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472756,
+      "categoryId" : 55,
+      "headline" : "Christian Fladeland new CEO at Heimstaden AB",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b81c3785687b078a6bceef0d723d48e40&lang=en&src=listed",
+      "releaseTime" : "2026-10-27 08:00:00",
+      "published" : "2026-10-27 08:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Press Release Heimstaden AB Christian Fladeland new CEO 27102026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a7768ad24b8dba0e65d8729f8a38ed0c8"
+      } ],
+      "company" : "Heimstaden AB (publ)",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472702,
+      "categoryId" : 498,
+      "headline" : "Nordic LEVEL Group tidigarelägger publicering av delårsrapport för tredje kvartalet 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Other information disclosed according to the rules of the Exchange",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=be21b574768a2ed1802eb5db304158d97&lang=sv&src=listed",
+      "releaseTime" : "2026-10-26 20:18:00",
+      "published" : "2026-10-26 20:18:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Nordic LEVEL Group tidigarelagger publicering av delarsrapport for tredje kvartalet 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a14e876d66772e082cbe27bc71b2f84ef"
+      } ],
+      "company" : "Nordic LEVEL Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472686,
+      "categoryId" : 497,
+      "headline" : "Ortoma erhåller orders om cirka 173 MSEK avseende 125 OTS™ Hip-system med tillhörande komponenter",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b92233e511c5146ba79301fec5748b0eb&lang=sv&src=listed",
+      "releaseTime" : "2026-10-26 17:59:00",
+      "published" : "2026-10-26 17:59:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Ortoma erhaller orders om cirka 173 MSEK avseende 125 OTSTM Hip-system med tillhorande komponenter.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a717b1943c7ce4d143bdd8dd04363c914"
+      } ],
+      "company" : "Ortoma AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472683,
+      "categoryId" : 55,
+      "headline" : "Terranor wins operation and maintenance contract in Gothenburg worth SEK 113 million",
+      "language" : "en",
+      "languages" : [ "en" ],
+      "cnsCategory" : "Investor News",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b16ffbe41f76137f6a5b4e14d5f187cd6&lang=en&src=listed",
+      "releaseTime" : "2026-10-26 17:45:00",
+      "published" : "2026-10-26 17:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10260126.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/ac5807b28a19741a67a2ced5276b033e4"
+      } ],
+      "company" : "Terranor Group AB",
+      "cnsTypeId" : "3"
+    }, {
+      "disclosureId" : 1472682,
+      "categoryId" : 497,
+      "headline" : "Terranor vinner drift- och underhållskontrakt i Göteborg värt 113 miljoner kronor",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Inside information",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b6c675afaee58fed31889ec174af71121&lang=sv&src=listed",
+      "releaseTime" : "2026-10-26 17:45:00",
+      "published" : "2026-10-26 17:45:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "10260125.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a3319767b41c94db21ee5070aef3da25c"
+      } ],
+      "company" : "Terranor Group AB",
+      "cnsTypeId" : "11"
+    }, {
+      "disclosureId" : 1472619,
+      "categoryId" : 108,
+      "headline" : "Observit AB tidigarelägger publicering av kvartalsrapporten för tredje kvartalet 2026",
+      "language" : "sv",
+      "languages" : [ "sv" ],
+      "cnsCategory" : "Company Announcement",
+      "messageUrl" : "https://view.news.eu.nasdaq.com/view?id=b8b42cb594c568af60d6b73b4e509ae21&lang=sv&src=listed",
+      "releaseTime" : "2026-10-26 16:00:00",
+      "published" : "2026-10-26 16:00:00",
+      "market" : "First North Sweden",
+      "attachment" : [ {
+        "mimetype" : "application/pdf",
+        "fileName" : "Observit AB tidigarelagger publicering av kvartalsrapporten for tredje kvartalet 2026.pdf",
+        "attachmentUrl" : "https://attachment.news.eu.nasdaq.com/a488737c1dfe5796a1679a1d779c5c6ad"
+      } ],
+      "company" : "Observit AB",
+      "cnsTypeId" : "11"
+    } ]
+  }
+}

@@ -8,6 +8,7 @@ import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.source.PoliteHttpClient
 import pl.investor.source.Source
+import pl.investor.source.nasdaq.NasdaqViewParser
 import pl.investor.source.SourceUnavailableException
 import pl.investor.source.gpw.ListingEntry
 import java.time.Instant
@@ -20,7 +21,7 @@ class ReportContentClientTest {
     private val http = mockk<PoliteHttpClient>()
     private val locator = mockk<BankierReportLocator>()
     private val attachments = mockk<AttachmentTextExtractor>()
-    private val client = ReportContentClient(http, ReportContentParser(), locator, attachments)
+    private val client = ReportContentClient(http, ReportContentParser(), locator, attachments, NasdaqViewParser())
 
     private val entry = ListingEntry(
         market = Market.GPW,

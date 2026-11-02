@@ -1,5 +1,6 @@
 package pl.investor.source.gpw
 
+import pl.investor.support.WARSAW
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.slf4j.LoggerFactory
@@ -7,7 +8,6 @@ import org.springframework.stereotype.Component
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Component
@@ -58,11 +58,10 @@ class EspiListingParser {
     private fun Market.detailBaseUrl() = when (this) {
         Market.GPW -> "https://www.gpw.pl/komunikat?geru_id="
         Market.NC -> "https://newconnect.pl/komunikat?geru_id="
-        Market.US -> error("No ESPI listing for $this")
+        Market.US, Market.SE -> error("No ESPI listing for $this")
     }
 
     private companion object {
-        val WARSAW: ZoneId = ZoneId.of("Europe/Warsaw")
         val TIMESTAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
         val NAME_WITH_ISIN = Regex("""(.*)\(([A-Z]{2}[A-Z0-9]{10})\)""", RegexOption.DOT_MATCHES_ALL)
         val GERU_ID = Regex("""geru_id=(\d+)""")

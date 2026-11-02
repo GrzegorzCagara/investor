@@ -25,7 +25,7 @@ enum class NewsDirection(val label: String) {
     NEUTRAL("neutralny"),
 }
 
-enum class ContractCurrency { PLN, EUR, USD, GBP, CHF, CZK, BGN, OTHER }
+enum class ContractCurrency { PLN, SEK, EUR, USD, GBP, CHF, CZK, BGN, NOK, DKK, OTHER }
 
 data class ContractValue(val valueInThousands: BigDecimal, val currency: ContractCurrency, val sourceText: String)
 
@@ -54,8 +54,10 @@ data class NewsInput(
     val market: Market,
     val title: String,
     val content: ReportContent,
-    val trailingRevenuePln: BigDecimal?,
+    val trailingRevenue: BigDecimal?,
 ) {
+    val currency: String get() = market.currency
+
     val announcement: String get() = "Tytuł: $title\n\n${content.text.take(NewsPrompt.MAX_BODY_CHARS)}"
 }
 

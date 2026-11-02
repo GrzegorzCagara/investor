@@ -14,7 +14,7 @@ object InstantSerializer : KSerializer<Instant> {
     override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
 }
 
-enum class Market { GPW, NC, US }
+enum class Market { GPW, NC, SE, US }
 
 enum class ReportKind { CURRENT, QUARTERLY, HALF_YEARLY, ANNUAL, OTHER }
 
@@ -37,6 +37,8 @@ enum class ReportStatus {
 enum class EventType { RESULTS, NEWS }
 
 enum class Reaction { NEGATIVE, FLAT, POSITIVE }
+
+enum class Signal { TREND_REVERSAL, ORDERS_UP, LOW_EXPECTATIONS, CONSISTENT_REACTION }
 
 @Serializable
 data class AlertItem(
@@ -81,7 +83,15 @@ data class AlertDetail(
     val companyHistory: List<OutcomeItem> = emptyList(),
     val eventType: EventType = EventType.RESULTS,
     val news: NewsView? = null,
+    val listing: String? = null,
+    val ytdChangePct: Double? = null,
+    val ordersYoyPct: Double? = null,
+    val pastReactions: List<PastReactionView> = emptyList(),
+    val signals: List<String> = emptyList(),
 )
+
+@Serializable
+data class PastReactionView(val date: String, val pct: Double)
 
 @Serializable
 data class NewsView(
@@ -101,7 +111,13 @@ data class ReactionView(
 )
 
 @Serializable
-data class ConsensusRowView(val label: String, val actual: Double, val consensus: Double, val differencePct: Double)
+data class ConsensusRowView(
+    val label: String,
+    val actual: Double,
+    val consensus: Double,
+    val differencePct: Double,
+    val currency: String? = null,
+)
 
 @Serializable
 data class OutcomeItem(
@@ -131,10 +147,14 @@ data class ScoreBucketView(val eventType: EventType, val label: String, val aler
 data class ReactionBucketView(val reaction: Reaction, val alerts: Int, val horizons: List<HorizonStats> = emptyList())
 
 @Serializable
+data class SignalBucketView(val signal: Signal, val label: String, val alerts: Int, val horizons: List<HorizonStats> = emptyList())
+
+@Serializable
 data class EffectivenessResponse(
     val buckets: List<ScoreBucketView> = emptyList(),
     val byReaction: List<ReactionBucketView> = emptyList(),
     val items: List<OutcomeItem> = emptyList(),
+    val bySignal: List<SignalBucketView> = emptyList(),
 )
 
 @Serializable

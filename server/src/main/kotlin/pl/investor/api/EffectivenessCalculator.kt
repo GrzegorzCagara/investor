@@ -3,6 +3,7 @@ package pl.investor.api
 import pl.investor.outcome.Outcome
 import pl.investor.report.EventType
 import pl.investor.report.Market
+import pl.investor.scoring.Signal
 import pl.investor.scoring.roundedHalfUp
 import java.time.Instant
 import kotlin.math.abs
@@ -68,7 +69,7 @@ object EffectivenessCalculator {
         ScoreRange("80+", 80..Int.MAX_VALUE),
     )
 
-    fun calculate(results: List<ScoredOutcome>): EffectivenessResponse {
+    fun calculate(results: List<ScoredOutcome>, signalOutcomes: List<SignalOutcome> = emptyList()): EffectivenessResponse {
         val population = results.filter { it.score >= MIN_SCORE }
         val buckets = EventType.entries.flatMap { eventType ->
             val ofType = population.filter { it.eventType == eventType }
@@ -91,13 +92,19 @@ object EffectivenessCalculator {
             .sortedWith(compareByDescending<ScoredOutcome> { it.publishedAt }.thenByDescending { it.id })
             .take(MAX_ITEMS)
             .map { it.toOutcomeItem() }
-        return EffectivenessResponse(buckets, byReaction, items)
+        val bySignal = Signal.entries.map { signal ->
+            val outcomes = signalOutcomes.filter { signal in it.signals }.map { it.outcome }
+            SignalBucketView(signal, signal.label, outcomes.size, outcomes.outcomeHorizons())
+        }
+        return EffectivenessResponse(buckets, byReaction, items, bySignal)
     }
 
-    private fun List<ScoredOutcome>.horizons(): List<HorizonStats> = HORIZONS.map { sessions ->
-        val excesses = mapNotNull { it.outcome?.excessAfter(sessions) }
+    private fun List<Outcome>.outcomeHorizons(): List<HorizonStats> = HORIZONS.map { sessions ->
+        val excesses = mapNotNull { it.excessAfter(sessions) }
         HorizonStats(sessions, excesses.size, excesses.takeIf { it.isNotEmpty() }?.average())
     }
+
+    private fun List<ScoredOutcome>.horizons(): List<HorizonStats> = mapNotNull { it.outcome }.outcomeHorizons()
 
     private data class ScoreRange(val label: String, val scores: IntRange)
 }

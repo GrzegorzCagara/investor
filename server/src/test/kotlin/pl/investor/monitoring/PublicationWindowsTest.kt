@@ -45,6 +45,23 @@ class PublicationWindowsTest {
         assertEquals(expected, open(date, time, Market.NC))
     }
 
+    @ParameterizedTest
+    @CsvSource(
+        "2026-01-15, 00:30, true",
+        "2026-01-15, 01:00, false",
+        "2026-01-15, 07:00, true",
+        "2026-01-15, 08:59, true",
+        "2026-01-15, 09:00, false",
+        "2026-01-15, 16:30, false",
+        "2026-01-15, 17:29, false",
+        "2026-01-15, 17:30, true",
+        "2026-07-15, 17:30, true",
+        "2026-07-15, 23:59, true",
+    )
+    fun `SE windows follow Stockholm time with the evening window from 17 30`(date: String, time: String, expected: Boolean) {
+        assertEquals(expected, open(date, time, Market.SE))
+    }
+
     @Test
     fun `US is never open yet`() {
         assertFalse(open("2026-01-15", "07:30", Market.US))

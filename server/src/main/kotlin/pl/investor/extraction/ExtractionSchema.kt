@@ -29,6 +29,8 @@ object ExtractionSchema {
         "operatingProfitPrevYear" to nullable(amount()),
         "netProfit" to nullable(amount()),
         "netProfitPrevYear" to nullable(amount()),
+        "orderIntake" to nullable(amount()),
+        "orderIntakePrevYear" to nullable(amount()),
     )
 
     private fun amount(): Map<String, Any> = obj(

@@ -89,6 +89,30 @@ class EffectivenessViewModelTest {
     }
 
     @Test
+    fun `signal buckets become signal rows`() {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody(SIGNALS_JSON))
+
+        val loaded = viewModel().awaitLoaded()
+
+        assertEquals(
+            listOf(
+                StatsRow("Odwrócenie trendu", 2, listOf(HorizonCell("+1,0%", "(2)"), HorizonCell("−2,5%", "(1)"), UNKNOWN)),
+                StatsRow("Rosnące zamówienia", 0, listOf(UNKNOWN, UNKNOWN, UNKNOWN)),
+                StatsRow("Niskie oczekiwania", 0, listOf(UNKNOWN, UNKNOWN, UNKNOWN)),
+                StatsRow("Regularne wzrosty po raportach", 0, listOf(UNKNOWN, UNKNOWN, UNKNOWN)),
+            ),
+            loaded.signalRows,
+        )
+    }
+
+    @Test
+    fun `response without signals has no signal rows`() {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody(EFFECTIVENESS_JSON))
+
+        assertEquals(emptyList<StatsRow>(), viewModel().awaitLoaded().signalRows)
+    }
+
+    @Test
     fun `failed request exposes an error`() {
         server.enqueue(MockResponse().setResponseCode(500))
 
@@ -112,6 +136,20 @@ class EffectivenessViewModelTest {
               "items":[
                 {"id":43,"companyName":"Beta","market":"GPW","eventType":"RESULTS","publishedAt":"2026-10-21T12:00:00Z","score":65,"reactionPct":-3.0,"reactionIndexPct":1.0,"excess5Pct":-5.0,"excess20Pct":null,"excess60Pct":null},
                 {"id":40,"companyName":"Gamma","market":"NC","eventType":"RESULTS","publishedAt":"2026-10-01T12:00:00Z","score":55,"reactionPct":null,"reactionIndexPct":null,"excess5Pct":null,"excess20Pct":null,"excess60Pct":null}
+              ]
+            }
+        """.trimIndent()
+
+        val SIGNALS_JSON = """
+            {
+              "buckets":[],
+              "byReaction":[],
+              "items":[],
+              "bySignal":[
+                {"signal":"TREND_REVERSAL","label":"Odwrócenie trendu","alerts":2,"horizons":[{"sessions":5,"count":2,"avgExcessPct":1.0},{"sessions":20,"count":1,"avgExcessPct":-2.5},{"sessions":60,"count":0,"avgExcessPct":null}]},
+                {"signal":"ORDERS_UP","label":"Rosnące zamówienia","alerts":0,"horizons":$NO_STATS},
+                {"signal":"LOW_EXPECTATIONS","label":"Niskie oczekiwania","alerts":0,"horizons":$NO_STATS},
+                {"signal":"CONSISTENT_REACTION","label":"Regularne wzrosty po raportach","alerts":0,"horizons":$NO_STATS}
               ]
             }
         """.trimIndent()

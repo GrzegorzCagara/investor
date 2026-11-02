@@ -3,6 +3,7 @@ package pl.investor.app
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +49,12 @@ private val BAR_WEAK = Color(0xFFD69E2E)
 private val REVENUE_BAR = Color(0xFF90CDF4)
 private val REVENUE_LAST_BAR = Color(0xFF2B6CB0)
 private val WARNING = Color(0xFF9C4221)
+private val NEGATIVE = Color(0xFFC53030)
+private val NEUTRAL = Color(0xFF888888)
+private val SIGNAL_CHIP = Color(0xFFE6F0FA)
+private val SIGNAL_TEXT = Color(0xFF2B6CB0)
 private const val GOOD_RATIO = 0.6f
+private const val SIGNALS_NOTE = "Sygnały mają charakter informacyjny i nie dodają punktów."
 
 @Composable
 fun DetailScreen(viewModel: DetailViewModel, now: () -> Instant, onBack: () -> Unit) {
@@ -77,7 +83,7 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("${detail.companyName} (${Formatting.marketLabel(detail.market)})", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(Formatting.detailTitle(detail), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(Formatting.detailHeadline(detail, now), fontSize = 12.sp, color = Color(0xFF666666))
             }
             ScoreBadge(detail.score)
@@ -112,9 +118,9 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
 
 @Composable
 private fun ResultsBreakdown(detail: AlertDetail) {
-    if (detail.consensus.isNotEmpty()) {
-        Text(Formatting.consensusLine(detail.consensus), fontSize = 13.sp)
-    }
+    Formatting.consensusLines(detail.consensus).forEach { Text(it, fontSize = 13.sp) }
+    detail.ytdChangePct?.let { Text(Formatting.ytdLine(it), fontSize = 13.sp) }
+    detail.ordersYoyPct?.let { Text(Formatting.ordersLine(it), fontSize = 13.sp) }
     detail.components.forEach { ComponentRow(it) }
     if (detail.penalty > 0) {
         Text("Kara: −${Formatting.points(detail.penalty)}", color = WARNING, fontSize = 12.sp)
@@ -122,10 +128,61 @@ private fun ResultsBreakdown(detail: AlertDetail) {
     if (detail.revenueHistory.isNotEmpty()) {
         RevenueChart(detail.revenueHistory)
     }
+    if (detail.pastReactions.isNotEmpty()) {
+        PastReactions(detail.pastReactions)
+    }
+    if (detail.signals.isNotEmpty()) {
+        Signals(detail.signals)
+    }
     detail.outlookQuote?.let { quote ->
         Text("Zapowiedź zarządu", fontSize = 11.sp, color = Color(0xFF888888))
         Text("„$quote”", fontStyle = FontStyle.Italic, style = MaterialTheme.typography.bodyMedium)
     }
+}
+
+@Composable
+private fun PastReactions(reactions: List<PastReactionView>) {
+    Text("Reakcje na poprzednie raporty", fontSize = 11.sp, color = NEUTRAL)
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        reactions.forEach { reaction ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(Formatting.reactionDate(reaction.date), fontSize = 10.sp, color = NEUTRAL)
+                Text(
+                    Formatting.percent(reaction.pct),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = signColor(reaction.pct),
+                )
+            }
+        }
+    }
+}
+
+private fun signColor(pct: Double): Color = when (Formatting.sign(pct)) {
+    1 -> BAR_GOOD
+    -1 -> NEGATIVE
+    else -> NEUTRAL
+}
+
+@Composable
+private fun Signals(signals: List<String>) {
+    Text("Sygnały", fontSize = 11.sp, color = NEUTRAL)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        signals.forEach { signal ->
+            Text(
+                signal,
+                fontSize = 12.sp,
+                color = SIGNAL_TEXT,
+                modifier = Modifier
+                    .background(SIGNAL_CHIP, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            )
+        }
+    }
+    Text(SIGNALS_NOTE, fontSize = 11.sp, color = NEUTRAL, fontStyle = FontStyle.Italic)
 }
 
 @Composable

@@ -2,6 +2,7 @@ package pl.investor.notification
 
 import pl.investor.extraction.OutlookTone
 import pl.investor.report.Company
+import pl.investor.scoring.ConsensusMetric
 import pl.investor.scoring.Score
 import pl.investor.scoring.ScoringInput
 import pl.investor.scoring.WarningLabels
@@ -17,17 +18,25 @@ Nie podawaj rekomendacji kupna ani sprzedaży. Odpowiedz samym tekstem uzasadnie
             "Spółka: ${company.shortName ?: company.name}",
             "Ocena raportu: ${score.total.round1()} na 100",
             input.revenueYoyPct?.let { "Przychody r/r: ${it.round1()}%" },
+            *input.consensus.map { "${it.metric.promptLabel()} vs konsensus analityków ${it.source}: ${it.differencePct().round1()}%" }.toTypedArray(),
             input.sur?.let { "Odchylenie wzrostu przychodów od dotychczasowego trendu (w odchyleniach standardowych): ${it.round1()}" },
             "Liczba mocnych raportów z rzędu przed tym raportem: ${input.consecutiveStrongBefore}",
             input.operatingProfitYoyPct?.let { "Zysk operacyjny r/r: ${it.round1()}%" },
             input.outlook?.outlookPhrase()?.let { "Zapowiedź zarządu: $it" },
+            input.ordersYoyPct?.let { "Zamówienia r/r: ${it.round1()}%" },
             input.pe?.let { "C/Z: ${it.round1()}" },
             input.ttmNetProfitGrowthPct?.let { "Wzrost zysku netto z 12 miesięcy: ${it.round1()}%" },
             input.priceChange10Pct?.let { "Zmiana kursu w 10 sesjach przed raportem: ${it.round1()}%" },
             "Kara za rajd kursu przed raportem: ${score.penalty.round1()} pkt",
+            score.signals.takeIf { it.isNotEmpty() }?.let { signals -> "Sygnały (informacyjne, bez punktów): ${signals.joinToString(", ") { it.label }}" },
             "Ostrzeżenia: ${score.warnings.joinToString(", ") { WarningLabels.label(it) }.ifEmpty { "brak" }}",
         )
         return facts.joinToString("\n")
+    }
+
+    private fun ConsensusMetric.promptLabel() = when (this) {
+        ConsensusMetric.REVENUE -> "Przychody"
+        ConsensusMetric.EBIT -> "Zysk operacyjny (EBIT)"
     }
 
     private fun OutlookTone.outlookPhrase(): String? = when (this) {

@@ -1,6 +1,7 @@
 package pl.investor.source
 
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.MediaType
 import org.springframework.http.client.JdkClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
@@ -43,13 +44,13 @@ class PoliteHttpClient(
     private val locksByHost = ConcurrentHashMap<String, ReentrantLock>()
 
     fun get(source: Source, url: String): String = execute(source, url) {
-        restClient.get().uri(url).fetchText()
+        restClient.get().uri(URI(url)).fetchText()
     }
 
     fun probe(source: Source, url: String): String? {
         waitForTurn(URI(url).hostWithPort())
         val body = try {
-            restClient.get().uri(url).fetchText()
+            restClient.get().uri(URI(url)).fetchText()
         } catch (e: Exception) {
             return null
         }
@@ -63,7 +64,11 @@ class PoliteHttpClient(
 
     fun postForm(source: Source, url: String, form: List<Pair<String, String>>): String = execute(source, url) {
         val body = LinkedMultiValueMap<String, String>().apply { form.forEach { (key, value) -> add(key, value) } }
-        restClient.post().uri(url).body(body).fetchText()
+        restClient.post().uri(URI(url)).body(body).fetchText()
+    }
+
+    fun postJson(source: Source, url: String, json: String): String = execute(source, url) {
+        restClient.post().uri(URI(url)).contentType(MediaType.APPLICATION_JSON).body(json).fetchText()
     }
 
     fun getBytes(source: Source, url: String, headers: Map<String, String> = emptyMap()): ByteArray = execute(source, url) {
@@ -87,7 +92,7 @@ class PoliteHttpClient(
             ?: Charsets.UTF_8
 
     private fun fetchBytes(url: String, headers: Map<String, String>): ByteArray =
-        restClient.get().uri(url).headers { target -> headers.forEach(target::set) }.retrieve().body<ByteArray>() ?: ByteArray(0)
+        restClient.get().uri(URI(url)).headers { target -> headers.forEach(target::set) }.retrieve().body<ByteArray>() ?: ByteArray(0)
 
     private fun <T> execute(source: Source, url: String, request: () -> T): T {
         val result = fetchWithRetries(source, url, request)

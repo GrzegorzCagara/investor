@@ -59,6 +59,8 @@ class PushMessageFactory {
         AiPool.GPW -> "Do końca miesiąca raporty GPW/NC są oceniane bez AI"
         AiPool.US -> "Do końca miesiąca raporty USA są oceniane bez AI"
         AiPool.NEWS -> "Do końca miesiąca wydarzenia nie są oceniane"
+        AiPool.SE -> "Do końca miesiąca raporty ze Szwecji są oceniane bez AI"
+        AiPool.SE_NEWS -> "Do końca miesiąca wydarzenia ze Szwecji nie są oceniane"
     }
 
     private companion object {

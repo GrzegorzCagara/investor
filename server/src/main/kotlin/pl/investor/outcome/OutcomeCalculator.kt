@@ -1,6 +1,7 @@
 package pl.investor.outcome
 
 import pl.investor.history.DailyQuote
+import pl.investor.report.Market
 import pl.investor.scoring.ReferenceSession
 import java.math.BigDecimal
 import java.time.Instant
@@ -11,9 +12,9 @@ object OutcomeCalculator {
     private const val VOLUME_SESSIONS = 20
     private val HORIZONS = listOf(5, 20, 60)
 
-    fun calculate(publishedAt: Instant, sessions: List<LocalDate>, stock: List<DailyQuote>, index: List<DailyQuote>): Outcome? {
+    fun calculate(market: Market, publishedAt: Instant, sessions: List<LocalDate>, stock: List<DailyQuote>, index: List<DailyQuote>): Outcome? {
         val calendar = (sessions + stock.map { it.date }).distinct().sorted()
-        val (closedBefore, open) = calendar.partition { ReferenceSession.isClosed(it, publishedAt) }
+        val (closedBefore, open) = calendar.partition { ReferenceSession.isClosed(it, publishedAt, market) }
         val ref = closedBefore.lastOrNull() ?: return null
         val base = open.firstOrNull() ?: return null
         val stockQuotes = Quotes(stock)

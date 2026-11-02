@@ -1,17 +1,25 @@
 package pl.investor.scoring
 
 import pl.investor.support.WARSAW
+import pl.investor.support.STOCKHOLM
+import pl.investor.report.Market
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 
 object ReferenceSession {
 
-    private val sessionEnd = LocalTime.of(17, 5)
+    private val POLISH_SESSION_CLOSED = LocalTime.of(17, 5)
+    private val SWEDISH_SESSION_CLOSED = LocalTime.of(17, 35)
 
-    fun isClosed(session: LocalDate, at: Instant): Boolean =
-        session.atTime(sessionEnd).atZone(WARSAW).toInstant() < at
+    fun isClosed(session: LocalDate, at: Instant, market: Market): Boolean =
+        market.closedAt(session) < at
 
-    fun lastClosedSessionBefore(publishedAt: Instant, sessions: List<LocalDate>): LocalDate =
-        sessions.filter { isClosed(it, publishedAt) }.max()
+    fun lastClosedSessionBefore(publishedAt: Instant, sessions: List<LocalDate>, market: Market): LocalDate =
+        sessions.filter { isClosed(it, publishedAt, market) }.max()
+
+    private fun Market.closedAt(session: LocalDate): Instant = when (this) {
+        Market.SE -> session.atTime(SWEDISH_SESSION_CLOSED).atZone(STOCKHOLM).toInstant()
+        Market.GPW, Market.NC, Market.US -> session.atTime(POLISH_SESSION_CLOSED).atZone(WARSAW).toInstant()
+    }
 }

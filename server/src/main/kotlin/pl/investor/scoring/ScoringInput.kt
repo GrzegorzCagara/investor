@@ -22,4 +22,9 @@ data class ScoringInput(
     val lowLiquidity: Boolean,
     val aiUsed: Boolean,
     val uncertainNumbers: Boolean,
+    val consensus: List<ConsensusComparison> = emptyList(),
+    val trendReversal: Boolean = false,
+    val ordersYoyPct: Double? = null,
+    val ytdChangePct: Double? = null,
+    val pastReactions: List<PastReaction> = emptyList(),
 )

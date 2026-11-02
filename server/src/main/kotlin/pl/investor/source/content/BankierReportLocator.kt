@@ -1,5 +1,6 @@
 package pl.investor.source.content
 
+import pl.investor.support.WARSAW
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -14,7 +15,6 @@ import pl.investor.source.gpw.ListingEntry
 import java.text.Normalizer
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.ConcurrentHashMap
@@ -37,7 +37,7 @@ class BankierReportLocator(
     private val slugsByCompany = ConcurrentHashMap<String, String>()
 
     fun find(entry: ListingEntry): String? {
-        if (entry.market == Market.US) return null
+        if (entry.market !in POLISH_MARKETS) return null
         val key = entry.isin ?: entry.companyName
         val known = slugsByCompany[key]?.let { knownAnnouncements(key, it) }
         if (known != null) return match(known, entry)
@@ -46,7 +46,7 @@ class BankierReportLocator(
     }
 
     fun confirmedSlug(company: Company): String? =
-        if (company.market == Market.US) null else slugsByCompany[company.isin ?: company.name]
+        if (company.market !in POLISH_MARKETS) null else slugsByCompany[company.isin ?: company.name]
 
     fun hasAnnouncements(slug: String, source: Source): Boolean =
         http.probe(source, listUrl(slug))?.let { parseAnnouncements(it).isNotEmpty() } ?: false
@@ -161,12 +161,12 @@ class BankierReportLocator(
 
     private companion object {
         const val BASE_URL = "https://www.bankier.pl"
+        val POLISH_MARKETS = setOf(Market.GPW, Market.NC)
         const val PERIODIC_TITLE_PREFIX = "wyniki finansowe"
         const val MIN_SLUG_LENGTH = 3
         const val MIN_TOKEN_LENGTH = 3
         const val MIN_TITLE_SIMILARITY = 0.5
         val STOP_WORDS = setOf("raport", "biezacy", "informacja", "spolki", "spolka", "sa")
-        val WARSAW: ZoneId = ZoneId.of("Europe/Warsaw")
         val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
         val WHITESPACE = Regex("[\\s\\u00A0]+")
         val DIACRITICS = Regex("\\p{M}+")

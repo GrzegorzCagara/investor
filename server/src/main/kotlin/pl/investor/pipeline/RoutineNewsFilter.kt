@@ -10,6 +10,10 @@ object RoutineNewsFilter {
         "zmian\\p{L}* (firmy|nazwy)",
         "zmian\\p{L}* (udzialowca|akcjonariusza) wiekszosciow",
         "^nabycie znacznego pakietu akcji spolki",
+        "uppkopserbjudande",
+        "budpliktsbud",
+        "public (cash )?offer",
+        "utdelning",
     )
 
     private val ROUTINE = patterns(
@@ -71,6 +75,27 @@ object RoutineNewsFilter {
         "wartosc aktywow pod zarzadzaniem",
         "dyrektor\\p{L}* (nie)?wykonawcz",
         "kadencji dyrektorow",
+        "flaggningsmeddelande",
+        "flagging",
+        "insynsperson",
+        "insider transaction",
+        "antal aktier och roster",
+        "number of shares and votes",
+        "aterkop av (egna )?aktier.*vecka",
+        "(repurchase|buy-?back)\\p{L}*.*week",
+        "(transactions|repurchases?) (in|of) own shares",
+        "valberedning",
+        "nomination committee",
+        "likviditetsgarant",
+        "liquidity provider",
+        "certified adviser",
+        "finansiell kalender",
+        "financial calendar",
+        "(andrat|nytt|tidigarelagt|senarelagt) (rapport)?datum",
+        "(change|changed|new) (of )?(reporting |report )?date",
+        "inbjudan till (presentation|webbsandning|telefonkonferens|kapitalmarknadsdag)",
+        "invitation to (the |a )?(presentation|webcast|conference call|audiocast|capital markets day)",
+        "invites to (the |a )?(presentation|webcast|conference call)",
     )
 
     private val GENERAL_MEETING = patterns(
@@ -80,8 +105,12 @@ object RoutineNewsFilter {
         "shareholders'? meeting",
         "co najmniej 5 ?%",
         "porzadk\\p{L}* obrad",
+        "bolagsstamma",
+        "arsstamma",
+        "kallelse till",
+        "notice to (the )?(annual|extraordinary)",
     )
-    private val MATERIAL_RESOLUTION = Regex("skup|nabywani\\p{L}* akcji wlasnych|emisj|polaczen")
+    private val MATERIAL_RESOLUTION = Regex("skup|nabywani\\p{L}* akcji wlasnych|emisj|polaczen|aterkop|emission|fusion|buy-?back|repurchase|share issue|merger")
 
     private val SUPERVISORY_BOARD = Regex("rad\\p{L}* nadzorcz")
     private val BOARD_CHANGE = Regex("powolan|rezygnac|odwolan|sklad|kandydat|czlonk|kadencj")

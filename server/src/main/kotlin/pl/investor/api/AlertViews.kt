@@ -6,6 +6,7 @@ import pl.investor.report.EventType
 import pl.investor.report.Market
 import pl.investor.report.ReportKind
 import pl.investor.report.ReportStatus
+import pl.investor.scoring.Signal
 import pl.investor.source.Source
 import java.math.BigDecimal
 import java.time.Instant
@@ -49,7 +50,14 @@ data class AlertDetail(
     val companyHistory: List<OutcomeItem>,
     val eventType: EventType = EventType.RESULTS,
     val news: NewsView? = null,
+    val listing: String? = null,
+    val ytdChangePct: Double? = null,
+    val ordersYoyPct: Double? = null,
+    val pastReactions: List<PastReactionView> = emptyList(),
+    val signals: List<String> = emptyList(),
 )
+
+data class PastReactionView(val date: LocalDate, val pct: Double)
 
 data class NewsView(
     val categoryLabel: String,
@@ -68,7 +76,13 @@ data class ReactionView(
     val category: Reaction,
 )
 
-data class ConsensusRowView(val label: String, val actual: BigDecimal, val consensus: BigDecimal, val differencePct: Double)
+data class ConsensusRowView(
+    val label: String,
+    val actual: BigDecimal,
+    val consensus: BigDecimal,
+    val differencePct: Double,
+    val currency: String? = null,
+)
 
 data class OutcomeItem(
     val id: Long,
@@ -92,10 +106,13 @@ data class ScoreBucketView(val eventType: EventType, val label: String, val aler
 
 data class ReactionBucketView(val reaction: Reaction, val alerts: Int, val horizons: List<HorizonStats>)
 
+data class SignalBucketView(val signal: Signal, val label: String, val alerts: Int, val horizons: List<HorizonStats>)
+
 data class EffectivenessResponse(
     val buckets: List<ScoreBucketView>,
     val byReaction: List<ReactionBucketView>,
     val items: List<OutcomeItem>,
+    val bySignal: List<SignalBucketView> = emptyList(),
 )
 
 data class DeviceRequest(val token: String)

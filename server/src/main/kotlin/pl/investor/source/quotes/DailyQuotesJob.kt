@@ -1,5 +1,6 @@
 package pl.investor.source.quotes
 
+import pl.investor.support.WARSAW
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -9,7 +10,6 @@ import pl.investor.history.SESSION_CALENDAR
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.ZoneId
 
 @Component
 class DailyQuotesJob(
@@ -45,6 +45,17 @@ class DailyQuotesJob(
         log.info("Quotes backfill finished, latest session {}", quotes.latestDate(SESSION_CALENDAR))
     }
 
+    fun backfillMissing(from: LocalDate, to: LocalDate) {
+        val recorded = quotes.between(SESSION_CALENDAR, from, to).map { it.date }.toSet()
+        val days = weekdays(from, to).filterNot { it in recorded }.toList()
+        log.info("Quotes history backfill of {} missing weekdays from {} to {} started", days.size, from, to)
+        days.forEachIndexed { index, day ->
+            run(day)
+            if ((index + 1) % PROGRESS_EVERY == 0) log.info("Quotes history backfill: {} of {} weekdays done", index + 1, days.size)
+        }
+        log.info("Quotes history backfill finished")
+    }
+
     private fun today(): LocalDate = LocalDate.now(clock.withZone(WARSAW))
 
     private fun missingSessionsBefore(today: LocalDate): List<LocalDate> {
@@ -67,9 +78,9 @@ class DailyQuotesJob(
     }
 
     private companion object {
-        val WARSAW: ZoneId = ZoneId.of("Europe/Warsaw")
         val INDICES = listOf("WIG", "NCINDEX")
         val WEEKEND = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
         const val GAP_WINDOW_DAYS = 14L
+        const val PROGRESS_EVERY = 50
     }
 }

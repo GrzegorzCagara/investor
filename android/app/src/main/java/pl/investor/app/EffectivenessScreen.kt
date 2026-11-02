@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.Instant
 
-private const val EXPLANATION = "Zwrot ponad indeks (WIG/NCIndex) po 5, 20 i 60 sesjach od zamknięcia sesji po raporcie."
+private const val EXPLANATION = "Zwrot ponad indeks (WIG/NCIndex/OMXSPI) po 5, 20 i 60 sesjach od zamknięcia sesji po raporcie."
 private const val LABEL_WEIGHT = 1.5f
 private const val ALERTS_WEIGHT = 0.8f
 private const val CELL_WEIGHT = 1.2f
@@ -53,6 +53,9 @@ fun EffectivenessTab(viewModel: EffectivenessViewModel, onOpen: (Long) -> Unit) 
             }
             if (state.reactionRows.isNotEmpty()) {
                 item(key = "reactions") { StatsTable("Według reakcji rynku w dniu raportu", "Reakcja", state.reactionRows) }
+            }
+            if (state.signalRows.isNotEmpty()) {
+                item(key = "signals") { StatsTable("Według sygnałów (tylko wyniki, bez względu na ocenę)", "Sygnał", state.signalRows) }
             }
             if (state.items.isNotEmpty()) {
                 item(key = "items-title") { SectionTitle("Wcześniejsze alerty", Modifier.padding(top = 8.dp)) }

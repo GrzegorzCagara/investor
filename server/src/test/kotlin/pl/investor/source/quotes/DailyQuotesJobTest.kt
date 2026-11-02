@@ -128,4 +128,19 @@ class DailyQuotesJobTest {
         verify(exactly = 2) { gpw.day(any()) }
         verify(exactly = 2) { nc.day(any()) }
     }
+
+    @Test
+    fun `history backfill fetches only weekdays without a WIG quote`() {
+        val from = LocalDate.of(2024, 5, 6)
+        val to = LocalDate.of(2024, 5, 12)
+        val stored = listOf(LocalDate.of(2024, 5, 6), LocalDate.of(2024, 5, 8), LocalDate.of(2024, 5, 9), LocalDate.of(2024, 5, 10))
+        every { repository.between("WIG", from, to) } returns stored.map { quote("WIG", it) }
+        session(LocalDate.of(2024, 5, 7))
+
+        job.backfillMissing(from, to)
+
+        verify(exactly = 1) { gpw.day(any()) }
+        verify(exactly = 1) { gpw.day(LocalDate.of(2024, 5, 7)) }
+        verify(exactly = 4) { repository.save(any()) }
+    }
 }

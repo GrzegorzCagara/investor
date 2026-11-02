@@ -8,6 +8,9 @@ data class ReportContent(
     val attachmentUrls: List<String>,
     val attachmentText: String = "",
     val attachmentsPending: Boolean = false,
+    val attachmentsArePdf: Boolean = false,
 ) {
     val hasSupportedAttachments: Boolean get() = attachmentUrls.any { AttachmentFormat.of(it) != null }
+
+    val hasReadableAttachments: Boolean get() = if (attachmentsArePdf) attachmentUrls.isNotEmpty() else hasSupportedAttachments
 }

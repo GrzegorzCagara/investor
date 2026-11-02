@@ -1,12 +1,12 @@
 package pl.investor.source.gpw
 
+import pl.investor.support.WARSAW
 import org.slf4j.LoggerFactory
 import pl.investor.report.Market
 import pl.investor.report.ReportRepository
 import pl.investor.settings.SettingRepository
 import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
 
 class ListingPoller(
     private val client: EspiListingClient,
@@ -65,7 +65,6 @@ class ListingPoller(
     private fun checkpointKey(market: Market) = "LAST_POLLED_DATE_${market.name}"
 
     private companion object {
-        val WARSAW: ZoneId = ZoneId.of("Europe/Warsaw")
         const val MAX_DAYS_BACK = 7L
     }
 }
