@@ -1,0 +1,1 @@
+ALTER TABLE news_assessment ADD COLUMN already_announced BOOLEAN NOT NULL DEFAULT FALSE;

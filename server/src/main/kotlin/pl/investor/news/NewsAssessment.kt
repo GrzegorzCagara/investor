@@ -3,6 +3,7 @@ package pl.investor.news
 import pl.investor.report.Market
 import pl.investor.source.content.ReportContent
 import java.math.BigDecimal
+import java.time.LocalDate
 
 enum class NewsCategory(val label: String) {
     CONTRACT("Umowa"),
@@ -35,6 +36,7 @@ data class ModelNewsAssessment(
     val impact: Double,
     val contractValue: ContractValue?,
     val reason: String,
+    val alreadyAnnounced: Boolean = false,
 )
 
 data class NewsAssessment(
@@ -45,6 +47,7 @@ data class NewsAssessment(
     val contractValue: BigDecimal?,
     val contractCurrency: ContractCurrency?,
     val revenueSharePct: Double?,
+    val alreadyAnnounced: Boolean = false,
 ) {
     val score: Double get() = if (direction == NewsDirection.POSITIVE) impact else 0.0
 }
@@ -55,11 +58,16 @@ data class NewsInput(
     val title: String,
     val content: ReportContent,
     val trailingRevenue: BigDecimal?,
+    val trailingNetProfit: BigDecimal? = null,
+    val marketCap: BigDecimal? = null,
+    val earlierReports: List<EarlierReport> = emptyList(),
 ) {
     val currency: String get() = market.currency
 
     val announcement: String get() = "Tytuł: $title\n\n${content.text.take(NewsPrompt.MAX_BODY_CHARS)}"
 }
+
+data class EarlierReport(val date: LocalDate, val title: String)
 
 class NewsAssessmentFailedException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 

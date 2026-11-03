@@ -28,6 +28,7 @@ import pl.investor.history.RevenuePeriodRepository
 import pl.investor.history.ValuationRepository
 import pl.investor.news.NewsAssessmentRepository
 import pl.investor.news.NewsAssessor
+import pl.investor.news.NewsContextAssembler
 import pl.investor.news.NewsCategory
 import pl.investor.news.NewsDirection
 import pl.investor.notification.PushLogRepository
@@ -90,6 +91,7 @@ class ReportPipelineTest : PostgresTestBase() {
     @Autowired lateinit var pushLog: PushLogRepository
     @Autowired lateinit var aiUsage: AiUsageRepository
     @Autowired lateinit var newsAssessments: NewsAssessmentRepository
+    @Autowired lateinit var newsContext: NewsContextAssembler
     @Autowired lateinit var alerts: AlertRepository
 
     private val clock: Clock = Clock.fixed(Instant.parse("2026-09-21T06:15:00Z"), ZoneOffset.UTC)
@@ -130,7 +132,7 @@ class ReportPipelineTest : PostgresTestBase() {
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, clock,
         )
     }
 
@@ -780,9 +782,15 @@ class ReportPipelineTest : PostgresTestBase() {
 
     private val newsTitle = "Zawarcie istotnej umowy na dostawy stacji transformatorowych"
 
-    private fun newsResponse(category: NewsCategory, direction: NewsDirection, impact: Int, reason: String = "Notowanie we Frankfurcie poszerza grono inwestorów. Drugie zdanie.") =
+    private fun newsResponse(
+        category: NewsCategory,
+        direction: NewsDirection,
+        impact: Int,
+        reason: String = "Notowanie we Frankfurcie poszerza grono inwestorów. Drugie zdanie.",
+        alreadyAnnounced: Boolean = false,
+    ) =
         json(
-            """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"${category.name}\",\"direction\":\"${direction.name}\",\"impact\":$impact,\"contractValue\":null,\"reason\":\"$reason\"}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
+            """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"${category.name}\",\"direction\":\"${direction.name}\",\"impact\":$impact,\"contractValue\":null,\"reason\":\"$reason\",\"alreadyAnnounced\":$alreadyAnnounced}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
         )
 
     private fun enqueueNews(category: NewsCategory = NewsCategory.LISTING, direction: NewsDirection = NewsDirection.POSITIVE, impact: Int = 80) =
@@ -803,6 +811,38 @@ class ReportPipelineTest : PostgresTestBase() {
         assertEquals("RESULTS", eventTypeOf("100"))
         assertEquals(0, server.requestCount)
         verify(exactly = 0) { contentClient.fetch(any(), any()) }
+    }
+
+    @Test
+    fun `already announced news is stored capped at 30 with the flag, not pushed and not listed`() {
+        server.enqueue(newsResponse(NewsCategory.CONTRACT, NewsDirection.POSITIVE, 82, "Rynek znał tę umowę wcześniej.", alreadyAnnounced = true))
+
+        pipeline.process(entry("130", newsTitle))
+
+        val id = reportId("130")
+        assertEquals(ReportStatus.SCORED, statusOf("130"))
+        assertEquals(30.0, checkNotNull(scores.find(id)).score.total, 0.001)
+        assertEquals(true, newsAssessments.find(id)?.alreadyAnnounced)
+        assertEquals(0L, newsPushes())
+        assertFalse(id in listedIds())
+    }
+
+    @Test
+    fun `news on a penny stock carries the penny stock warning, also after reprocessing`() {
+        jdbc.sql("INSERT INTO daily_quote (instrument, date, close, volume, turnover) VALUES ('CY1000031710', DATE '2026-09-19', 0.40, 1000, 400)").update()
+        try {
+            enqueueNews(impact = 60)
+
+            pipeline.process(entry("131", newsTitle))
+            val id = reportId("131")
+            jdbc.sql("UPDATE score SET warnings = '{}' WHERE report_id = :id").param("id", id).update()
+            pipeline.reprocess(id, allowWithoutAttachments = false)
+
+            assertEquals(setOf(Warning.PENNY_STOCK), checkNotNull(scores.find(id)).score.warnings)
+            assertEquals(1, server.requestCount)
+        } finally {
+            jdbc.sql("DELETE FROM daily_quote WHERE instrument = 'CY1000031710' AND date = DATE '2026-09-19'").update()
+        }
     }
 
     @Test

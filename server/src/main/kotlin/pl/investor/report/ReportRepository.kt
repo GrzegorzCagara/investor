@@ -116,6 +116,23 @@ class ReportRepository(private val jdbc: JdbcClient) {
             .query { rs, _ -> rs.toReport() }
             .list()
 
+    fun relevantBetween(companyId: Long, from: Instant, before: Instant, limit: Int): List<Report> =
+        jdbc.sql(
+            """
+            SELECT * FROM report
+            WHERE company_id = :companyId AND published_at >= :from AND published_at < :before
+              AND title IS NOT NULL AND status <> 'IRRELEVANT'
+            ORDER BY published_at DESC
+            LIMIT :limit
+            """
+        )
+            .param("companyId", companyId)
+            .param("from", from.toUtc())
+            .param("before", before.toUtc())
+            .param("limit", limit)
+            .query { rs, _ -> rs.toReport() }
+            .list()
+
     fun findById(id: Long): Report =
         jdbc.sql("SELECT * FROM report WHERE id = :id")
             .param("id", id)

@@ -27,4 +27,6 @@ data class ScoringInput(
     val ordersYoyPct: Double? = null,
     val ytdChangePct: Double? = null,
     val pastReactions: List<PastReaction> = emptyList(),
+    val earlyStage: Boolean = false,
+    val pennyStock: Boolean = false,
 )

@@ -13,6 +13,8 @@ import pl.investor.history.RevenuePeriod
 import pl.investor.history.RevenuePeriodRepository
 import pl.investor.history.ValuationRepository
 import pl.investor.history.indexInstrument
+import pl.investor.history.trailingYearOperatingResult
+import pl.investor.history.trailingYearRevenueOrZero
 import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.report.Report
@@ -72,8 +74,23 @@ class ScoringInputAssembler(
             ordersYoyPct = extraction?.ordersYoyPct(),
             ytdChangePct = market.ytdChangePct,
             pastReactions = pastReactions.before(company, report.publishedAt),
+            earlyStage = listOfNotNull(results.lossExceedsRevenueOverTrailingYear(), primary?.lossExceedsRevenue()).let { it.isNotEmpty() && it.all { loss -> loss } },
+            pennyStock = market.pennyStock,
         )
     }
+
+    private fun List<QuarterResult>.lossExceedsRevenueOverTrailingYear(): Boolean? {
+        val result = trailingYearOperatingResult() ?: return null
+        val revenue = trailingYearRevenueOrZero() ?: return null
+        return lossExceeds(result, revenue)
+    }
+
+    private fun ExtractedPeriod.lossExceedsRevenue(): Boolean? {
+        val result = (operatingProfit ?: netProfit)?.valueInThousands ?: return null
+        return lossExceeds(result, revenue?.valueInThousands ?: BigDecimal.ZERO)
+    }
+
+    private fun lossExceeds(result: BigDecimal, revenue: BigDecimal): Boolean = result.signum() < 0 && result.negate() > revenue
 
     private fun consensusComparisons(company: Company, report: Report, primary: ExtractedPeriod): List<ConsensusComparison> {
         if (company.market != Market.SE || primary.kind != PeriodKind.QUARTER) return emptyList()
@@ -243,6 +260,7 @@ class ScoringInputAssembler(
             lowLiquidity = company.isQuotedInMarketCurrency() && turnovers.isNotEmpty() &&
                 turnovers.sumOf { it }.toDouble() / turnovers.size < company.market.lowLiquidityTurnover,
             ytdChangePct = yearStartClose?.let { changePct(latest.close, it.close) },
+            pennyStock = company.isQuotedInMarketCurrency() && latest.close < PENNY_STOCK_PRICE,
         )
     }
 
@@ -253,8 +271,6 @@ class ScoringInputAssembler(
         val start = closes[from] ?: return null
         return changePct(end, start)
     }
-
-    private fun Company.isQuotedInMarketCurrency(): Boolean = quoteCurrency == null || quoteCurrency == market.currency
 
     private fun changePct(end: BigDecimal, start: BigDecimal): Double? =
         if (start.signum() > 0) (end.toDouble() / start.toDouble() - 1) * 100 else null
@@ -294,9 +310,10 @@ class ScoringInputAssembler(
         val indexChange10Pct: Double?,
         val lowLiquidity: Boolean,
         val ytdChangePct: Double?,
+        val pennyStock: Boolean,
     ) {
         companion object {
-            val EMPTY = MarketData(null, null, null, false, null)
+            val EMPTY = MarketData(null, null, null, false, null, false)
         }
     }
 
@@ -314,6 +331,7 @@ class ScoringInputAssembler(
         const val REVERSAL_QUARTERS = 3L
         const val YEAR_END_GAP_DAYS = 10L
         val HISTORY_TOLERANCE = BigDecimal("0.05")
+        val PENNY_STOCK_PRICE: BigDecimal = BigDecimal.ONE
     }
 }
 

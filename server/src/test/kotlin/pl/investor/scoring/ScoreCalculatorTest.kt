@@ -1,6 +1,7 @@
 package pl.investor.scoring
 
 import pl.investor.extraction.OutlookTone
+import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -82,5 +83,38 @@ class ScoreCalculatorTest {
         val clean = ScoreCalculator.score(asbisLike().copy(revenueYoyPct = 100.0, previousYoyPcts = listOf(60.0, 50.0, 40.0)))
         assertEquals(20.0, withNan.components.growth, 1e-9)
         assertEquals(clean.total, withNan.total, 1e-9)
+    }
+
+    private fun immunoviaLike() = allNull().copy(
+        sur = 6.0, revenueYoyPct = 734.0, previousYoyPcts = listOf(120.0, 90.0, 60.0, 40.0), marginChangePp = 12000.0,
+        consecutiveStrongBefore = 3, outlook = OutlookTone.POSITIVE, ps = 2.0, psMedian20q = 40.0,
+    )
+
+    @Test fun `early-stage company keeps growth, quality and own-trend surprise at most neutral`() {
+        val regular = ScoreCalculator.score(immunoviaLike())
+        val early = ScoreCalculator.score(immunoviaLike().copy(earlyStage = true))
+        assertEquals(100.0, regular.total, 1e-9)
+        assertEquals(15.0, early.components.surprise, 1e-9)
+        assertEquals(10.0, early.components.growth, 1e-9)
+        assertEquals(7.5, early.components.quality, 1e-9)
+        assertEquals(67.5, early.total, 1e-9)
+        assertTrue(Warning.EARLY_STAGE in early.warnings)
+        assertFalse(Warning.EARLY_STAGE in regular.warnings)
+    }
+    @Test fun `early stage never raises weak points`() {
+        val early = ScoreCalculator.score(allNull().copy(sur = -3.0, revenueYoyPct = -20.0, marginChangePp = -4.0, earlyStage = true))
+        assertEquals(0.0, early.components.surprise, 1e-9)
+        assertEquals(0.0, early.components.growth, 1e-9)
+        assertEquals(1.5, early.components.quality, 1e-9)
+    }
+    @Test fun `early stage keeps a consensus surprise`() {
+        val beat = ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal(150), BigDecimal(100), "SEK", "Placera", 3)
+        val early = ScoreCalculator.score(immunoviaLike().copy(earlyStage = true, consensus = listOf(beat)))
+        assertEquals(30.0, early.components.surprise, 1e-9)
+    }
+    @Test fun `penny stock is a warning only`() {
+        val penny = ScoreCalculator.score(asbisLike().copy(pennyStock = true))
+        assertTrue(Warning.PENNY_STOCK in penny.warnings)
+        assertEquals(ScoreCalculator.score(asbisLike()).total, penny.total, 1e-9)
     }
 }

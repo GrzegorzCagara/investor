@@ -7,6 +7,7 @@ import kotlin.math.min
 private const val NEUTRAL_QUALITY = 7.5
 private const val NEUTRAL_VALUATION = 7.5
 private const val NEUTRAL_SURPRISE = 15.0
+private const val NEUTRAL_GROWTH = 10.0
 private const val CONFIRMED_SERIES = 3
 private const val ORDERS_SIGNIFICANT_PCT = 20.0
 private const val LOW_EXPECTATIONS_YTD_PCT = -30.0
@@ -96,14 +97,18 @@ fun runUpPenalty(priceChangePct: Double?, indexChangePct: Double?, surprisePoint
 fun oneOffSurprisePoints(surprisePoints: Double, oneOff: Boolean): Double =
     if (oneOff) min(surprisePoints, NEUTRAL_SURPRISE) else surprisePoints
 
+private fun Double.atMostNeutralWhen(earlyStage: Boolean, neutral: Double): Double = if (earlyStage) min(this, neutral) else this
+
 object ScoreCalculator {
     fun score(raw: ScoringInput): Score {
         val input = raw.finiteOnly()
         val consensusSurprise = input.consensusSurprisePoints()
+        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage, NEUTRAL_SURPRISE)
         val components = ScoreComponents(
-            surprise = oneOffSurprisePoints(consensusSurprise ?: surprisePoints(input.sur), input.oneOff),
-            growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal),
-            quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly),
+            surprise = oneOffSurprisePoints(consensusSurprise ?: ownTrendSurprise, input.oneOff),
+            growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal).atMostNeutralWhen(input.earlyStage, NEUTRAL_GROWTH),
+            quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly)
+                .atMostNeutralWhen(input.earlyStage, NEUTRAL_QUALITY),
             series = seriesPoints(input.consecutiveStrongBefore),
             outlook = outlookPoints(input.outlook, input.ordersYoyPct),
             valuation = valuationPoints(input.pe, input.ttmNetProfitGrowthPct, input.ps, input.psMedian20q, input.cyclical),
@@ -157,5 +162,7 @@ object ScoreCalculator {
         if (!input.aiUsed) add(Warning.NO_AI)
         if (input.uncertainNumbers) add(Warning.UNCERTAIN_NUMBERS)
         if (hasRunUp(input.priceChange10Pct, input.indexChange10Pct)) add(Warning.RUN_UP)
+        if (input.earlyStage) add(Warning.EARLY_STAGE)
+        if (input.pennyStock) add(Warning.PENNY_STOCK)
     }
 }

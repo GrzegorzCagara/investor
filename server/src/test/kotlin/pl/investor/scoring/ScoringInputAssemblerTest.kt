@@ -356,6 +356,89 @@ class ScoringInputAssemblerTest : PostgresTestBase() {
         assertEquals(1, input.consecutiveStrongBefore)
     }
 
+    private fun saveTrailingYear(company: Company, revenue: Long, operatingProfit: Long?, netProfit: Long) =
+        listOf("2026-06-30", "2026-03-31", "2025-12-31", "2025-09-30").map(LocalDate::parse).forEach { end ->
+            quarterResults.save(QuarterResult(company.id!!, end, BigDecimal(revenue), operatingProfit?.let(::BigDecimal), BigDecimal(netProfit), end.plusDays(40)))
+        }
+
+    private fun withOperatingProfit(verified: VerifiedExtraction, operatingProfit: Long) = verified.copy(
+        extraction = verified.extraction.copy(
+            periods = verified.extraction.periods.map { it.copy(operatingProfit = Amount(BigDecimal(operatingProfit), "$operatingProfit")) },
+        ),
+    )
+
+    @Test
+    fun `operating loss larger than revenue over the trailing year marks an early-stage company`() {
+        val early = synthetic().also { saveTrailingYear(it, revenue = 100, operatingProfit = -500, netProfit = -480) }
+        assertTrue(assembler.assemble(early, reportFor(early), null).earlyStage)
+
+        reset()
+        val lossMaking = synthetic().also { saveTrailingYear(it, revenue = 1000, operatingProfit = -200, netProfit = -250) }
+        assertFalse(assembler.assemble(lossMaking, reportFor(lossMaking), null).earlyStage)
+    }
+
+    @Test
+    fun `net loss stands in for a missing operating result in the trailing year`() {
+        val company = synthetic().also { saveTrailingYear(it, revenue = 100, operatingProfit = null, netProfit = -480) }
+
+        assertTrue(assembler.assemble(company, reportFor(company), null).earlyStage)
+    }
+
+    @Test
+    fun `without a trailing year the reported period decides the early stage`() {
+        val company = synthetic()
+        val quarter = periodOf(PeriodKind.QUARTER, "PLN", "2026-09-30", 300, 40)
+
+        assertTrue(assembler.assemble(company, reportFor(company), withOperatingProfit(quarter, -900)).earlyStage)
+        assertFalse(assembler.assemble(company, reportFor(company), withOperatingProfit(quarter, -100)).earlyStage)
+        assertFalse(assembler.assemble(company, reportFor(company), quarter).earlyStage)
+    }
+
+    @Test
+    fun `missing revenue counts as none for a loss-making company`() {
+        val company = synthetic()
+        listOf("2026-06-30", "2026-03-31", "2025-12-31", "2025-09-30").map(LocalDate::parse).forEach { end ->
+            quarterResults.save(QuarterResult(company.id!!, end, null, BigDecimal(-500), BigDecimal(-480), end.plusDays(40)))
+        }
+
+        assertTrue(assembler.assemble(company, reportFor(company), null).earlyStage)
+    }
+
+    @Test
+    fun `early stage needs both the trailing year and the reported quarter to show the loss above revenue`() {
+        val company = synthetic().also { saveTrailingYear(it, revenue = 100, operatingProfit = -500, netProfit = -480) }
+
+        val stillEarly = withOperatingProfit(periodOf(PeriodKind.QUARTER, "PLN", "2026-09-30", 300, 40), -900)
+        val breakout = withOperatingProfit(periodOf(PeriodKind.QUARTER, "PLN", "2026-09-30", 2000, 40), -300)
+
+        assertTrue(assembler.assemble(company, reportFor(company), stillEarly).earlyStage)
+        assertFalse(assembler.assemble(company, reportFor(company), breakout).earlyStage)
+    }
+
+    @Test
+    fun `trailing year decides over a loss-making reported quarter`() {
+        val company = synthetic().also { saveTrailingYear(it, revenue = 1000, operatingProfit = 50, netProfit = 40) }
+        val quarter = withOperatingProfit(periodOf(PeriodKind.QUARTER, "PLN", "2026-09-30", 300, 40), -900)
+
+        assertFalse(assembler.assemble(company, reportFor(company), quarter).earlyStage)
+    }
+
+    @Test
+    fun `close below 1 in the market currency marks a penny stock`() {
+        val penny = synthetic()
+        quotes.save(DailyQuote(penny.isin!!, LocalDate.of(2026, 9, 18), BigDecimal("0.45"), 1000, BigDecimal(450)))
+        assertTrue(assembler.assemble(penny, reportFor(penny), null).pennyStock)
+
+        reset()
+        val euro = companies.save(Company(null, "EUR", "PLSYN0000012", Market.GPW, "EUR", null, false, quoteCurrency = "EUR"))
+        quotes.save(DailyQuote(euro.isin!!, LocalDate.of(2026, 9, 18), BigDecimal("0.45"), 1000, BigDecimal(450)))
+        assertFalse(assembler.assemble(euro, reportFor(euro), null).pennyStock)
+
+        reset()
+        val regular = synthetic().also { saveSessions(it, "WIG", 500_000) }
+        assertFalse(assembler.assemble(regular, reportFor(regular), null).pennyStock)
+    }
+
     private companion object {
         const val ASBIS_ISIN = "CY1000031710"
     }

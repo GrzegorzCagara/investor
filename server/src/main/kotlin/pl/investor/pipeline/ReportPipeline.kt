@@ -24,9 +24,7 @@ import pl.investor.news.NewsAssessmentRepository
 import pl.investor.news.NewsAssessor
 import pl.investor.news.NewsDirection
 import pl.investor.news.NEWS_LISTED_MIN_SCORE
-import pl.investor.news.TRAILING_YEAR_QUARTERS
-import pl.investor.news.NewsInput
-import pl.investor.news.trailingYearRevenue
+import pl.investor.news.NewsContextAssembler
 import pl.investor.notification.PushLogRepository
 import pl.investor.notification.PushMessage
 import pl.investor.notification.PushMessageFactory
@@ -86,6 +84,7 @@ class ReportPipeline(
     private val messages: PushMessageFactory,
     private val newsAssessor: NewsAssessor,
     private val newsAssessments: NewsAssessmentRepository,
+    private val newsContext: NewsContextAssembler,
     private val clock: Clock,
 ) {
 
@@ -308,7 +307,7 @@ class ReportPipeline(
         }
         val body = content ?: contentClient.fetch(entry, includeAttachments = false)
         val refreshed = refreshedQuietly(company)
-        val input = NewsInput(refreshed.name, report.market, entry.title.orEmpty(), body, trailingRevenue(refreshed, report))
+        val input = newsContext.input(refreshed, report, entry.title.orEmpty(), body)
         val assessment = callingAi(news, onBudgetExhausted = { newsWithoutAi(news) }) { newsAssessor.assess(input) } ?: return
         newsAssessments.save(id, assessment, clock.instant())
         scoreAndNotifyNews(news, refreshed, assessment)
@@ -316,7 +315,7 @@ class ReportPipeline(
 
     private fun scoreAndNotifyNews(report: Report, company: Company, assessment: NewsAssessment) {
         val id = checkNotNull(report.id)
-        val score = Score(assessment.score, NO_COMPONENTS, 0.0, emptySet())
+        val score = Score(assessment.score, NO_COMPONENTS, 0.0, newsContext.warnings(company, report))
         scores.save(id, score, assessment.reason, clock.instant())
         if (!isNewsPushDue(report, assessment)) {
             setStatus(report, ReportStatus.SCORED)
@@ -336,10 +335,6 @@ class ReportPipeline(
         notifyBudgetExhaustedOnce(report.market.newsPool())
         setStatus(report, ReportStatus.UNSCORED_NO_AI)
     }
-
-    private fun trailingRevenue(company: Company, report: Report) =
-        quarterResults.publishedBefore(checkNotNull(company.id), report.publishedAt.toWarsawDate().plusDays(1), TRAILING_YEAR_QUARTERS)
-            .trailingYearRevenue()
 
     private fun afterExtraction(report: Report, company: Company, entry: ListingEntry, verified: VerifiedExtraction, content: ReportContent?) {
         saveRevenuePeriods(report, company, verified)

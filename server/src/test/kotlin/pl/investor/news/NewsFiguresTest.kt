@@ -2,6 +2,9 @@ package pl.investor.news
 
 import org.junit.jupiter.api.Test
 import pl.investor.history.QuarterResult
+import pl.investor.history.trailingYearNetProfit
+import pl.investor.history.trailingYearOperatingResult
+import pl.investor.history.trailingYearRevenue
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -33,6 +36,17 @@ class NewsFiguresTest {
         assertNull(listOf(quarter("2026-06-30", "1"), quarter("2026-03-31", "1"), quarter("2025-12-31", "1"), quarter("2025-06-30", "1")).trailingYearRevenue())
         assertNull(listOf(quarter("2026-06-30", "1"), quarter("2026-03-31", null), quarter("2025-12-31", "1"), quarter("2025-09-30", "1")).trailingYearRevenue())
         assertNull(listOf(quarter("2026-06-30", "1"), quarter("2026-03-31", "1"), quarter("2025-12-31", "1")).trailingYearRevenue())
+    }
+
+    @Test
+    fun `trailing year net profit and operating result follow the same quarters`() {
+        val quarters = listOf("2026-06-30", "2026-03-31", "2025-12-31", "2025-09-30").map {
+            QuarterResult(1, LocalDate.parse(it), BigDecimal(10), null, BigDecimal(-25), LocalDate.parse(it).plusMonths(2))
+        }
+
+        assertEquals(0, BigDecimal("-100").compareTo(quarters.trailingYearNetProfit()))
+        assertEquals(0, BigDecimal("-100").compareTo(quarters.trailingYearOperatingResult()))
+        assertEquals(0, BigDecimal("-40").compareTo(quarters.map { it.copy(operatingProfit = BigDecimal(-10)) }.trailingYearOperatingResult()))
     }
 
     @Test

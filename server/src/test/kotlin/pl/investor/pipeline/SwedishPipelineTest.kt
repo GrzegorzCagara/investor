@@ -24,6 +24,7 @@ import pl.investor.history.RevenuePeriodRepository
 import pl.investor.history.ValuationRepository
 import pl.investor.news.NewsAssessmentRepository
 import pl.investor.news.NewsAssessor
+import pl.investor.news.NewsContextAssembler
 import pl.investor.notification.PushLogRepository
 import pl.investor.notification.PushMessage
 import pl.investor.notification.PushMessageFactory
@@ -91,6 +92,7 @@ class SwedishPipelineTest : PostgresTestBase() {
     @Autowired lateinit var pushLog: PushLogRepository
     @Autowired lateinit var aiUsage: AiUsageRepository
     @Autowired lateinit var newsAssessments: NewsAssessmentRepository
+    @Autowired lateinit var newsContext: NewsContextAssembler
     @Autowired lateinit var previews: ConsensusPreviewRepository
 
     private val clock: Clock = Clock.fixed(Instant.parse("2026-10-30T07:05:00Z"), ZoneOffset.UTC)
@@ -141,7 +143,7 @@ class SwedishPipelineTest : PostgresTestBase() {
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, clock,
         )
     }
 

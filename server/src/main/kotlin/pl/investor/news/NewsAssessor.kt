@@ -77,17 +77,29 @@ class NewsAssessor(
             ?.takeIf { category == NewsCategory.CONTRACT }
             ?.takeIf { verifier.isSupported(Amount(it.valueInThousands, it.sourceText), input.announcement, input.market) }
         val currency = value?.currency
-        val clamped = impact.coerceIn(0.0, 100.0)
         return NewsAssessment(
             category = category,
             direction = direction,
-            impact = if (category == NewsCategory.CONTRACT && value == null) clamped.coerceAtMost(UNVERIFIED_CONTRACT_MAX_IMPACT) else clamped,
+            impact = guardedImpact(hasVerifiedValue = value != null),
             reason = reason.trim(),
             contractValue = value?.valueInThousands,
             contractCurrency = currency,
-            revenueSharePct = value?.takeIf { currency?.name == input.currency }?.let { revenueSharePct(it.valueInThousands, input.trailingRevenue) },
+            revenueSharePct = value?.takeIf { currency?.name == input.currency }?.let { revenueSharePct(it.netOfVat(), input.trailingRevenue) },
+            alreadyAnnounced = alreadyAnnounced,
         )
     }
+
+    private fun ModelNewsAssessment.guardedImpact(hasVerifiedValue: Boolean): Double =
+        listOfNotNull(
+            impact.coerceIn(0.0, 100.0),
+            UNVERIFIED_CONTRACT_MAX_IMPACT.takeIf { category == NewsCategory.CONTRACT && !hasVerifiedValue },
+            ALREADY_ANNOUNCED_MAX_IMPACT.takeIf { alreadyAnnounced },
+        ).min()
+
+    private fun ContractValue.netOfVat(): BigDecimal =
+        if (currency == ContractCurrency.PLN && isGrossOnly()) valueInThousands.divide(POLISH_VAT_MULTIPLIER, MathContext.DECIMAL64) else valueInThousands
+
+    private fun ContractValue.isGrossOnly(): Boolean = sourceText.lowercase().let { GROSS in it && NET !in it }
 
     private fun revenueSharePct(value: BigDecimal, revenue: BigDecimal?): Double? =
         revenue?.takeIf { it.signum() > 0 }
@@ -97,6 +109,10 @@ class NewsAssessor(
         const val MODEL = "claude-haiku-5-5"
         const val MAX_TOKENS = 2000L
         const val UNVERIFIED_CONTRACT_MAX_IMPACT = 60.0
+        const val ALREADY_ANNOUNCED_MAX_IMPACT = 30.0
+        const val GROSS = "brutto"
+        const val NET = "netto"
+        val POLISH_VAT_MULTIPLIER = BigDecimal("1.23")
         val HUNDRED = BigDecimal(100)
     }
 }

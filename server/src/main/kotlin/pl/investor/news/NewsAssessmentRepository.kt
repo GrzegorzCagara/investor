@@ -11,8 +11,8 @@ class NewsAssessmentRepository(private val jdbc: JdbcClient) {
     fun save(reportId: Long, assessment: NewsAssessment, createdAt: Instant) {
         jdbc.sql(
             """
-            INSERT INTO news_assessment (report_id, category, direction, impact, reason, contract_value, contract_currency, revenue_share_pct, created_at)
-            VALUES (:reportId, :category, :direction, :impact, :reason, :contractValue, :contractCurrency, :revenueSharePct, :createdAt)
+            INSERT INTO news_assessment (report_id, category, direction, impact, reason, contract_value, contract_currency, revenue_share_pct, already_announced, created_at)
+            VALUES (:reportId, :category, :direction, :impact, :reason, :contractValue, :contractCurrency, :revenueSharePct, :alreadyAnnounced, :createdAt)
             ON CONFLICT (report_id) DO UPDATE SET
                 category = EXCLUDED.category,
                 direction = EXCLUDED.direction,
@@ -21,6 +21,7 @@ class NewsAssessmentRepository(private val jdbc: JdbcClient) {
                 contract_value = EXCLUDED.contract_value,
                 contract_currency = EXCLUDED.contract_currency,
                 revenue_share_pct = EXCLUDED.revenue_share_pct,
+                already_announced = EXCLUDED.already_announced,
                 created_at = EXCLUDED.created_at
             """
         )
@@ -32,6 +33,7 @@ class NewsAssessmentRepository(private val jdbc: JdbcClient) {
             .param("contractValue", assessment.contractValue)
             .param("contractCurrency", assessment.contractCurrency?.name)
             .param("revenueSharePct", assessment.revenueSharePct)
+            .param("alreadyAnnounced", assessment.alreadyAnnounced)
             .param("createdAt", createdAt.toUtc())
             .update()
     }
@@ -48,6 +50,7 @@ class NewsAssessmentRepository(private val jdbc: JdbcClient) {
                     contractValue = rs.getBigDecimal("contract_value"),
                     contractCurrency = rs.getString("contract_currency")?.let(ContractCurrency::valueOf),
                     revenueSharePct = rs.getDouble("revenue_share_pct").takeUnless { rs.wasNull() },
+                    alreadyAnnounced = rs.getBoolean("already_announced"),
                 )
             }
             .optional()
