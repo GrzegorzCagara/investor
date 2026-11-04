@@ -161,6 +161,7 @@ object Formatting {
         "AVANZA" -> "Avanza"
         "YAHOO" -> "Yahoo (indeks)"
         "PLACERA" -> "Placera (konsensus)"
+        "XTB" -> "XTB (lista akcji)"
         else -> source
     }
 

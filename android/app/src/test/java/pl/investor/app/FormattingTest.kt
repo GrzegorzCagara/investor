@@ -183,6 +183,7 @@ class FormattingTest {
         assertEquals("Avanza", Formatting.sourceLabel("AVANZA"))
         assertEquals("Yahoo (indeks)", Formatting.sourceLabel("YAHOO"))
         assertEquals("Placera (konsensus)", Formatting.sourceLabel("PLACERA"))
+        assertEquals("XTB (lista akcji)", Formatting.sourceLabel("XTB"))
         assertEquals("Spadek w dniu raportu", Formatting.reactionLabel(Reaction.NEGATIVE))
         assertEquals("Płasko", Formatting.reactionLabel(Reaction.FLAT))
         assertEquals("Wzrost", Formatting.reactionLabel(Reaction.POSITIVE))

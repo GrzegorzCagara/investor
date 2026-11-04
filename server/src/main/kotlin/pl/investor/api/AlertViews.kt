@@ -22,6 +22,7 @@ data class AlertItem(
     val belowThreshold: Boolean,
     val summary: String,
     val status: ReportStatus,
+    val availableOnXtb: Boolean = false,
 )
 
 data class AlertsResponse(val items: List<AlertItem>)
@@ -55,6 +56,7 @@ data class AlertDetail(
     val ordersYoyPct: Double? = null,
     val pastReactions: List<PastReactionView> = emptyList(),
     val signals: List<String> = emptyList(),
+    val availableOnXtb: Boolean = false,
 )
 
 data class PastReactionView(val date: LocalDate, val pct: Double)

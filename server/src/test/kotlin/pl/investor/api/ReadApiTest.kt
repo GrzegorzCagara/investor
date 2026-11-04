@@ -152,6 +152,26 @@ class ReadApiTest : PostgresTestBase() {
     }
 
     @Test
+    fun `alerts, ranking and detail show whether the company is available on XTB`() {
+        val onXtb = company("Alfa")
+        companies.updateXtbAvailability(listOf(onXtb), available = true)
+        val onXtbReport = report(onXtb, 1, total = 80.0)
+        val elsewhereReport = report(company("Beta"), 2, total = 70.0)
+
+        mvc.perform(authorized("/api/alerts"))
+            .andExpect(jsonPath("\$.items[0].id").value(onXtbReport))
+            .andExpect(jsonPath("\$.items[0].availableOnXtb").value(true))
+            .andExpect(jsonPath("\$.items[1].id").value(elsewhereReport))
+            .andExpect(jsonPath("\$.items[1].availableOnXtb").value(false))
+        mvc.perform(authorized("/api/ranking"))
+            .andExpect(jsonPath("\$.items[0].availableOnXtb").value(true))
+        mvc.perform(authorized("/api/alerts/$onXtbReport"))
+            .andExpect(jsonPath("\$.availableOnXtb").value(true))
+        mvc.perform(authorized("/api/alerts/$elsewhereReport"))
+            .andExpect(jsonPath("\$.availableOnXtb").value(false))
+    }
+
+    @Test
     fun `ranking orders by the displayed score and then newest first`() {
         val older = report(company("Alfa"), 20, total = 82.4)
         val newer = report(company("Beta"), 1, total = 81.6)

@@ -80,6 +80,20 @@ class CompanyRepository(private val jdbc: JdbcClient) {
             .query { rs, _ -> rs.getString("name") }
             .list()
 
+    fun findInMarkets(markets: Collection<Market>): List<Company> =
+        jdbc.sql("SELECT * FROM company WHERE market IN (:markets) ORDER BY id")
+            .param("markets", markets.map { it.name })
+            .query { rs, _ -> rs.toCompany() }
+            .list()
+
+    fun updateXtbAvailability(ids: Collection<Long>, available: Boolean) {
+        if (ids.isEmpty()) return
+        jdbc.sql("UPDATE company SET xtb_available = :available WHERE id IN (:ids)")
+            .param("available", available)
+            .param("ids", ids)
+            .update()
+    }
+
     fun findByIsin(isin: String, market: Market): Company? =
         jdbc.sql("SELECT * FROM company WHERE isin = :isin AND market = :market")
             .param("isin", isin)
@@ -114,5 +128,6 @@ class CompanyRepository(private val jdbc: JdbcClient) {
         avanzaId = getString("avanza_id"),
         listing = getString("listing"),
         quoteCurrency = getString("quote_currency"),
+        availableOnXtb = getBoolean("xtb_available"),
     )
 }

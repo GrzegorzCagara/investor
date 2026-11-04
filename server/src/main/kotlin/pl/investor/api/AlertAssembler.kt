@@ -60,6 +60,7 @@ class AlertAssembler(
                 belowThreshold = row.scoredTotal()?.let { it < threshold } ?: false,
                 summary = row.summary().firstSentence(),
                 status = row.status,
+                availableOnXtb = row.availableOnXtb,
             )
         }
     }
@@ -96,6 +97,7 @@ class AlertAssembler(
             ordersYoyPct = context?.ordersYoyPct,
             pastReactions = context?.pastReactions.orEmpty().map { PastReactionView(it.date, it.pct) },
             signals = stored?.score?.signals.orEmpty().sortedBy { it.ordinal }.map { it.label },
+            availableOnXtb = row.availableOnXtb,
         )
     }
 

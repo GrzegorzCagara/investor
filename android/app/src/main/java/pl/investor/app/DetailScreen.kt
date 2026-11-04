@@ -86,6 +86,7 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
                 Text(Formatting.detailTitle(detail), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(Formatting.detailHeadline(detail, now), fontSize = 12.sp, color = Color(0xFF666666))
             }
+            if (detail.availableOnXtb) XtbBadge(Modifier.padding(end = 6.dp))
             ScoreBadge(detail.score)
         }
         detail.news?.let { NewsSection(it) }

@@ -26,6 +26,8 @@ class BiznesRadarClient(
 
     fun mediumNameFor(companyName: String): String? = symbolDirectory.mediumNameFor(companyName)
 
+    fun tickersBySymbol(): Map<String, String> = symbolDirectory.tickersBySymbol
+
     private companion object {
         const val BASE = "https://www.biznesradar.pl"
     }

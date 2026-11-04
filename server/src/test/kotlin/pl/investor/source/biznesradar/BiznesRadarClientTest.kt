@@ -60,6 +60,17 @@ class BiznesRadarClientTest {
     }
 
     @Test
+    fun `stock symbols map back to exchange tickers`() {
+        stubSymbols()
+
+        val tickers = client.tickersBySymbol()
+
+        assertEquals("11B", tickers["11-BIT-STUDIOS"])
+        assertEquals("ASB", tickers["ASBISC"])
+        assertEquals("CRJ", tickers["CRJ"])
+    }
+
+    @Test
     fun `unknown company throws`() {
         stubSymbols()
 

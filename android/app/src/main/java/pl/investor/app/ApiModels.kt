@@ -51,6 +51,7 @@ data class AlertItem(
     val belowThreshold: Boolean,
     val summary: String,
     val status: ReportStatus,
+    val availableOnXtb: Boolean = false,
 )
 
 @Serializable
@@ -88,6 +89,7 @@ data class AlertDetail(
     val ordersYoyPct: Double? = null,
     val pastReactions: List<PastReactionView> = emptyList(),
     val signals: List<String> = emptyList(),
+    val availableOnXtb: Boolean = false,
 )
 
 @Serializable

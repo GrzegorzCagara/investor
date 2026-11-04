@@ -225,6 +225,14 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
   - Spółki notowane jednocześnie na GPW i w Sztokholmie są oceniane tylko z raportów GPW.
 - **Aktualizacja:** serwer i apkę zaktualizuj razem. Apka ma ścisłą listę rynków, więc starsza apka nie odczyta odpowiedzi z rynkiem SE. Po aktualizacji serwera uruchom raz backfill notowań z rozdziału 7 („Historia notowań GPW i NewConnect z 2,5 roku”).
 
+## 12c. Dostępność na XTB
+
+- **Znacznik:** w Alertach, Rankingu i szczegółach raportu obok oceny jest mała ramka „XTB”, gdy akcje spółki można kupić na XTB (rachunek z Polski). Spółki spoza XTB nadal są analizowane i widoczne, tylko bez znacznika.
+- **Źródło:** lista akcji z wyszukiwarki „Specyfikacja instrumentów” na xtb.com (nieoficjalne API strony, polski oddział, akcje z Polski i Szwecji). Liczą się tylko prawdziwe akcje: bez CFD, ETF-ów i akcji w trybie „close only” (tylko zamknięcie pozycji).
+- **Odświeżanie:** serwer pobiera listę raz na dobę (pierwszy raz około 3 minut po starcie) i co godzinę dopasowuje do niej spółki, więc nowa spółka dostaje znacznik najpóźniej po godzinie. Gdy XTB nie odpowiada, zostają znaczniki z ostatniej udanej listy.
+- **Dopasowanie:** GPW i NewConnect po tickerze z BiznesRadaru, Szwecja po tickerze z Avanzy, a gdy ticker się nie zgadza, po nazwie spółki bez formy prawnej. Na zapisanych komunikatach ESPI (161 spółek) bez znacznika zostały tylko 3 spółki, które są na XTB pod inną nazwą: Bumech (po zmianie nazwy), Krka i MOL.
+- **Aktualizacja:** starsza apka po prostu nie pokaże znacznika. Spółki z USA na razie nie są sprawdzane.
+
 ## 13. Deploy na mini-PC
 
 Serwer działa na mini-PC (w sieci domowej `minipc`, w Tailscale `debian-server`) z katalogu `/home/grzegorz/investor`. Repozytorium trzymasz na PC w `C:\projekty\investor`. Nową wersję pobierasz z GitHuba na PC, kopiujesz na mini-PC i tam przebudowujesz kontener.

@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -94,6 +95,14 @@ class InvestorApiTest {
         assertNull(detail.ordersYoyPct)
         assertTrue(detail.pastReactions.isEmpty())
         assertTrue(detail.signals.isEmpty())
+        assertFalse(detail.availableOnXtb)
+    }
+
+    @Test
+    fun `detail parses availability on XTB`() = runBlocking {
+        enqueueJson("{$DETAIL_BASE,\"availableOnXtb\":true}")
+
+        assertTrue(api().alert(42).availableOnXtb)
     }
 
     @Test
@@ -243,6 +252,17 @@ class InvestorApiTest {
 
         assertEquals(EventType.NEWS, item.eventType)
         assertEquals(78, item.score)
+        assertFalse(item.availableOnXtb)
+    }
+
+    @Test
+    fun `alerts parse availability on XTB`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":77,"companyName":"Mirbud","market":"GPW","eventType":"NEWS","publishedAt":"2026-11-02T08:15:00Z",""" +
+                """"score":78,"belowThreshold":false,"summary":"Umowa na 18,4 mln PLN.","status":"SCORED","availableOnXtb":true}]}""",
+        )
+
+        assertTrue(api().alerts().items.single().availableOnXtb)
     }
 
     @Test

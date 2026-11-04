@@ -22,6 +22,11 @@ class CompanyNamesTest {
         assertTrue(CompanyNames.sameCompany("Nokia Oyj", "NOKIA"))
         assertTrue(CompanyNames.sameCompany("Pepco Group N.V.", "PEPCO GROUP"))
         assertTrue(CompanyNames.sameCompany("Lyckegård AB", "LYCKEGARD"))
+        assertTrue(CompanyNames.sameCompany("PKP Cargo SA", "PKP CARGO SPÓŁKA AKCYJNA W RESTRUKTURYZACJI"))
+        assertTrue(CompanyNames.sameCompany("Capital Partners SA w likwidacji", "CAPITAL PARTNERS SPÓŁKA AKCYJNA"))
+        assertTrue(CompanyNames.sameCompany("MCI Capital SA", "MCI CAPITAL ALTERNATYWNA SPÓŁKA INWESTYCYJNA SPÓŁKA AKCYJNA"))
+        assertTrue(CompanyNames.sameCompany("Grupa Zywiec SA", "GRUPA ŻYWIEC SPÓŁKA AKCYJNA"))
+        assertTrue(CompanyNames.sameCompany("Zaklady Urzadzen Kotlowych Staporkow SA", "ZAKŁADY URZĄDZEŃ KOTŁOWYCH STĄPORKÓW S.A."))
     }
 
     @Test

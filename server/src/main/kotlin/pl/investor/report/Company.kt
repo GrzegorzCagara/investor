@@ -12,6 +12,7 @@ data class Company(
     val avanzaId: String? = null,
     val listing: String? = null,
     val quoteCurrency: String? = null,
+    val availableOnXtb: Boolean = false,
 ) {
     fun isQuotedInMarketCurrency(): Boolean = quoteCurrency == null || quoteCurrency == market.currency
 }

@@ -5,7 +5,7 @@ import java.text.Normalizer
 object CompanyNames {
 
     private val LEGAL_FORM = Regex(
-        "\\(publ\\)|(?<![\\p{L}\\p{N}])(sp[oó][lł]ka akcyjna|s\\.a\\.?|n\\.v\\.?|hf\\.?|ltd\\.?|ab|ad|asa|oyj|plc|publ|sa|se|nv)(?![\\p{L}\\p{N}])",
+        "\\(publ\\)|(?<![\\p{L}\\p{N}])(w restrukturyzacji|w likwidacji|w upad[lł]o[sś]ci|alternatywna sp[oó][lł]ka inwestycyjna|sp[oó][lł]ka akcyjna|s\\.a\\.?|n\\.v\\.?|hf\\.?|ltd\\.?|ab|ad|asa|oyj|plc|publ|sa|se|nv)(?![\\p{L}\\p{N}])",
         RegexOption.IGNORE_CASE,
     )
     private val APOSTROPHES = Regex("['’`´]")
@@ -18,8 +18,10 @@ object CompanyNames {
         name.replace(APOSTROPHES, "").replace(LEGAL_FORM, " ").replace(PUNCTUATION, " ").replace(WHITESPACE, " ").trim()
 
     fun key(name: String): String =
-        Normalizer.normalize(name.lowercase(), Normalizer.Form.NFD).replace(DIACRITICS, "").replace(NON_ALPHANUMERIC, "")
+        Normalizer.normalize(name.lowercase().replace('ł', 'l'), Normalizer.Form.NFD).replace(DIACRITICS, "").replace(NON_ALPHANUMERIC, "")
+
+    fun keyWithoutLegalForm(name: String): String = key(withoutLegalForm(name))
 
     fun sameCompany(name: String, other: String): Boolean =
-        key(withoutLegalForm(name)).let { it.isNotEmpty() && it == key(withoutLegalForm(other)) }
+        keyWithoutLegalForm(name).let { it.isNotEmpty() && it == keyWithoutLegalForm(other) }
 }

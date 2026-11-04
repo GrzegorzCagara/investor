@@ -11,6 +11,8 @@ class SymbolDirectory private constructor(private val entries: List<Entry>) {
 
     data class Entry(val ticker: String, val mediumName: String, val fullName: String, val symbol: String)
 
+    val tickersBySymbol: Map<String, String> by lazy { entries.associate { it.symbol to it.ticker } }
+
     fun symbolFor(company: Company): String =
         (byTicker(company) ?: byName(company))?.symbol ?: throw SymbolNotFoundException(company)
 

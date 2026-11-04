@@ -29,6 +29,7 @@ data class AlertRow(
     val total: Double?,
     val reason: String?,
     val listing: String? = null,
+    val availableOnXtb: Boolean = false,
 )
 
 data class SignalOutcome(val signals: Set<Signal>, val outcome: Outcome)
@@ -151,6 +152,7 @@ class AlertRepository(private val jdbc: JdbcClient) {
         total = getDouble("total").takeUnless { wasNull() },
         reason = getString("reason"),
         listing = getString("listing"),
+        availableOnXtb = getBoolean("xtb_available"),
     )
 
     private companion object {
@@ -164,7 +166,7 @@ class AlertRepository(private val jdbc: JdbcClient) {
             ReportStatus.PENDING_DATA,
         )
         val LISTED = LISTED_STATUSES.joinToString(",") { "'${it.name}'" }
-        const val COLUMNS = "r.id, r.company_id, c.name, c.short_name, c.listing, r.market, r.event_type, r.number, r.kind, r.published_at, r.detail_url, r.status, s.total, s.reason"
+        const val COLUMNS = "r.id, r.company_id, c.name, c.short_name, c.listing, c.xtb_available, r.market, r.event_type, r.number, r.kind, r.published_at, r.detail_url, r.status, s.total, s.reason"
         const val FROM = "FROM report r JOIN company c ON c.id = r.company_id LEFT JOIN score s ON s.report_id = r.id"
         const val SELECT = "SELECT $COLUMNS $FROM"
         const val SCORED = "r.status IN ('SCORED', 'PUSH_PENDING') AND s.total IS NOT NULL"
