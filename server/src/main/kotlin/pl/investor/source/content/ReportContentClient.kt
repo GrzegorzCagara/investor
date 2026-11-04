@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import pl.investor.report.Market
 import pl.investor.source.PoliteHttpClient
 import pl.investor.source.Source
+import pl.investor.source.eqs.EqsReleaseParser
 import pl.investor.source.gpw.ListingEntry
 import pl.investor.source.nasdaq.NasdaqViewParser
 
@@ -15,6 +16,7 @@ class ReportContentClient(
     private val locator: BankierReportLocator,
     private val attachments: AttachmentTextExtractor,
     private val nasdaqParser: NasdaqViewParser,
+    private val eqsParser: EqsReleaseParser,
 ) {
 
     private val log = LoggerFactory.getLogger(ReportContentClient::class.java)
@@ -22,6 +24,7 @@ class ReportContentClient(
     fun fetch(entry: ListingEntry, includeAttachments: Boolean = false): ReportContent =
         when (entry.market) {
             Market.SE -> fetchNasdaq(entry, includeAttachments)
+            Market.DE -> eqsParser.parse(http.get(Source.EQS, entry.detailUrl), entry.detailUrl)
             Market.GPW, Market.NC -> fetchEspi(entry, includeAttachments)
             Market.US -> error("No report content for ${entry.market}")
         }
@@ -59,12 +62,12 @@ class ReportContentClient(
     private fun Market.espiSource() = when (this) {
         Market.GPW -> Source.GPW_LISTING
         Market.NC -> Source.NC_LISTING
-        Market.SE, Market.US -> error("No ESPI listing for $this")
+        Market.SE, Market.DE, Market.US -> error("No ESPI listing for $this")
     }
 
     private fun Market.espiBaseUrl() = when (this) {
         Market.GPW -> "https://www.gpw.pl/"
         Market.NC -> "https://newconnect.pl/"
-        Market.SE, Market.US -> error("No ESPI page for $this")
+        Market.SE, Market.DE, Market.US -> error("No ESPI page for $this")
     }
 }

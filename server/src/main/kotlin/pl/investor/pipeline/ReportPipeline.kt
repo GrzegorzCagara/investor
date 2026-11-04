@@ -51,6 +51,7 @@ import pl.investor.settings.SettingRepository
 import pl.investor.source.SourceUnavailableException
 import pl.investor.source.content.ReportContent
 import pl.investor.source.content.ReportContentClient
+import pl.investor.source.eqs.isEqsCorporateNews
 import pl.investor.source.gpw.ListingEntry
 import pl.investor.source.nasdaq.isIgnoredNasdaqCategory
 import pl.investor.support.toWarsawDate
@@ -85,6 +86,7 @@ class ReportPipeline(
     private val newsAssessor: NewsAssessor,
     private val newsAssessments: NewsAssessmentRepository,
     private val newsContext: NewsContextAssembler,
+    private val xtbFilter: XtbFilter,
     private val clock: Clock,
 ) {
 
@@ -115,32 +117,39 @@ class ReportPipeline(
     }
 
     private fun route(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean) {
-        val title = entry.title?.takeIf { it.isNotBlank() }
+        val next = nextStep(report, company, entry)
         when {
-            entry.isIgnoredNasdaqCategory() -> setStatus(report, ReportStatus.IRRELEVANT)
-            isOutsideSwedishCoverage(company) -> setStatus(report, ReportStatus.IRRELEVANT)
-            title?.let(ResultsKeywordFilter::isCorrection) == true -> setStatus(report, ReportStatus.CORRECTION_SKIPPED)
-            report.eventType == EventType.NEWS -> assessNews(report, company, entry, content = null)
-            entry.kind.isPeriodic -> analyze(report, company, entry, allowWithoutAttachments)
-            title == null -> setStatus(report, ReportStatus.IRRELEVANT)
-            ResultsKeywordFilter.matches(title) -> analyze(report, company, entry, allowWithoutAttachments)
-            else -> assessNewsUnlessRoutine(report, company, entry, content = null)
+            next is Step.Skip -> setStatus(report, next.status)
+            xtbFilter.withholdsFromAi(company) -> setStatus(report, ReportStatus.SKIPPED_NOT_ON_XTB)
+            next == Step.Results -> analyze(report, company, entry, allowWithoutAttachments)
+            else -> assessNews(report, company, entry, content = null)
+        }
+    }
+
+    private fun nextStep(report: Report, company: Company, entry: ListingEntry): Step {
+        val title = entry.title?.takeIf { it.isNotBlank() }
+        return when {
+            entry.isIgnoredNasdaqCategory() -> Step.Skip(ReportStatus.IRRELEVANT)
+            isOutsideSwedishCoverage(company) -> Step.Skip(ReportStatus.IRRELEVANT)
+            title?.let(ResultsKeywordFilter::isCorrection) == true -> Step.Skip(ReportStatus.CORRECTION_SKIPPED)
+            report.eventType == EventType.NEWS -> Step.News
+            entry.kind.isPeriodic -> Step.Results
+            title == null -> Step.Skip(ReportStatus.IRRELEVANT)
+            entry.isEqsCorporateNews() -> if (ResultsKeywordFilter.isResultsRelease(title)) Step.Results else Step.Skip(ReportStatus.IRRELEVANT)
+            ResultsKeywordFilter.matches(title, entry.market) -> Step.Results
+            RoutineNewsFilter.isRoutine(title, entry.market) -> Step.Skip(ReportStatus.IRRELEVANT)
+            else -> Step.News
         }
     }
 
     private fun isOutsideSwedishCoverage(company: Company): Boolean {
         if (company.market != Market.SE) return false
-        return when (val identification = swedishIdentification(company)) {
-            SwedishIdentification.NotListed -> true
-            is SwedishIdentification.Identified -> companies.existsInMarkets(identification.isin, POLISH_MARKETS) || hasPolishNamesake(company)
-            SwedishIdentification.Unavailable -> hasPolishNamesake(company)
+        return when (val identification = refresher.avanzaIdentification(company)) {
+            AvanzaIdentification.NotListed -> true
+            is AvanzaIdentification.Identified -> companies.existsInMarkets(identification.isin, POLISH_MARKETS) || hasPolishNamesake(company)
+            AvanzaIdentification.Unavailable -> hasPolishNamesake(company)
         }
     }
-
-    private fun swedishIdentification(company: Company): SwedishIdentification =
-        runCatching { refresher.swedishIdentification(company) }
-            .onFailure { log.warn("Identifying {} failed, it will be retried", company.name, it) }
-            .getOrDefault(SwedishIdentification.Unavailable)
 
     private fun hasPolishNamesake(company: Company): Boolean =
         companies.namesInMarkets(POLISH_MARKETS).any { CompanyNames.sameCompany(it, company.name) }
@@ -184,8 +193,10 @@ class ReportPipeline(
         val report = reports.findById(reportId)
         guarded(report) {
             val company = refreshedQuietly(companies.findById(report.companyId), force = true)
-            if (assembler.currentQuarter(company, report) != null) {
-                scoreAndNotify(report, company, extractions.find(reportId))
+            when {
+                assembler.currentQuarter(company, report) == null -> Unit
+                xtbFilter.withholdsFromAi(company) -> setStatus(report, ReportStatus.SKIPPED_NOT_ON_XTB)
+                else -> scoreAndNotify(report, company, extractions.find(reportId))
             }
         }
     }
@@ -222,7 +233,7 @@ class ReportPipeline(
         val extracted = extractWithBodyFirst(report, company, entry, allowWithoutAttachments) ?: return
         val category = extracted.verified.extraction.category
         when {
-            !report.kind.isPeriodic && category != ReportCategory.RESULTS -> assessNewsUnlessRoutine(report, company, entry, extracted.content)
+            !report.kind.isPeriodic && category != ReportCategory.RESULTS -> newsUnlessCorporate(report, company, entry, extracted.content)
             category == ReportCategory.OTHER -> setStatus(report, ReportStatus.IRRELEVANT)
             else -> {
                 extractions.save(checkNotNull(report.id), extracted.verified)
@@ -285,8 +296,12 @@ class ReportPipeline(
             null
         }
 
+    private fun newsUnlessCorporate(report: Report, company: Company, entry: ListingEntry, content: ReportContent?) {
+        if (entry.isEqsCorporateNews()) setStatus(report, ReportStatus.IRRELEVANT) else assessNewsUnlessRoutine(report, company, entry, content)
+    }
+
     private fun assessNewsUnlessRoutine(report: Report, company: Company, entry: ListingEntry, content: ReportContent?) {
-        if (RoutineNewsFilter.isRoutine(entry.title.orEmpty())) {
+        if (RoutineNewsFilter.isRoutine(entry.title.orEmpty(), entry.market)) {
             setStatus(report, ReportStatus.IRRELEVANT)
         } else {
             assessNews(report, company, entry, content)
@@ -340,6 +355,7 @@ class ReportPipeline(
         saveRevenuePeriods(report, company, verified)
         when {
             verified.extraction.primaryPeriod() != null -> scoreAndNotify(report, company, verified)
+            entry.isEqsCorporateNews() -> setStatus(report, ReportStatus.IRRELEVANT)
             !report.kind.isPeriodic -> assessNews(report, company, entry, content)
             else -> setStatus(report, ReportStatus.PENDING_DATA)
         }
@@ -473,6 +489,12 @@ class ReportPipeline(
     )
 
     private data class PushPeriod(val kind: PeriodKind, val end: LocalDate)
+
+    private sealed interface Step {
+        data class Skip(val status: ReportStatus) : Step
+        data object Results : Step
+        data object News : Step
+    }
 
     private data class Extracted(val verified: VerifiedExtraction, val content: ReportContent)
 

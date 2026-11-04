@@ -56,12 +56,16 @@ import pl.investor.source.biznesradar.BiznesRadarClient
 import pl.investor.source.content.ReportContent
 import pl.investor.source.content.ReportContentClient
 import pl.investor.source.gpw.ListingEntry
+import pl.investor.source.xtb.XtbAvailability
+import pl.investor.source.xtb.XtbClient
+import pl.investor.source.xtb.XtbCountry
+import pl.investor.source.xtb.XtbStock
 import pl.investor.source.nasdaq.NasdaqNewsParser
 import pl.investor.source.nasdaq.NasdaqViewParser
 import pl.investor.source.placera.ConsensusEstimate
 import pl.investor.source.placera.ConsensusPreview
 import pl.investor.source.placera.ConsensusPreviewRepository
-import pl.investor.source.quotes.SwedishQuotes
+import pl.investor.source.quotes.AvanzaQuotes
 import pl.investor.support.PostgresTestBase
 import pl.investor.support.STOCKHOLM
 import tools.jackson.databind.json.JsonMapper
@@ -101,7 +105,8 @@ class SwedishPipelineTest : PostgresTestBase() {
     private val notifier = mockk<PushNotifier>(relaxed = true)
     private val contentClient = mockk<ReportContentClient>()
     private val avanza = mockk<AvanzaClient>()
-    private val swedishQuotes = mockk<SwedishQuotes>(relaxed = true)
+    private val xtb = mockk<XtbClient>()
+    private val avanzaQuotes = mockk<AvanzaQuotes>(relaxed = true)
     private val reasonWriter = mockk<ReasonWriter>()
     private val news = NasdaqNewsParser.parse(fixture("nasdaq-first-north.json"))
 
@@ -130,20 +135,26 @@ class SwedishPipelineTest : PostgresTestBase() {
         every { avanza.stock("1307030") } returns AvanzaStock("1307030", "Opter", "SE0016075063", "OPTER", "SEK", "First North Stockholm")
         every { avanza.quarters("1307030") } returns AvanzaParser.quarters(fixture("avanza-analysis-opter.json"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg()) }
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("KRU", "KRUK SA"))
+        every { xtb.stocks(XtbCountry.SE) } returns listOf(
+            XtbStock("OPTER", "Opter AB"), XtbStock("MIPS", "Mips AB"), XtbStock("MINEST", "Minesto AB"),
+            XtbStock("ORT", "Ortoma AB"), XtbStock("MCG", "MacGregor Group AB"),
+        )
+        every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +14% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
         pipeline = pipelineWith(avanza)
     }
 
     private fun pipelineWith(avanzaClient: AvanzaClient): ReportPipeline {
-        val swedishRefresher = SwedishCompanyRefresher(avanzaClient, swedishQuotes, companies, quarterResults, valuations, quotes, settings, clock)
+        val avanzaRefresher = AvanzaCompanyRefresher(avanzaClient, avanzaQuotes, companies, quarterResults, valuations, quotes, settings, clock)
         val biznesRadar = mockk<BiznesRadarClient>()
-        val refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, swedishRefresher)
+        val refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, avanzaRefresher)
         return ReportPipeline(
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies), clock,
         )
     }
 
@@ -275,6 +286,17 @@ class SwedishPipelineTest : PostgresTestBase() {
         assertEquals(ReportStatus.IRRELEVANT, statusOf(MINESTO_SV))
         assertEquals(1, server.requestCount)
         assertEquals(1L, jdbc.sql("SELECT count(DISTINCT company_id) FROM report").query(Long::class.java).single())
+    }
+
+    @Test
+    fun `Swedish company that XTB does not offer is skipped by default before any AI call`() {
+        every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
+
+        pipeline.process(entry(OPTER))
+
+        assertEquals(ReportStatus.SKIPPED_NOT_ON_XTB, statusOf(OPTER))
+        assertEquals(0, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
     }
 
     @Test

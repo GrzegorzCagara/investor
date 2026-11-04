@@ -6,7 +6,7 @@ import pl.investor.source.Source
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 
-enum class XtbCountry { PL, SE }
+enum class XtbCountry { PL, SE, DE }
 
 data class XtbStock(val ticker: String, val companyName: String)
 
@@ -16,12 +16,12 @@ class UnexpectedXtbListException(message: String) : RuntimeException(message)
 class XtbClient(private val http: PoliteHttpClient, private val baseUrl: String = BASE_URL) {
 
     fun stocks(country: XtbCountry): List<XtbStock> =
-        parse(http.get(Source.XTB, "$baseUrl$SPECIFICATION_PATH?country=${country.name}&pageSize=$PAGE_SIZE"), country)
+        parse(http.get(Source.XTB, "$baseUrl$SPECIFICATION_PATH?country=${country.name}&typeSlug=$STOCKS&pageSize=$PAGE_SIZE"), country)
 
     companion object {
         private const val BASE_URL = "https://www.xtb.com"
         private const val SPECIFICATION_PATH = "/web-api/v3/languages/pl/branches/pl/instrument-specification"
-        private const val PAGE_SIZE = 5000
+        private const val PAGE_SIZE = 1000
         private const val STOCKS = "cashstocks"
         private const val CLOSE_ONLY_NAME_PREFIX = "CLOSE ONLY"
         private val mapper = JsonMapper.builder().build()

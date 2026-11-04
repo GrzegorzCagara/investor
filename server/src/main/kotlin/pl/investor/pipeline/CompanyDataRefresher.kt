@@ -1,5 +1,6 @@
 package pl.investor.pipeline
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import pl.investor.history.QuarterResult
 import pl.investor.history.QuarterResultRepository
@@ -24,14 +25,44 @@ class CompanyDataRefresher(
     private val valuations: ValuationRepository,
     private val settings: SettingRepository,
     private val clock: Clock,
-    private val swedish: SwedishCompanyRefresher,
+    private val avanza: AvanzaCompanyRefresher,
 ) {
 
     fun refresh(company: Company, force: Boolean = false) {
-        if (company.market == Market.SE) swedish.refresh(company, force) else refreshFromBiznesRadar(company, force)
+        if (company.market.isCoveredByAvanza) avanza.refresh(company, force) else refreshFromBiznesRadar(company, force)
     }
 
-    fun swedishIdentification(company: Company): SwedishIdentification = swedish.identification(company)
+    private val log = LoggerFactory.getLogger(CompanyDataRefresher::class.java)
+
+    fun avanzaIdentification(company: Company): AvanzaIdentification =
+        runCatching { avanza.identification(company) }
+            .onFailure { log.warn("Identifying {} failed, it will be retried", company.name, it) }
+            .getOrDefault(AvanzaIdentification.Unavailable)
+
+    fun tradingIdentity(company: Company): TradingIdentity = when {
+        company.market.isCoveredByAvanza -> when (avanzaIdentification(company)) {
+            is AvanzaIdentification.Identified -> TradingIdentity.KNOWN
+            AvanzaIdentification.NotListed -> TradingIdentity.NOT_FOUND
+            AvanzaIdentification.Unavailable -> TradingIdentity.UNAVAILABLE
+        }
+        company.market in POLISH_MARKETS -> biznesRadarIdentity(company)
+        else -> TradingIdentity.NOT_FOUND
+    }
+
+    private fun biznesRadarIdentity(company: Company): TradingIdentity {
+        if (company.biznesradarSymbol != null) return TradingIdentity.KNOWN
+        val symbol = try {
+            biznesRadar.symbolFor(company)
+        } catch (e: SymbolNotFoundException) {
+            return TradingIdentity.NOT_FOUND
+        } catch (e: SourceUnavailableException) {
+            log.warn("BiznesRadar unavailable while identifying {}, it will be retried", company.name)
+            return TradingIdentity.UNAVAILABLE
+        }
+        val shortName = runCatching { biznesRadar.mediumNameFor(company.name) }.getOrNull()
+        companies.updateBiznesradarIdentity(checkNotNull(company.id), symbol, shortName)
+        return TradingIdentity.KNOWN
+    }
 
     private fun refreshFromBiznesRadar(company: Company, force: Boolean) {
         val companyId = checkNotNull(company.id)
@@ -70,4 +101,10 @@ class CompanyDataRefresher(
     private fun refreshKey(companyId: Long) = "BR_REFRESHED_$companyId"
 
     private fun symbolTriedKey(companyId: Long, day: LocalDate) = "BR_SYMBOL_TRIED_${companyId}_$day"
+
+    private companion object {
+        val POLISH_MARKETS = setOf(Market.GPW, Market.NC)
+    }
 }
+
+enum class TradingIdentity { KNOWN, NOT_FOUND, UNAVAILABLE }

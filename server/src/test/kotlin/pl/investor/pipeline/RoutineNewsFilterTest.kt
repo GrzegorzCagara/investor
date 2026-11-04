@@ -59,7 +59,7 @@ class RoutineNewsFilterTest {
             "Zakończenie kadencji Dyrektorów.",
             "Powołanie nowego dyrektora niewykonawczego",
             "Powołanie Dyrektora Wykonawczego",
-        ).forEach { assertTrue(RoutineNewsFilter.isRoutine(it), it) }
+        ).forEach { assertTrue(RoutineNewsFilter.isRoutine(it, Market.GPW), it) }
     }
 
     @Test
@@ -83,7 +83,7 @@ class RoutineNewsFilterTest {
             "Zmiana firmy (nazwy) Spółki na Bumech Defense Partners S.A., rejestracja przez sąd zmiany statutu Spółki",
             "Allegro informuje o zakończeniu Fazy I programu skupu akcji własnych",
             "UniCredit announces a tender offer for one series of Notes",
-        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it), it) }
+        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it, Market.GPW), it) }
     }
 
     @Test
@@ -96,9 +96,9 @@ class RoutineNewsFilterTest {
             .filter { it.kind == ReportKind.CURRENT }
             .mapNotNull { it.title }
             .distinct()
-            .filterNot { ResultsKeywordFilter.matches(it) || ResultsKeywordFilter.isCorrection(it) }
+            .filterNot { ResultsKeywordFilter.matches(it, Market.GPW) || ResultsKeywordFilter.isCorrection(it) }
 
-        val routineShare = titles.count(RoutineNewsFilter::isRoutine).toDouble() / titles.size
+        val routineShare = titles.count({ RoutineNewsFilter.isRoutine(it, Market.GPW) }).toDouble() / titles.size
 
         assertTrue(titles.size > 250, "only ${titles.size} titles")
         assertTrue(routineShare in 0.5..0.7, "routine share $routineShare")
@@ -111,21 +111,21 @@ class RoutineNewsFilterTest {
             "Uchwała NWZ w sprawie skupu akcji własnych",
             "Projekty uchwał Nadzwyczajnego Walnego Zgromadzenia w sprawie emisji akcji serii K",
             "Zwołanie Nadzwyczajnego Walnego Zgromadzenia w sprawie połączenia ze spółką zależną",
-        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it), it) }
-        assertTrue(RoutineNewsFilter.isRoutine("Zwołanie Nadzwyczajnego Walnego Zgromadzenia na dzień 8 czerwca 2026 roku"))
+        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it, Market.GPW), it) }
+        assertTrue(RoutineNewsFilter.isRoutine("Zwołanie Nadzwyczajnego Walnego Zgromadzenia na dzień 8 czerwca 2026 roku", Market.GPW))
     }
 
     @Test
     fun `supervisory board titles that also name the chief executive reach the AI`() {
-        assertFalse(RoutineNewsFilter.isRoutine("Powołanie członka Rady Nadzorczej delegowanego do czasowego pełnienia funkcji Prezesa"))
-        assertFalse(RoutineNewsFilter.isRoutine("Rezygnacja członka Rady Nadzorczej, nowy CEO spółki"))
-        assertTrue(RoutineNewsFilter.isRoutine("Rezygnacja członka rady nadzorczej"))
+        assertFalse(RoutineNewsFilter.isRoutine("Powołanie członka Rady Nadzorczej delegowanego do czasowego pełnienia funkcji Prezesa", Market.GPW))
+        assertFalse(RoutineNewsFilter.isRoutine("Rezygnacja członka Rady Nadzorczej, nowy CEO spółki", Market.GPW))
+        assertTrue(RoutineNewsFilter.isRoutine("Rezygnacja członka rady nadzorczej", Market.GPW))
     }
 
     @Test
     fun `change of control and acquisition of a stake in another company reach the AI`() {
-        assertFalse(RoutineNewsFilter.isRoutine("Zmiana udziałowca większościowego"))
-        assertFalse(RoutineNewsFilter.isRoutine("Nabycie znacznego pakietu akcji spółki Mostostal Zabrze S.A."))
-        assertTrue(RoutineNewsFilter.isRoutine("Zawiadomienie w sprawie znacznego pakietu akcji."))
+        assertFalse(RoutineNewsFilter.isRoutine("Zmiana udziałowca większościowego", Market.GPW))
+        assertFalse(RoutineNewsFilter.isRoutine("Nabycie znacznego pakietu akcji spółki Mostostal Zabrze S.A.", Market.GPW))
+        assertTrue(RoutineNewsFilter.isRoutine("Zawiadomienie w sprawie znacznego pakietu akcji.", Market.GPW))
     }
 }

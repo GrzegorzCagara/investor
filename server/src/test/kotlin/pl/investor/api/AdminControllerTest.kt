@@ -25,7 +25,7 @@ class AdminControllerTest {
     private val monthlySales = mockk<MonthlySalesBackfillJob>()
     private val dailyQuotes = mockk<DailyQuotesJob>()
     private val outcomes = mockk<OutcomeJob>(relaxed = true)
-    private val controller = AdminController(monthlySales, dailyQuotes, outcomes, clock)
+    private val controller = AdminController(monthlySales, dailyQuotes, outcomes, mockk(relaxed = true), clock)
     private val mvc = MockMvcBuilders.standaloneSetup(controller).build()
 
     private fun awaitAccepted() {

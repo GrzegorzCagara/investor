@@ -41,7 +41,7 @@ class ScoringInputAssembler(
         val extraction = verified?.extraction
         val currency = company.market.currency
         val results = quarterResults.publishedBefore(checkNotNull(company.id), report.publishedAt.toWarsawDate(), VALUATION_QUARTERS)
-            .takeIf { extraction == null || company.market != Market.SE || extraction.agreesWithHistory(it, currency) }
+            .takeIf { extraction == null || !company.market.isCoveredByAvanza || extraction.agreesWithHistory(it, currency) }
             .orEmpty()
         val primary = extraction?.primaryPeriod() ?: currentQuarter(company, report)?.toExtractedPeriod(currency)?.withPriorYearFrom(results, currency)
         val trend = primary?.let { trend(company, report.publishedAt, it, results) } ?: Trend.EMPTY
@@ -224,7 +224,7 @@ class ScoringInputAssembler(
         return Valuation(
             pe = rescaled(latest?.pe),
             ps = rescaled(latest?.ps),
-            psMedian20q = points.values.mapNotNull { it.ps?.toDouble() }.takeIf { company.market != Market.SE || it.size >= MIN_SWEDISH_PS_QUARTERS }?.median(),
+            psMedian20q = points.values.mapNotNull { it.ps?.toDouble() }.takeIf { !company.market.isCoveredByAvanza || it.size >= MIN_AVANZA_PS_QUARTERS }?.median(),
             ttmNetProfitGrowthPct = ttmNetProfitGrowthPct(results),
         )
     }
@@ -257,8 +257,9 @@ class ScoringInputAssembler(
             closeRef = latest.close,
             priceChange10Pct = tenSessionsAgo?.let { changePct(latest.close, it.close) },
             indexChange10Pct = tenSessionsAgo?.let { indexChangePct(company.market, reference, it.date) },
-            lowLiquidity = company.isQuotedInMarketCurrency() && turnovers.isNotEmpty() &&
-                turnovers.sumOf { it }.toDouble() / turnovers.size < company.market.lowLiquidityTurnover,
+            lowLiquidity = company.market.lowLiquidityTurnover?.let { limit ->
+                company.isQuotedInMarketCurrency() && turnovers.isNotEmpty() && turnovers.sumOf { it }.toDouble() / turnovers.size < limit
+            } ?: false,
             ytdChangePct = yearStartClose?.let { changePct(latest.close, it.close) },
             pennyStock = company.isQuotedInMarketCurrency() && latest.close < PENNY_STOCK_PRICE,
         )
@@ -327,7 +328,7 @@ class ScoringInputAssembler(
         const val QUOTE_WINDOW = 25
         const val PRICE_CHANGE_SESSIONS = 10
         const val LIQUIDITY_SESSIONS = 20
-        const val MIN_SWEDISH_PS_QUARTERS = 4
+        const val MIN_AVANZA_PS_QUARTERS = 4
         const val REVERSAL_QUARTERS = 3L
         const val YEAR_END_GAP_DAYS = 10L
         val HISTORY_TOLERANCE = BigDecimal("0.05")

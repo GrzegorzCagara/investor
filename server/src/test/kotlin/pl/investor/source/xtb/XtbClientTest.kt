@@ -47,7 +47,7 @@ class XtbClientTest {
     }
 
     @Test
-    fun `client asks the Polish branch for the whole country list in one page`() {
+    fun `client asks the Polish branch for the cash stocks of a country in one page`() {
         val server = MockWebServer().apply { start() }
         server.enqueue(MockResponse.Builder().body(fixture("instruments-se.json")).build())
         val client = XtbClient(PoliteHttpClient(Clock.systemUTC(), "me@example.com", mockk<SourceHealthTracker>(relaxed = true)), server.url("").toString().trimEnd('/'))
@@ -57,7 +57,8 @@ class XtbClientTest {
         val url = server.takeRequest().url
         assertEquals("/web-api/v3/languages/pl/branches/pl/instrument-specification", url.encodedPath)
         assertEquals("SE", url.queryParameter("country"))
-        assertEquals("5000", url.queryParameter("pageSize"))
+        assertEquals("cashstocks", url.queryParameter("typeSlug"))
+        assertEquals("1000", url.queryParameter("pageSize"))
         server.close()
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component
 import pl.investor.report.Market
 import pl.investor.report.ReportRepository
 import pl.investor.settings.SettingRepository
+import pl.investor.source.eqs.EqsListingClient
+import pl.investor.source.eqs.EqsPoller
 import pl.investor.source.gpw.EspiListingClient
 import pl.investor.source.gpw.ListingPoller
 import pl.investor.source.nasdaq.NasdaqNordicListingClient
@@ -33,6 +35,14 @@ class PollingConfig {
         clock: Clock,
         pipeline: ReportPipeline,
     ) = NasdaqNordicPoller(client, reports, clock, pipeline::process)
+
+    @Bean
+    fun eqsPoller(
+        client: EqsListingClient,
+        reports: ReportRepository,
+        clock: Clock,
+        pipeline: ReportPipeline,
+    ) = EqsPoller(client, reports, clock, pipeline::process)
 }
 
 @Component
@@ -58,6 +68,18 @@ class NasdaqPolling(private val poller: NasdaqNordicPoller) {
     fun poll() {
         runCatching { poller.poll() }
             .onFailure { log.error("Polling {} listing failed", Market.SE, it) }
+    }
+}
+
+@Component
+class EqsPolling(private val poller: EqsPoller) {
+
+    private val log = LoggerFactory.getLogger(EqsPolling::class.java)
+
+    @Scheduled(fixedDelay = POLL_INTERVAL_MS)
+    fun poll() {
+        runCatching { poller.poll() }
+            .onFailure { log.error("Polling {} listing failed", Market.DE, it) }
     }
 }
 

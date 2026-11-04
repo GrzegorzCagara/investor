@@ -8,13 +8,14 @@ import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.source.PoliteHttpClient
 import pl.investor.source.Source
+import java.time.Clock
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class BiznesRadarClientTest {
 
     private val http = mockk<PoliteHttpClient>()
-    private val client = BiznesRadarClient(http, QuarterlyResultsParser(), ValuationParser())
+    private val client = BiznesRadarClient(http, QuarterlyResultsParser(), ValuationParser(), Clock.systemUTC())
 
     private fun fixture(name: String) =
         javaClass.getResource("/fixtures/biznesradar/$name")!!.readText()

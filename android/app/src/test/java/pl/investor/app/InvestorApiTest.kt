@@ -308,6 +308,48 @@ class InvestorApiTest {
     }
 
     @Test
+    fun `ranking can be filtered to Germany`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":95,"companyName":"Masterflex","market":"DE","eventType":"RESULTS","publishedAt":"2026-11-04T06:30:00Z",""" +
+                """"score":71,"belowThreshold":false,"summary":"Przychody wzrosły o 3%.","status":"SCORED","availableOnXtb":true}]}""",
+        )
+
+        val de = api().ranking(Market.DE)
+
+        assertEquals(Market.DE, de.items.single().market)
+        assertTrue(de.items.single().availableOnXtb)
+        assertEquals("/api/ranking?market=DE", server.takeRequest().path)
+    }
+
+    @Test
+    fun `german detail parses EQS report number and EUR amounts`() = runBlocking {
+        enqueueJson(
+            """{"id":95,"companyName":"Masterflex","market":"DE","reportNumber":"EQS","reportKind":"QUARTERLY",""" +
+                """"publishedAt":"2026-11-04T06:30:00Z","score":71,"components":[],"penalty":0.0,"warnings":[],""" +
+                """"reason":"Przychody wzrosły.","outlookQuote":null,""" +
+                """"revenueHistory":[{"label":"Q3 2026","value":82.2,"currency":"EUR"}],"sourceUrl":"https://example.test/de",""" +
+                """"reaction":null,"consensus":[],"companyHistory":[],"availableOnXtb":true}""",
+        )
+
+        val detail = api().alert(95)
+
+        assertEquals(Market.DE, detail.market)
+        assertEquals("EQS", detail.reportNumber)
+        assertEquals("EUR", detail.revenueHistory.single().currency)
+        assertTrue(detail.availableOnXtb)
+    }
+
+    @Test
+    fun `alerts parse the not on XTB status`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":96,"companyName":"Uniper","market":"DE","eventType":"NEWS","publishedAt":"2026-11-04T07:00:00Z",""" +
+                """"score":null,"belowThreshold":false,"summary":"","status":"SKIPPED_NOT_ON_XTB"}]}""",
+        )
+
+        assertEquals(ReportStatus.SKIPPED_NOT_ON_XTB, api().alerts().items.single().status)
+    }
+
+    @Test
     fun `settings are read and written with the same shape`() = runBlocking {
         enqueueJson(SettingsViewModelTest.SETTINGS_JSON)
         enqueueJson(SettingsViewModelTest.SETTINGS_JSON)

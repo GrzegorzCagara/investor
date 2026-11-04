@@ -30,7 +30,11 @@ class QuoteVerifier {
     fun isSupported(amount: Amount, sourceText: String, market: Market): Boolean =
         amount.isSupportedBy(sourceText.normalized(), market.units(), Period.CURRENT)
 
-    private fun Market.units(): Units = if (this == Market.SE) SWEDISH else POLISH
+    private fun Market.units(): Units = when (this) {
+        Market.SE -> SWEDISH
+        Market.DE -> GERMAN
+        Market.GPW, Market.NC, Market.US -> POLISH
+    }
 
     private fun ExtractedPeriod.verified(text: String, units: Units, onUncertain: (String) -> Unit): ExtractedPeriod {
         fun Amount?.check(field: String): Amount? {
@@ -72,7 +76,21 @@ class QuoteVerifier {
 
     private fun Amount.matchesValue(quoted: String, text: String, start: Int, hasUnitDeclaration: Boolean, units: Units, period: Period): Boolean {
         if (valueInThousands.signum() > 0 && isPrecededByMinus(text, start)) return false
-        return units.readings(quoted).any { matchesReading(it, quoted, text, start, hasUnitDeclaration, units, period) }
+        val readings = units.readings(quoted)
+        if (units.labelsPriorYearInBrackets && readings.none { units.comparative(it) != null } && !isQuotedForPeriod(quoted, text, start, units, period)) return false
+        return readings.any { matchesReading(it, quoted, text, start, hasUnitDeclaration, units, period) }
+    }
+
+    private fun isQuotedForPeriod(quoted: String, text: String, start: Int, units: Units, period: Period): Boolean {
+        val valueStart = start + (units.numberToken.findAll(quoted).lastOrNull()?.range?.first ?: 0)
+        val insidePriorYearBracket = text.substring(0, valueStart).isInsidePriorYearBracket()
+        val tableValue = !units.unitWord.containsMatchIn(quoted) && !ENGLISH_UNIT_SUFFIX.containsMatchIn(quoted)
+        return if (period == Period.PREVIOUS_YEAR) insidePriorYearBracket || tableValue else !insidePriorYearBracket
+    }
+
+    private fun String.isInsidePriorYearBracket(): Boolean {
+        val open = lastIndexOf('(')
+        return open >= 0 && indexOf(')', open) < 0 && PRIOR_YEAR_BRACKET_LABEL.containsMatchIn(substring(open))
     }
 
     private fun Amount.matchesReading(source: String, quoted: String, text: String, start: Int, hasUnitDeclaration: Boolean, units: Units, period: Period): Boolean {
@@ -103,10 +121,13 @@ class QuoteVerifier {
         val declaration: Regex,
         private val comparativeForm: Regex?,
         val readings: (String) -> List<String> = { listOf(it) },
+        val labelsPriorYearInBrackets: Boolean = false,
     ) {
         fun comparative(source: String): Comparative? {
             val match = comparativeForm?.matchEntire(source) ?: return null
-            val unit = unitWord.findAll(match.groupValues[1]).lastOrNull()?.value ?: return null
+            val unit = match.groupValues.getOrNull(3)?.takeIf { it.isNotEmpty() }
+                ?: unitWord.findAll(match.groupValues[1]).lastOrNull()?.value
+                ?: return null
             return Comparative(match.groupValues[1], match.groupValues[2], unit)
         }
     }
@@ -151,6 +172,7 @@ class QuoteVerifier {
         const val PREV_YEAR_SUFFIX = "PrevYear"
         const val POLISH_UNITS = "tys|mln|mld|thousand|million|billion"
         const val SWEDISH_UNITS = "mdsek|mdkr|msek|mnkr|mkr|ksek|tsek|tkr|miljoner|miljarder|tusen"
+        const val GERMAN_UNITS = "mio|mrd|millionen|milliarden|teur|keur|meur|tsd"
         const val POLISH_DECLARATION = "w tys\\.|w tysiącach|w mln|w milionach|tys\\. (zł|EUR|USD)"
         val WHITESPACE = Regex("[\\s\\u00A0\\u202F]+")
         val POLISH = Units(
@@ -171,6 +193,20 @@ class QuoteVerifier {
             declaration = Regex("$POLISH_DECLARATION|(?<!\\p{L})($SWEDISH_UNITS|meur|teur|keur)(?!\\p{L})|belopp i", RegexOption.IGNORE_CASE),
             comparativeForm = Regex("^(.*\\d.*?)\\s*\\(\\s*(-?\\d[\\d ]*(?:,\\d{3})*(?:[,.]\\d+)?)\\s*\\)$"),
             readings = ::englishSwedishReadings,
+        )
+        val GERMAN = Units(
+            unitWord = Regex("\\b($POLISH_UNITS|$GERMAN_UNITS)|T€", RegexOption.IGNORE_CASE),
+            numberToken = Regex(
+                "-?\\d+(?:[ .]\\d{3})*(?:[,.]\\d+)?(?: ?(?:mio\\.?|mrd\\.?|millionen|milliarden|million|billion|thousand|teur|t€|tsd\\.?)(?!\\p{L}))?(?: ?(?:euro|eur|€)(?!\\p{L}))?",
+                RegexOption.IGNORE_CASE,
+            ),
+            declaration = Regex(
+                "(?<!\\p{L})(teur|keur|meur|t€|tsd\\. ?(eur|€)|mio\\. ?(eur|€)|(eur|€) ?(thousand|million|mio\\.?)|(thousand|million|mio\\.?) (eur|€|euro))(?!\\p{L})",
+                RegexOption.IGNORE_CASE,
+            ),
+            comparativeForm = Regex("^(.*\\d.*?)\\s*\\(\\s*(-?\\d[\\d ]*(?:,\\d+)?)\\s*(mln|mld|tys)?\\s*\\)$"),
+            readings = ::germanReadings,
+            labelsPriorYearInBrackets = true,
         )
         val UNIT_BLOCKER = Regex(
             "^\\s*(%|r\\.|(stycz|lut|marc|kwiet|maj|czerw|lip|sierp|wrze|paźdz|listop|grud)\\p{L}*)",
@@ -208,5 +244,41 @@ class QuoteVerifier {
                 .replace(MILLIONS_SUFFIX, " msek")
                 .replace(BILLIONS_SUFFIX, " mdsek")
                 .replace(UNIT_AFTER_COMPARATIVE, "$1 $3 $2")
+
+        val COMPARATIVE_LABEL = Regex("\\(\\s*[^():]*:\\s*")
+        val COMPARATIVE_REMARK = Regex(",\\s+[^()]*\\)")
+        val GERMAN_THOUSANDS_UNIT = Regex("(?<!\\p{L})(teur|keur|tsd\\.?|tausend|thousand)(?!\\p{L})|T€", RegexOption.IGNORE_CASE)
+        val GERMAN_CURRENCY = Regex("€|(?<!\\p{L})(eur|euro)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val GERMAN_MILLIONS_UNIT = Regex("(?<!\\p{L})(meur|mio\\.?|millionen|million|mn)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val GERMAN_BILLIONS_UNIT = Regex("(?<!\\p{L})(mrd\\.?|milliarden|billion|bn)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val MINUS_BEFORE_NUMBER = Regex("-\\s+(?=\\d)")
+        val UNIT_BEFORE_NUMBER = Regex("^(mln|mld|tys) (-?\\d[\\d.,]*)")
+        val GERMAN_THOUSANDS_DOT = Regex("(?<=\\d)\\.(?=\\d{3}(?!\\d))")
+        val GERMAN_UNIT_SPELLING = Regex("(?<!\\p{L})(mio|mrd|millionen|milliarden|teur|keur|meur|tsd|tausend)(?!\\p{L})|T€", RegexOption.IGNORE_CASE)
+        val ENGLISH_UNIT_SPELLING = Regex("(?<!\\p{L})(million|billion|thousand|mn|bn)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val ENGLISH_UNIT_SUFFIX = Regex("(?<=\\d)\\s?m(?![\\p{L}\\d])")
+        val PRIOR_YEAR_BRACKET_LABEL = Regex(":|vorjahr|vj\\.|prior[- ]year|previous year|last year", RegexOption.IGNORE_CASE)
+
+        fun germanReadings(source: String): List<String> {
+            val amount = source
+                .replace(COMPARATIVE_LABEL, "(")
+                .replace(COMPARATIVE_REMARK, ")")
+                .replace(GERMAN_THOUSANDS_UNIT, " tys ")
+                .replace(GERMAN_CURRENCY, " ")
+                .replace(GERMAN_MILLIONS_UNIT, " mln ")
+                .replace(MILLIONS_SUFFIX, " mln ")
+                .replace(GERMAN_BILLIONS_UNIT, " mld ")
+                .replace(MINUS_BEFORE_NUMBER, "-")
+                .replace(WHITESPACE, " ")
+                .trim()
+                .replace(UNIT_BEFORE_NUMBER, "$2 $1")
+            val germanFormat = amount.replace(GERMAN_THOUSANDS_DOT, "")
+            val englishFormat = amount.replace(THOUSANDS_COMMA, "").replace(ENGLISH_DECIMAL, ",")
+            return when {
+                GERMAN_UNIT_SPELLING.containsMatchIn(source) -> listOf(germanFormat)
+                ENGLISH_UNIT_SPELLING.containsMatchIn(source) || ENGLISH_UNIT_SUFFIX.containsMatchIn(source) -> listOf(englishFormat)
+                else -> listOf(germanFormat, englishFormat).distinct()
+            }
+        }
     }
 }

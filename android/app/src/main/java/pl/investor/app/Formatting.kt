@@ -44,6 +44,7 @@ object Formatting {
         Market.NC -> "NC"
         Market.US -> "USA"
         Market.SE -> "SE"
+        Market.DE -> "DE"
     }
 
     fun marketName(m: Market): String = when (m) {
@@ -51,6 +52,7 @@ object Formatting {
         Market.NC -> "NC"
         Market.US -> "USA"
         Market.SE -> "Szwecja"
+        Market.DE -> "Niemcy"
     }
 
     fun detailTitle(detail: AlertDetail): String =
@@ -162,6 +164,7 @@ object Formatting {
         "YAHOO" -> "Yahoo (indeks)"
         "PLACERA" -> "Placera (konsensus)"
         "XTB" -> "XTB (lista akcji)"
+        "EQS" -> "EQS News"
         else -> source
     }
 
@@ -171,6 +174,8 @@ object Formatting {
         "NEWS" -> "Wydarzenia"
         "SE" -> "Szwecja – wyniki"
         "SE_NEWS" -> "Szwecja – wydarzenia"
+        "DE" -> "Niemcy – wyniki"
+        "DE_NEWS" -> "Niemcy – wydarzenia"
         else -> pool
     }
 

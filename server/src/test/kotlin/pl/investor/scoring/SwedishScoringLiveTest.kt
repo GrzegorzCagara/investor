@@ -12,7 +12,7 @@ import pl.investor.extraction.AiPool
 import pl.investor.extraction.ClaudeExtractor
 import pl.investor.extraction.ExtractionPrompt
 import pl.investor.extraction.QuoteVerifier
-import pl.investor.pipeline.SwedishCompanyRefresher
+import pl.investor.pipeline.AvanzaCompanyRefresher
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.Market
@@ -42,7 +42,7 @@ class SwedishScoringLiveTest : PostgresTestBase() {
     @Autowired lateinit var jdbc: JdbcClient
     @Autowired lateinit var http: PoliteHttpClient
     @Autowired lateinit var companies: CompanyRepository
-    @Autowired lateinit var refresher: SwedishCompanyRefresher
+    @Autowired lateinit var refresher: AvanzaCompanyRefresher
     @Autowired lateinit var contentClient: ReportContentClient
     @Autowired lateinit var previews: ConsensusPreviewRepository
     @Autowired lateinit var assembler: ScoringInputAssembler

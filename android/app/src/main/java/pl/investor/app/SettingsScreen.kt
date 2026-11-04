@@ -65,7 +65,7 @@ private fun SettingsFormSection(form: SettingsForm, state: SettingsUiState, view
     )
 
     SectionTitle("Rynki")
-    Market.entries.forEach { market ->
+    Market.covered.forEach { market ->
         SwitchRow(Formatting.marketName(market), market in form.enabledMarkets, editable) { viewModel.onMarketChange(market, it) }
     }
 

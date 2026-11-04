@@ -1,5 +1,7 @@
 package pl.investor.pipeline
 
+import pl.investor.report.Market
+
 object RoutineNewsFilter {
 
     private val MATERIAL = patterns(
@@ -110,6 +112,23 @@ object RoutineNewsFilter {
         "kallelse till",
         "notice to (the )?(annual|extraordinary)",
     )
+    private val GERMAN_ROUTINE = patterns(
+        "directors'? dealings",
+        "stimmrechtsmitteilung",
+        "veroffentlichung von finanzberichten",
+    )
+    private val GERMAN_GENERAL_MEETING = patterns(
+        "(einberufung|einladung) (der|zur) (ordentlichen )?hauptversammlung",
+        "(abstimmungs|ergebnisse?)\\p{L}* der (ordentlichen )?hauptversammlung",
+        "hauptversammlung .*(beschlossen|abstimmungsergebnis)",
+        "convocation (of the )?(annual general meeting|agm)",
+        "voting results of the (annual )?general meeting",
+    )
+    private val EXTRAORDINARY_MEETING = Regex("au(ß|ss)erordentlich|extraordinary|\\begm\\b")
+    private val GERMAN_MATERIAL = Regex(
+        "aktienruckkauf|verschmelzung|abspaltung|ubernahme|verlust der halfte|§ ?92|insolvenz|delisting|squeeze-?out|beherrschungs|kapitalerhohung|capital increase",
+    )
+
     private val MATERIAL_RESOLUTION = Regex("skup|nabywani\\p{L}* akcji wlasnych|emisj|polaczen|aterkop|emission|fusion|buy-?back|repurchase|share issue|merger")
 
     private val SUPERVISORY_BOARD = Regex("rad\\p{L}* nadzorcz")
@@ -119,14 +138,20 @@ object RoutineNewsFilter {
     private val BOARD_OF_DIRECTORS = Regex("rad\\p{L}* dyrektorow")
     private val DIRECTORS_TERM = Regex("ponown|wybor|kadencj")
 
-    fun isRoutine(title: String): Boolean {
+    fun isRoutine(title: String, market: Market): Boolean {
         val text = title.foldedTitle()
         if (MATERIAL.any { it.containsMatchIn(text) }) return false
+        if (market == Market.DE && GERMAN_MATERIAL.containsMatchIn(text)) return false
         return ROUTINE.any { it.containsMatchIn(text) } ||
             text.isGeneralMeetingFormality() ||
             text.isSupervisoryBoardChange() ||
-            text.isDirectorsReelection()
+            text.isDirectorsReelection() ||
+            (market == Market.DE && text.isGermanRoutine())
     }
+
+    private fun String.isGermanRoutine(): Boolean =
+        GERMAN_ROUTINE.any { it.containsMatchIn(this) } ||
+            (GERMAN_GENERAL_MEETING.any { it.containsMatchIn(this) } && !EXTRAORDINARY_MEETING.containsMatchIn(this) && !MATERIAL_RESOLUTION.containsMatchIn(this))
 
     private fun String.isGeneralMeetingFormality(): Boolean =
         GENERAL_MEETING.any { it.containsMatchIn(this) } && !MATERIAL_RESOLUTION.containsMatchIn(this)

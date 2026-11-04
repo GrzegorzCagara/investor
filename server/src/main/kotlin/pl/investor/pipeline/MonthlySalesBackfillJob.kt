@@ -24,6 +24,7 @@ import pl.investor.support.toWarsawDate
 import java.text.Normalizer
 import java.time.Clock
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicInteger
 
 @Component
 class MonthlySalesBackfillJob(
@@ -36,10 +37,12 @@ class MonthlySalesBackfillJob(
     private val verifier: QuoteVerifier,
     private val revenuePeriods: RevenuePeriodRepository,
     private val transactions: TransactionTemplate,
+    private val xtbFilter: XtbFilter,
     private val clock: Clock,
 ) {
 
     private val log = LoggerFactory.getLogger(MonthlySalesBackfillJob::class.java)
+    private val companiesNotOnXtb = AtomicInteger()
 
     fun runAll(months: Int = DEFAULT_MONTHS): Int {
         val today = clock.instant().toWarsawDate()
@@ -57,6 +60,7 @@ class MonthlySalesBackfillJob(
         val groups = entries.groupBy { it.isin ?: it.companyName }.values
         log.info("Monthly sales backfill scan finished, {} reports of {} companies found", entries.size, groups.size)
         var saved = 0
+        companiesNotOnXtb.set(0)
         for (group in groups) {
             try {
                 saved += backfill(group)
@@ -70,7 +74,7 @@ class MonthlySalesBackfillJob(
                 log.error("Backfill of {} failed", group.first().companyName, e)
             }
         }
-        log.info("Monthly sales backfill finished, {} monthly revenues saved", saved)
+        log.info("Monthly sales backfill finished, {} monthly revenues saved, {} companies skipped as not on XTB", saved, companiesNotOnXtb.get())
         return groups.size
     }
 
@@ -90,6 +94,11 @@ class MonthlySalesBackfillJob(
         val company = sorted.firstOrNull()?.let(resolver::resolve) ?: return 0
         val companyId = checkNotNull(company.id)
         companies.markPublishesMonthlySales(companyId)
+        if (xtbFilter.withholdsFromAi(company)) {
+            companiesNotOnXtb.incrementAndGet()
+            log.info("Monthly sales backfill of {} skipped, the company is not on XTB", company.name)
+            return 0
+        }
         val unread = sorted.filterNot { reports.existsBySourceRef(it.market, it.sourceRef) }
         log.info("Monthly sales backfill of {}: {} of {} reports to read", company.name, unread.size, sorted.size)
         var stored = 0

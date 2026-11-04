@@ -15,20 +15,19 @@ class CompanyResolver(private val companies: CompanyRepository, private val bizn
 
     private val log = LoggerFactory.getLogger(CompanyResolver::class.java)
 
-    fun resolve(entry: ListingEntry): Company =
-        if (entry.market == Market.SE) {
-            companies.findByName(entry.companyName, Market.SE) ?: companies.save(swedishCompany(entry))
-        } else {
-            entry.isin?.let { companies.findByIsin(it, entry.market) }
-                ?: companies.findByName(entry.companyName, entry.market)
-                ?: companies.save(newCompany(entry))
-        }
+    fun resolve(entry: ListingEntry): Company = when (entry.market) {
+        Market.SE -> companies.findByName(entry.companyName, Market.SE) ?: companies.save(avanzaCompany(entry))
+        Market.DE -> companies.findByIsin(checkNotNull(entry.isin) { "German release without ISIN" }, Market.DE) ?: companies.save(avanzaCompany(entry))
+        else -> entry.isin?.let { companies.findByIsin(it, entry.market) }
+            ?: companies.findByName(entry.companyName, entry.market)
+            ?: companies.save(newCompany(entry))
+    }
 
-    private fun swedishCompany(entry: ListingEntry) = Company(
+    private fun avanzaCompany(entry: ListingEntry) = Company(
         id = null,
         name = entry.companyName,
-        isin = null,
-        market = Market.SE,
+        isin = entry.isin,
+        market = entry.market,
         ticker = null,
         biznesradarSymbol = null,
         publishesMonthlySales = false,

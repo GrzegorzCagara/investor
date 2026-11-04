@@ -107,6 +107,7 @@ class FixtureHttpClient(clock: Clock, tracker: SourceHealthTracker) : PoliteHttp
     override fun get(source: Source, url: String): String {
         GPW_DETAIL.matchEntire(url)?.let { return gpwDetail(source, it.groupValues[1], url) }
         if (url == SYMBOLS_URL) return fixture("biznesradar/symbols-raw.js", url)
+        XTB_LIST.find(url)?.let { return fixture(XTB_FILES.getValue(it.groupValues[1]), url) }
         QUARTERLY.matchEntire(url)?.let { return fixture("biznesradar/${it.groupValues[1]}-pl-q.html", url) }
         VALUATION.matchEntire(url)?.let { return fixture("biznesradar/${it.groupValues[1]}-valuation.html", url) }
         BANKIER_LIST.matchEntire(url)?.let { return bankierList(source, it.groupValues[1], url) }
@@ -166,6 +167,8 @@ class FixtureHttpClient(clock: Clock, tracker: SourceHealthTracker) : PoliteHttp
 
     private companion object {
         const val SYMBOLS_URL = "https://www.biznesradar.pl/service-data-js/8"
+        val XTB_LIST = Regex("""^https://www\.xtb\.com/web-api/v3/languages/pl/branches/pl/instrument-specification\?country=(PL|SE|DE)&""")
+        val XTB_FILES = mapOf("PL" to "xtb/instruments-pl-replay.json", "SE" to "xtb/instruments-se.json", "DE" to "xtb/instruments-de.json")
         const val EMPTY_ARTICLE = "<html><body></body></html>"
         val NON_SESSION_PAGE = "<!DOCTYPE html><html><body>Brak notowań</body></html>".toByteArray()
         val GPW_DETAIL = Regex("""https://www\.gpw\.pl/komunikat\?geru_id=(\d+)""")

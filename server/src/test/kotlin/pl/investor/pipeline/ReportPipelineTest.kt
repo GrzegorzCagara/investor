@@ -60,6 +60,10 @@ import pl.investor.source.content.ReportContentClient
 import pl.investor.source.content.ReportContentNotFoundException
 import pl.investor.source.content.ReportContentParser
 import pl.investor.source.gpw.ListingEntry
+import pl.investor.source.xtb.XtbAvailability
+import pl.investor.source.xtb.XtbClient
+import pl.investor.source.xtb.XtbCountry
+import pl.investor.source.xtb.XtbStock
 import pl.investor.support.PostgresTestBase
 import pl.investor.scoring.Warning
 import pl.investor.source.biznesradar.ParsedQuarter
@@ -98,6 +102,7 @@ class ReportPipelineTest : PostgresTestBase() {
     private val notifier = mockk<PushNotifier>(relaxed = true)
     private val contentClient = mockk<ReportContentClient>()
     private val biznesRadar = mockk<BiznesRadarClient>()
+    private val xtb = mockk<XtbClient>()
     private val reasonWriter = mockk<ReasonWriter>()
     private val fixtureBySourceRef = mutableMapOf<String, String>()
     private val pendingAttachments = mutableSetOf<String>()
@@ -122,6 +127,10 @@ class ReportPipelineTest : PostgresTestBase() {
             .build()
         every { biznesRadar.symbolFor(any()) } returns "ASBISC"
         every { biznesRadar.mediumNameFor(any()) } returns "ASBIS"
+        every { biznesRadar.tickersBySymbol() } returns mapOf("ASBISC" to "ASB")
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("ASB", "ASBISC Enterprises PLC"))
+        every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
+        every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { biznesRadar.quarterly("ASBISC") } returns QuarterlyResultsParser().parse(fixture("biznesradar/ASBISC-pl-q.html"))
         every { biznesRadar.valuation("ASBISC") } returns ValuationParser().parse(fixture("biznesradar/ASBISC-valuation.html"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg<ListingEntry>().sourceRef, secondArg()) }
@@ -132,7 +141,7 @@ class ReportPipelineTest : PostgresTestBase() {
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies), clock,
         )
     }
 
@@ -660,6 +669,61 @@ class ReportPipelineTest : PostgresTestBase() {
         assertEquals(ReportStatus.SCORED, statusOf("82"))
         assertEquals(0, server.requestCount)
         verify(exactly = 1) { notifier.send(match { it.title.startsWith("ASBIS (GPW)") }) }
+    }
+
+    @Test
+    fun `GPW company that XTB does not offer is skipped by default before any AI call`() {
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("XTB", "XTB SA"))
+
+        pipeline.process(entry())
+
+        assertEquals(ReportStatus.SKIPPED_NOT_ON_XTB, statusOf("497297"))
+        assertEquals(0, server.requestCount)
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
+        verify(exactly = 0) { notifier.send(any()) }
+        assertFalse(companies.findById(reports.findById(reportId("497297")).companyId).availableOnXtb)
+    }
+
+    @Test
+    fun `XTB list that cannot be downloaded right after a restart keeps the report NEW for the retry job`() {
+        every { xtb.stocks(XtbCountry.PL) } throws SourceUnavailableException(Source.XTB, RuntimeException("down"))
+
+        pipeline.process(entry())
+
+        assertEquals(ReportStatus.NEW, statusOf("497297"))
+        assertEquals(0, server.requestCount)
+
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("ASB", "ASBISC Enterprises PLC"))
+        enqueueAsbisRb23()
+        pipeline.reprocess(reportId("497297"), allowWithoutAttachments = false)
+
+        assertEquals(ReportStatus.SCORED, statusOf("497297"))
+    }
+
+    @Test
+    fun `BiznesRadar outage while looking up the symbol keeps a GPW report NEW when XTB has no such name`() {
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("ASB", "ASBIS Group"))
+        every { biznesRadar.symbolFor(any()) } throws SourceUnavailableException(Source.BIZNESRADAR, RuntimeException("down"))
+
+        pipeline.process(entry())
+
+        assertEquals(ReportStatus.NEW, statusOf("497297"))
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `pending data of a company no longer on XTB is skipped instead of scored, because the reason needs AI`() {
+        asbis()
+        val latest = QuarterlyResultsParser().parse(fixture("biznesradar/ASBISC-pl-q.html")).filter { it.publishedOn != null }.maxBy { it.publishedOn!! }
+        every { biznesRadar.quarterly("ASBISC") } returns listOf(latest)
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("XTB", "XTB SA"))
+        val id = storedReport("84", ReportKind.QUARTERLY, ReportStatus.PENDING_DATA, latest.publishedOn!!.atTime(10, 0).atZone(java.time.ZoneId.of("Europe/Warsaw")).toInstant())
+
+        assertTrue(pipeline.retryPendingData(id))
+
+        assertEquals(ReportStatus.SKIPPED_NOT_ON_XTB, statusOf("84"))
+        verify(exactly = 0) { reasonWriter.write(any(), any(), any()) }
+        verify(exactly = 0) { notifier.send(any()) }
     }
 
     @Test
@@ -1199,7 +1263,7 @@ class ReportPipelineTest : PostgresTestBase() {
     fun `periodic report whose Bankier article has no attachment links yet waits for attachments`() {
         val http = mockk<pl.investor.source.PoliteHttpClient>()
         val locator = mockk<pl.investor.source.content.BankierReportLocator>()
-        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http), pl.investor.source.nasdaq.NasdaqViewParser())
+        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http), pl.investor.source.nasdaq.NasdaqViewParser(), pl.investor.source.eqs.EqsReleaseParser())
         every { http.get(Source.GPW_LISTING, any()) } returns fixture("reports/asbis-ps-2026.html")
         every { locator.find(any()) } returns "https://www.bankier.pl/wiadomosc/asbis.html"
         every { http.get(Source.BANKIER, "https://www.bankier.pl/wiadomosc/asbis.html") } returns "<html><body><p>Raport półroczny</p></body></html>"

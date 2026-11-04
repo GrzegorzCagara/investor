@@ -21,7 +21,7 @@ class ReportContentClientTest {
     private val http = mockk<PoliteHttpClient>()
     private val locator = mockk<BankierReportLocator>()
     private val attachments = mockk<AttachmentTextExtractor>()
-    private val client = ReportContentClient(http, ReportContentParser(), locator, attachments, NasdaqViewParser())
+    private val client = ReportContentClient(http, ReportContentParser(), locator, attachments, NasdaqViewParser(), pl.investor.source.eqs.EqsReleaseParser())
 
     private val entry = ListingEntry(
         market = Market.GPW,

@@ -146,6 +146,8 @@ Quote history backfill finished in 75 min
 
 Notowania spółek ze Szwecji serwer pobiera sam (z Avanzy, 2,5 roku przy pierwszym raporcie spółki), tego backfillu nie potrzebują.
 
+**Po aktualizacji „Niemcy”** uruchom ten sam backfill raz jeszcze. Na końcu dociąga też indeks DAX z 915 dni (kalendarz sesji Xetra) i notowania niemieckich spółek z Avanzy. Notowania GPW, które już są w bazie, nie są pobierane ponownie, więc tym razem trwa to kilka minut. Błąd tej części widać w logach jako `German quote history backfill failed`.
+
 ## 8. Budowa APK w Android Studio
 
 Robisz to na drugim komputerze.
@@ -211,7 +213,7 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
   - Avanza: identyfikacja spółki (ISIN, ticker, lista), przychody i zysk netto z 10 ostatnich kwartałów z datami raportów, C/Z i C/S, notowania dzienne.
   - Yahoo Finance: indeks OMXSPI (kalendarz sesji, rajd przed raportem, zwrot ponad indeks).
   - Placera.se (Finwire): zapowiedzi „X väntas redovisa …” z konsensusem analityków, sprawdzane co 15 minut od 6:00 do 22:00.
-- **Koszt AI:** z dawnej puli USA. Pula `SE` (wyniki) ma 1,35 USD, pula `SE_NEWS` (wydarzenia) 0,50 USD miesięcznie. GPW/NC (1,90 USD) i `NEWS` (1,00 USD) bez zmian, razem nadal 4,75 USD. Gdy pula się wyczerpie, przychodzi jeden push „raporty ze Szwecji” albo „wydarzenia ze Szwecji”.
+- **Koszt AI:** z dawnej puli USA. Pula `SE` (wyniki) ma 1,00 USD, pula `SE_NEWS` (wydarzenia) 0,25 USD miesięcznie (od aktualizacji „Niemcy”; wcześniej 1,35 i 0,50, różnica przeszła na Niemcy, rozdział 12d). GPW/NC (1,90 USD) i `NEWS` (1,00 USD) bez zmian, razem nadal 4,75 USD. Gdy pula się wyczerpie, przychodzi jeden push „raporty ze Szwecji” albo „wydarzenia ze Szwecji”.
 - **Ocena:** te same 6 składowych i ten sam próg co GPW. Raporty ze Szwecji wychodzą zwykle 7:00–8:30, push przychodzi od razu, przed otwarciem sesji o 9:00.
 - **Konsensus (Szwecja):** Finwire publikuje na Placera około 2 dni przed raportem oczekiwaną sprzedaż i zysk operacyjny (rörelseresultat) według FactSet, Modular Finance, Bloomberg albo Infront. Gdy taka zapowiedź istnieje, „Niespodzianka” jest liczona względem konsensusu, a nie względem trendu spółki. Pobicie zysku operacyjnego waży mniej więcej dwa razy więcej niż pobicie sprzedaży. Mips za III kw. 2026 (zysk 60 vs 58 mln, sprzedaż 215 vs 216 mln) dostaje 13,5 z 30 pkt, Mips za II kw. 2026 (95 vs 77, 232 vs 214) pełne 30. W szczegółach raportu konsensus widać jako np. „Sprzedaż vs konsensus FactSet (6 analityków)”. Konsensus innego rodzaju (np. „cash ebit”, skorygowany EBIT) nie jest porównywany z zyskiem operacyjnym, tylko sprzedaż.
 - **Zapowiedzi i zamówienia** (wszystkie rynki): składowa 10 pkt patrzy teraz też na zamówienia (orderingång, order intake, portfel zamówień za okres). Bez zapowiedzi zarządu wzrost zamówień o co najmniej 20% r/r daje 10 pkt, spadek o co najmniej 20% daje 0.
@@ -227,11 +229,35 @@ Dopóki telefon się nie zarejestruje, alerty czekają na serwerze (do 24 godzin
 
 ## 12c. Dostępność na XTB
 
-- **Znacznik:** w Alertach, Rankingu i szczegółach raportu obok oceny jest mała ramka „XTB”, gdy akcje spółki można kupić na XTB (rachunek z Polski). Spółki spoza XTB nadal są analizowane i widoczne, tylko bez znacznika.
-- **Źródło:** lista akcji z wyszukiwarki „Specyfikacja instrumentów” na xtb.com (nieoficjalne API strony, polski oddział, akcje z Polski i Szwecji). Liczą się tylko prawdziwe akcje: bez CFD, ETF-ów i akcji w trybie „close only” (tylko zamknięcie pozycji).
+- **Znacznik:** w Alertach, Rankingu i szczegółach raportu obok oceny jest mała ramka „XTB”, gdy akcje spółki można kupić na XTB (rachunek z Polski).
+- **Filtr XTB (wszystkie rynki):** od aktualizacji „Niemcy” do AI trafiają tylko komunikaty spółek, które można kupić na XTB, na GPW, NewConnect, w Szwecji i w Niemczech. Serwer sprawdza to na świeżej liście XTB przed każdym wywołaniem AI (także przed backfillem sprzedaży miesięcznej), więc nowa spółka nie czeka godziny na znacznik. Komunikat spółki spoza XTB dostaje status `SKIPPED_NOT_ON_XTB`, nie jest widoczny w Alertach ani w Rankingu i nie daje pushu. Gdy XTB, BiznesRadar albo Avanza chwilowo nie odpowiadają, a spółki nie da się dopasować po nazwie, komunikat zostaje nowy i serwer ponawia go co kilka minut (także zaraz po restarcie, gdy lista XTB nie jest jeszcze pobrana).
+- **Wyłączenie filtru:** rynki z filtrem ustawia zmienna `XTB_ONLY_MARKETS` w `.env` (lista rozdzielona przecinkami), domyślnie `DE,GPW,NC,SE`. Żeby np. znów analizować wszystkie spółki z GPW i NewConnect, wpisz `XTB_ONLY_MARKETS=DE,SE` i zrestartuj serwer (`docker compose up -d`). Pusta wartość (`XTB_ONLY_MARKETS=`) wyłącza filtr wszędzie.
+- **Źródło:** lista akcji z wyszukiwarki „Specyfikacja instrumentów” na xtb.com (nieoficjalne API strony, polski oddział, akcje z Polski, Szwecji i Niemiec). Liczą się tylko prawdziwe akcje: bez CFD, ETF-ów i akcji w trybie „close only” (tylko zamknięcie pozycji).
 - **Odświeżanie:** serwer pobiera listę raz na dobę (pierwszy raz około 3 minut po starcie) i co godzinę dopasowuje do niej spółki, więc nowa spółka dostaje znacznik najpóźniej po godzinie. Gdy XTB nie odpowiada, zostają znaczniki z ostatniej udanej listy.
-- **Dopasowanie:** GPW i NewConnect po tickerze z BiznesRadaru, Szwecja po tickerze z Avanzy, a gdy ticker się nie zgadza, po nazwie spółki bez formy prawnej. Na zapisanych komunikatach ESPI (161 spółek) bez znacznika zostały tylko 3 spółki, które są na XTB pod inną nazwą: Bumech (po zmianie nazwy), Krka i MOL.
+- **Dopasowanie:** GPW i NewConnect po tickerze z BiznesRadaru, Szwecja po tickerze z Avanzy, a gdy ticker się nie zgadza, po nazwie spółki bez formy prawnej. Na zapisanych komunikatach ESPI (161 spółek) bez znacznika zostały tylko 3 spółki, które są na XTB pod inną nazwą: Bumech Defense Partners (na XTB nadal jako Capital Partners, CPAP), Krka i MOL (długie nazwy z ESPI nie dają symbolu w BiznesRadarze). Przy włączonym filtrze ich komunikaty są pomijane.
 - **Aktualizacja:** starsza apka po prostu nie pokaże znacznika. Spółki z USA na razie nie są sprawdzane.
+
+## 12d. Niemcy
+
+- **Rynek:** DE („Niemcy”) to spółki z niemieckim ISIN-em (`DE…`), które publikują komunikaty przez EQS News (Xetra i giełda we Frankfurcie, od Prime Standard po Freiverkehr). Działa jak Szwecja: alerty z wynikami, Wydarzenia, wyniki po 5/20/60 sesjach, Skuteczność, Ranking, przełącznik w ustawieniach i znacznik XTB.
+- **Źródła** (darmowe i nieoficjalne):
+  - EQS News (lista komunikatów na eqs-news.com, co 60 s): wykrycie komunikatu i jego treść. Brane są tylko kategorie Ad-hoc (informacje poufne) i Corporate. Stimmrechte, Directors' Dealings, zapowiedzi raportów i inne kategorie są pomijane od razu, bez zapisu.
+  - Avanza (to samo API co dla Szwecji, wyszukiwanie po ISIN-ie): identyfikacja spółki (ticker, waluta), przychody i zysk netto z 10 kwartałów z datami raportów, C/Z, C/S i notowania dzienne.
+  - Yahoo Finance: indeks DAX (kalendarz sesji, rajd przed raportem, zwrot ponad indeks).
+- **Trasa komunikatu:**
+  - Ad-hoc z tytułem o wynikach (Umsatz, Ergebnis, Quartal, Prognose, results, Q3, outlook…) idzie do wyciągania wyników, a gdy to nie wyniki, do oceny jako Wydarzenie. Inne Ad-hoc idą od razu do oceny jako Wydarzenie (rutynowe tytuły, np. zwołanie Hauptversammlung, są pomijane).
+  - Corporate z tytułem o wynikach (bez zapowiedzi typu „to publish”, „Einladung”, „webcast”, „conference call”) idzie do wyciągania wyników. Każdy inny Corporate jest zapisywany jako nieistotny bez AI, także gdy AI nie znajdzie w nim liczb.
+- **Filtr XTB:** jak na pozostałych rynkach (rozdział 12c): do AI trafiają tylko spółki, które można kupić na XTB (dopasowanie po tickerze z Avanzy albo po nazwie), a pozostałe dostają status `SKIPPED_NOT_ON_XTB`. Filtr dla Niemiec wyłączysz, usuwając `DE` z `XTB_ONLY_MARKETS`.
+- **Koszt AI:** z puli Szwecji. Pule: `GPW` 1,90 USD, `NEWS` 1,00, `SE` 1,00 (było 1,35), `SE_NEWS` 0,25 (było 0,50), `DE` 0,40, `DE_NEWS` 0,20, razem nadal 4,75 USD. Komunikat EQS to czysty tekst (ok. 4 tys. tokenów, ok. 0,001 USD), więc Niemcy powinny kosztować ok. 0,3–0,5 USD miesięcznie. Gdy pula się wyczerpie, przychodzi jeden push „raporty z Niemiec” albo „wydarzenia z Niemiec”.
+- **Ocena:** te same 6 składowych i ten sam próg co w Szwecji. Dla Niemiec nie ma konsensusu analityków, więc „Niespodzianka” jest liczona względem własnego trendu spółki (ostrzeżenie „Brak konsensusu”). Sesja Xetra liczy się jako zamknięta po 17:35. Ostrzeżenia „Mała płynność” dla Niemiec nie ma, bo Avanza podaje tylko część obrotu. W szczegółach raportu numer raportu to „EQS”, kwoty są w EUR.
+- **Ograniczenia:**
+  - Tylko EQS News. Spółki, które publikują przez inne serwisy (Business Wire, dpa-AFX, pressetext), nie są widoczne.
+  - Tylko ISIN-y `DE…`; spółki z Austrii, Szwajcarii, Luksemburga i Holandii są pomijane.
+  - Bez konsensusu i bez PDF-ów: liczy się tekst komunikatu. Gdy AI cytuje liczby z tabeli z kilkoma kolumnami, dostają one ostrzeżenie o niepewnych liczbach.
+  - Komunikaty Corporate bez wyników (np. duży kontrakt ogłoszony jako Corporate) nie są oceniane.
+  - Wolumen z Avanzy obejmuje tylko część obrotu niemieckich akcji, więc płynność nie jest oceniana, dopóki nie będzie pełnego źródła.
+  - Avanza nie zna około jednej czwartej małych spółek (głównie Freiverkehr). Taka spółka idzie do AI tylko wtedy, gdy XTB ma ją pod tą samą nazwą, i jest oceniana bez historii (ostrzeżenie o brakujących danych).
+- **Aktualizacja:** serwer i apkę zaktualizuj razem (apka ma ścisłą listę rynków i statusów). Po starcie serwera uruchom raz `POST /api/admin/backfill-quote-history` (rozdział 7).
 
 ## 13. Deploy na mini-PC
 

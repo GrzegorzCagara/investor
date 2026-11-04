@@ -10,14 +10,14 @@ import java.time.Clock
 import java.time.Duration
 
 @Component
-class SwedishQuotesJob(
-    private val swedishQuotes: SwedishQuotes,
+class AvanzaQuotesJob(
+    private val avanzaQuotes: AvanzaQuotes,
     private val outcomes: OutcomeRepository,
     private val companies: CompanyRepository,
     private val clock: Clock,
 ) {
 
-    private val log = LoggerFactory.getLogger(SwedishQuotesJob::class.java)
+    private val log = LoggerFactory.getLogger(AvanzaQuotesJob::class.java)
 
     @Scheduled(cron = "0 45 18 * * MON-FRI", zone = "Europe/Stockholm")
     fun afterClose() = run()
@@ -26,18 +26,28 @@ class SwedishQuotesJob(
     fun retry() = run()
 
     fun run() {
-        runCatching { swedishQuotes.updateIndex() }.onFailure { log.error("OMXSPI quotes update failed", it) }
+        AVANZA_MARKETS.forEach { market ->
+            runCatching { avanzaQuotes.updateIndex(market) }.onFailure { log.error("{} index quotes update failed", market, it) }
+        }
         outcomes.pending(clock.instant().minus(TRACKING_PERIOD))
-            .filter { it.market == Market.SE }
-            .map { it.isin }
+            .filter { it.market in AVANZA_MARKETS }
+            .map { it.market to it.isin }
             .distinct()
-            .forEach { isin ->
-                runCatching { companies.findByIsin(isin, Market.SE)?.let(swedishQuotes::updateCompany) }
+            .forEach { (market, isin) ->
+                runCatching { companies.findByIsin(isin, market)?.let(avanzaQuotes::updateCompany) }
                     .onFailure { log.error("Quotes update of {} failed", isin, it) }
             }
     }
 
+    fun backfillHistory(market: Market) {
+        avanzaQuotes.updateIndex(market)
+        companies.findInMarkets(listOf(market)).forEach { company ->
+            runCatching { avanzaQuotes.updateCompany(company) }.onFailure { log.error("Quotes backfill of {} failed", company.name, it) }
+        }
+    }
+
     private companion object {
         val TRACKING_PERIOD: Duration = Duration.ofDays(120)
+        val AVANZA_MARKETS = Market.entries.filter { it.isCoveredByAvanza }
     }
 }

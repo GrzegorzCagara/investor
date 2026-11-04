@@ -14,4 +14,5 @@ enum class ReportStatus {
     PENDING_AI,
     PUSH_PENDING,
     BACKFILLED,
+    SKIPPED_NOT_ON_XTB,
 }

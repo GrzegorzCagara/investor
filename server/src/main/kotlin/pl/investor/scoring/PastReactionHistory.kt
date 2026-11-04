@@ -58,7 +58,7 @@ class PastReactionHistory(
         if (dates.isEmpty()) return emptyList()
         val history = quotes.between(isin, dates.min().minusDays(MAX_GAP_DAYS), reportDate)
         return dates.mapNotNull { date ->
-            val pct = if (company.market == Market.SE) history.sameDayChangePct(date) else history.overnightChangePct(date)
+            val pct = if (company.market.isCoveredByAvanza) history.sameDayChangePct(date) else history.overnightChangePct(date)
             pct?.let { PastReaction(date, it) }
         }
     }

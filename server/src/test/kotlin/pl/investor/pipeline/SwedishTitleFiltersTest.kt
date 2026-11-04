@@ -1,5 +1,6 @@
 package pl.investor.pipeline
 
+import pl.investor.report.Market
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -25,7 +26,7 @@ class SwedishTitleFiltersTest {
             "Inbjudan till presentation av Mips delårsrapport för tredje kvartalet 2026",
             "Invitation to webcast presentation of the Q3 2026 report",
             "Ändrat datum för publicering av bokslutskommuniké",
-        ).forEach { assertTrue(RoutineNewsFilter.isRoutine(it), it) }
+        ).forEach { assertTrue(RoutineNewsFilter.isRoutine(it, Market.SE), it) }
     }
 
     @Test
@@ -38,7 +39,7 @@ class SwedishTitleFiltersTest {
             "Kallelse till extra bolagsstämma med anledning av riktad emission",
             "Offentligt uppköpserbjudande till aktieägarna i Opter AB",
             "Styrelsen föreslår extra utdelning",
-        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it), it) }
+        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it, Market.SE), it) }
     }
 
     @Test
@@ -47,14 +48,14 @@ class SwedishTitleFiltersTest {
             "Number of voting rights and size of share capital at MOL Plc",
             "Banco Santander communicates the transactions over its own shares which it has carried out between 30 July and 5 August 2026 under the buyback programme",
             "Regarding the supplement of the agenda of the Annual General Meeting of Shareholders of AB \"Novaturas\"",
-        ).forEach { assertTrue(RoutineNewsFilter.isRoutine(it), it) }
+        ).forEach { assertTrue(RoutineNewsFilter.isRoutine(it, Market.SE), it) }
         listOf(
             "Banco Santander share capital reduction following completion of buy-back programme",
             "Completion of the acquisition of O_GD's Hungarian assets",
             "UniCredit announces a tender offer for one series of Notes and the issue of new Euro-denominated Tier 2 Fixed Rate Subordinated Callable Notes",
-        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it), it) }
-        assertTrue(ResultsKeywordFilter.matches("Preliminary sales revenue data for August 2026"))
-        assertFalse(ResultsKeywordFilter.matches("MOL's reaction to today's press reports regarding the NIS transaction"))
+        ).forEach { assertFalse(RoutineNewsFilter.isRoutine(it, Market.SE), it) }
+        assertTrue(ResultsKeywordFilter.matches("Preliminary sales revenue data for August 2026", Market.SE))
+        assertFalse(ResultsKeywordFilter.matches("MOL's reaction to today's press reports regarding the NIS transaction", Market.SE))
     }
 
     @Test
@@ -66,11 +67,11 @@ class SwedishTitleFiltersTest {
             "Bolaget bedömer att rörelseresultatet för tredje kvartalet överstiger marknadens förväntningar",
             "Preliminär nettoomsättning för oktober",
             "MilDef estimates that sales and earnings for the third quarter will significantly exceed",
-        ).forEach { assertTrue(ResultsKeywordFilter.matches(it), it) }
+        ).forEach { assertTrue(ResultsKeywordFilter.matches(it, Market.SE), it) }
         listOf(
             "Positiva borrresultat i Vargbäcken stärker underlaget för fortsatt utveckling",
             "Terranor vinner drift- och underhållskontrakt i Göteborg",
-        ).forEach { assertFalse(ResultsKeywordFilter.matches(it), it) }
+        ).forEach { assertFalse(ResultsKeywordFilter.matches(it, Market.SE), it) }
         assertTrue(ResultsKeywordFilter.isCorrection("Rättelse: Opter kvartalsrapport Q3 2026"))
     }
 }

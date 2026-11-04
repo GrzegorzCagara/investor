@@ -19,6 +19,13 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
             ?: throw AvanzaStockNotFoundException(companyName)
     }
 
+    fun findStockByIsin(isin: String): AvanzaStock =
+        search(isin).sortedByDescending { it.marketPlaceName == GERMAN_VENUE }.asSequence()
+            .take(MAX_ISIN_CANDIDATES)
+            .map { stock(it.orderBookId) }
+            .firstOrNull { it.isin == isin }
+            ?: throw AvanzaStockNotFoundException(isin)
+
     private fun search(query: String): List<AvanzaSearchHit> =
         AvanzaParser.searchHits(http.postJson(Source.AVANZA, "$baseUrl/_api/search/filtered-search", searchBody(query)))
 
@@ -47,6 +54,8 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
         private const val BASE_URL = "https://www.avanza.se"
         private const val SWEDEN = "SE"
         private val COVERED_VENUES = setOf("Stockholmsbörsen", "First North Stockholm")
+        private const val GERMAN_VENUE = "Xetra"
+        private const val MAX_ISIN_CANDIDATES = 3
         private const val SEARCH_SIZE = 5
         private const val MAX_SEARCHES = 3
         private const val MIN_FIRST_WORD_LETTERS = 4

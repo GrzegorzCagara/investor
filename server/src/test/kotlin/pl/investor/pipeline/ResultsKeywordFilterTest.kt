@@ -1,5 +1,6 @@
 package pl.investor.pipeline
 
+import pl.investor.report.Market
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -8,17 +9,17 @@ class ResultsKeywordFilterTest {
 
     @Test
     fun `monthly sales title matches regardless of case and diacritics`() {
-        assertTrue(ResultsKeywordFilter.matches("Informacja o szacunkowych miesięcznych skonsolidowanych przychodach za sierpień 2026 r."))
-        assertTrue(ResultsKeywordFilter.matches("SPRZEDAŻ w III kwartale"))
-        assertTrue(ResultsKeywordFilter.matches("Wstępne wybrane dane finansowe za 1 kwartał 2026 r."))
-        assertTrue(ResultsKeywordFilter.matches("Prognoza EBITDA"))
-        assertTrue(ResultsKeywordFilter.matches("Wstępne wyniki finansowe"))
+        assertTrue(ResultsKeywordFilter.matches("Informacja o szacunkowych miesięcznych skonsolidowanych przychodach za sierpień 2026 r.", Market.GPW))
+        assertTrue(ResultsKeywordFilter.matches("SPRZEDAŻ w III kwartale", Market.GPW))
+        assertTrue(ResultsKeywordFilter.matches("Wstępne wybrane dane finansowe za 1 kwartał 2026 r.", Market.GPW))
+        assertTrue(ResultsKeywordFilter.matches("Prognoza EBITDA", Market.GPW))
+        assertTrue(ResultsKeywordFilter.matches("Wstępne wyniki finansowe", Market.GPW))
     }
 
     @Test
     fun `unrelated titles do not match`() {
-        assertFalse(ResultsKeywordFilter.matches("Zwołanie Nadzwyczajnego Walnego Zgromadzenia"))
-        assertFalse(ResultsKeywordFilter.matches("Powołanie nowego dyrektora niewykonawczego"))
+        assertFalse(ResultsKeywordFilter.matches("Zwołanie Nadzwyczajnego Walnego Zgromadzenia", Market.GPW))
+        assertFalse(ResultsKeywordFilter.matches("Powołanie nowego dyrektora niewykonawczego", Market.GPW))
     }
 
     @Test
@@ -34,7 +35,7 @@ class ResultsKeywordFilterTest {
             "Net profit for the nine months of 2026",
             "Earnings release",
             "Financial report for the third quarter",
-        ).forEach { assertTrue(ResultsKeywordFilter.matches(it), it) }
+        ).forEach { assertTrue(ResultsKeywordFilter.matches(it, Market.GPW), it) }
     }
 
     @Test
@@ -46,7 +47,7 @@ class ResultsKeywordFilterTest {
             "Eurohold Bulgaria launched a procedure to list its shares on the Frankfurt Stock Exchange",
             "Extraordinary Shareholders' Meeting",
             "Acquisition of treasury shares",
-        ).forEach { assertFalse(ResultsKeywordFilter.matches(it), it) }
+        ).forEach { assertFalse(ResultsKeywordFilter.matches(it, Market.GPW), it) }
     }
 
     @Test

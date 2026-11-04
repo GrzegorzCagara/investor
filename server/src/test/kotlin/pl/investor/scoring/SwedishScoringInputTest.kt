@@ -18,7 +18,7 @@ import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResultRepository
 import pl.investor.history.QuoteRepository
 import pl.investor.history.ValuationRepository
-import pl.investor.pipeline.SwedishCompanyRefresher
+import pl.investor.pipeline.AvanzaCompanyRefresher
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.Market
@@ -29,7 +29,7 @@ import pl.investor.settings.SettingRepository
 import pl.investor.source.avanza.AvanzaClient
 import pl.investor.source.avanza.AvanzaParser
 import pl.investor.source.avanza.AvanzaSearchHit
-import pl.investor.source.quotes.SwedishQuotes
+import pl.investor.source.quotes.AvanzaQuotes
 import pl.investor.source.quotes.YahooChartClient
 import pl.investor.support.PostgresTestBase
 import java.math.BigDecimal
@@ -56,10 +56,10 @@ class SwedishScoringInputTest : PostgresTestBase() {
 
     private val clock = Clock.fixed(Instant.parse("2026-10-21T05:35:00Z"), ZoneOffset.UTC)
     private val avanza = mockk<AvanzaClient>()
-    private val swedishQuotes = mockk<SwedishQuotes>(relaxed = true)
+    private val avanzaQuotes = mockk<AvanzaQuotes>(relaxed = true)
     private val publishedAt = Instant.parse("2026-10-21T05:30:00Z")
 
-    private lateinit var refresher: SwedishCompanyRefresher
+    private lateinit var refresher: AvanzaCompanyRefresher
 
     private fun fixture(path: String) = checkNotNull(javaClass.getResource("/fixtures/se/$path")) { "missing fixture $path" }.readText()
 
@@ -70,7 +70,7 @@ class SwedishScoringInputTest : PostgresTestBase() {
         every { avanza.findStock("Mips AB") } returns AvanzaSearchHit("740416", "Mips", "SE", "Stockholmsbörsen")
         every { avanza.stock("740416") } returns AvanzaParser.stock(fixture("avanza-stock-mips.json"))
         every { avanza.quarters("740416") } returns AvanzaParser.quarters(fixture("avanza-analysis-mips.json"))
-        refresher = SwedishCompanyRefresher(avanza, swedishQuotes, companies, quarterResults, valuations, quotes, settings, clock)
+        refresher = AvanzaCompanyRefresher(avanza, avanzaQuotes, companies, quarterResults, valuations, quotes, settings, clock)
     }
 
     private fun mips(): Company = companies.save(Company(null, "Mips AB", null, Market.SE, null, null, false))
@@ -100,7 +100,7 @@ class SwedishScoringInputTest : PostgresTestBase() {
     private fun quote(isin: String, date: String, close: String, volume: Long) =
         DailyQuote(isin, LocalDate.parse(date), BigDecimal(close), volume, BigDecimal(close) * BigDecimal(volume))
 
-    private fun refreshedMips(refresher: SwedishCompanyRefresher = this.refresher): Company {
+    private fun refreshedMips(refresher: AvanzaCompanyRefresher = this.refresher): Company {
         val company = mips()
         quotes.save(quote("SE0009216278", "2026-06-30", "258.2", 50_000))
         generateSequence(LocalDate.parse("2026-09-21")) { it.plusDays(1) }.takeWhile { it <= LocalDate.parse("2026-10-20") }
@@ -128,8 +128,8 @@ class SwedishScoringInputTest : PostgresTestBase() {
         val valuation = valuations.forQuarters(checkNotNull(company.id), listOf(LocalDate.parse("2026-06-30"))).single()
         assertEquals(0, BigDecimal("258.2").compareTo(valuation.price))
         assertEquals(0, BigDecimal("41.2").compareTo(valuation.pe))
-        verify(exactly = 1) { swedishQuotes.updateIndex() }
-        verify(exactly = 1) { swedishQuotes.updateCompany(any()) }
+        verify(exactly = 1) { avanzaQuotes.updateIndex(Market.SE) }
+        verify(exactly = 1) { avanzaQuotes.updateCompany(any()) }
     }
 
     @Test
@@ -190,8 +190,8 @@ class SwedishScoringInputTest : PostgresTestBase() {
             listOf(quote("SE0009216278", "2026-10-21", "390.0", 2_000)).filter { !it.date.isAfter(arg<LocalDate>(3)) && !it.date.isBefore(arg<LocalDate>(2)) }
         }
         val yahoo = mockk<YahooChartClient> { every { daily(any(), any(), any(), any()) } returns emptyList() }
-        val liveQuotes = SwedishQuotes(avanza, yahoo, quotes, movingClock)
-        val liveRefresher = SwedishCompanyRefresher(avanza, liveQuotes, companies, quarterResults, valuations, quotes, settings, movingClock)
+        val liveQuotes = AvanzaQuotes(avanza, yahoo, quotes, movingClock)
+        val liveRefresher = AvanzaCompanyRefresher(avanza, liveQuotes, companies, quarterResults, valuations, quotes, settings, movingClock)
         val company = refreshedMips(liveRefresher)
         verify(exactly = 0) { avanza.dailyQuotes(any(), any(), any(), any()) }
 

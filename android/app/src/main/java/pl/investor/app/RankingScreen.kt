@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private val marketFilters: List<Pair<Market?, String>> =
-    listOf<Pair<Market?, String>>(null to "Wszystkie") + listOf(Market.GPW, Market.NC, Market.SE, Market.US).map { it to Formatting.marketName(it) }
+    listOf<Pair<Market?, String>>(null to "Wszystkie") + Market.covered.map { it to Formatting.marketName(it) }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -23,7 +23,7 @@ class SwedishQuotesTest {
     private val company = Company(1, "Mips AB", "SE0009216278", Market.SE, "MIPS", null, false, avanzaId = "740416")
     private val today = LocalDate.parse("2026-11-02")
 
-    private fun quotes(at: String) = SwedishQuotes(avanza, yahoo, repository, Clock.fixed(Instant.parse(at), ZoneOffset.UTC))
+    private fun quotes(at: String) = AvanzaQuotes(avanza, yahoo, repository, Clock.fixed(Instant.parse(at), ZoneOffset.UTC))
 
     private fun bar(instrument: String, date: LocalDate) = DailyQuote(instrument, date, BigDecimal.TEN, 100, BigDecimal(1000))
 
@@ -43,7 +43,7 @@ class SwedishQuotesTest {
         every { repository.latestDate("OMXSPI") } returns today.minusDays(4)
         every { yahoo.daily("^OMXSPI", "OMXSPI", any(), any()) } returns listOf(bar("OMXSPI", today.minusDays(3)), bar("OMXSPI", today))
 
-        quotes("2026-11-02T14:00:00Z").updateIndex()
+        quotes("2026-11-02T14:00:00Z").updateIndex(Market.SE)
 
         verify { yahoo.daily("^OMXSPI", "OMXSPI", today.minusDays(3), today.minusDays(1)) }
         verify(exactly = 1) { repository.save(match { it.date == today.minusDays(3) }) }
@@ -53,10 +53,10 @@ class SwedishQuotesTest {
     @Test
     fun `no call is made when only the unfinished session or a weekend is missing`() {
         every { repository.latestDate("OMXSPI") } returns today.minusDays(1)
-        quotes("2026-11-02T15:00:00Z").updateIndex()
+        quotes("2026-11-02T15:00:00Z").updateIndex(Market.SE)
 
         every { repository.latestDate("OMXSPI") } returns LocalDate.parse("2026-10-30")
-        quotes("2026-11-01T12:00:00Z").updateIndex()
+        quotes("2026-11-01T12:00:00Z").updateIndex(Market.SE)
 
         verify(exactly = 0) { yahoo.daily(any(), any(), any(), any()) }
     }
@@ -66,7 +66,7 @@ class SwedishQuotesTest {
         every { repository.latestDate("OMXSPI") } returns today.minusDays(1)
         every { yahoo.daily("^OMXSPI", "OMXSPI", today, today) } returns listOf(bar("OMXSPI", today))
 
-        quotes("2026-11-02T16:40:00Z").updateIndex()
+        quotes("2026-11-02T16:40:00Z").updateIndex(Market.SE)
 
         verify(exactly = 1) { repository.save(match { it.date == today }) }
     }

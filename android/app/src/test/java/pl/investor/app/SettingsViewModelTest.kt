@@ -75,7 +75,7 @@ class SettingsViewModelTest {
         assertEquals(
             SettingsForm(
                 threshold = "70",
-                enabledMarkets = setOf(Market.GPW, Market.US, Market.SE),
+                enabledMarkets = setOf(Market.GPW, Market.US, Market.SE, Market.DE),
                 enabledEventTypes = setOf(EventType.RESULTS, EventType.NEWS),
                 quietEnabled = false,
                 quietFrom = "22:00",
@@ -122,6 +122,18 @@ class SettingsViewModelTest {
         )
         assertTrue(putBodies.single().contains("\"disabledMarkets\":[\"US\"]"))
         assertEquals("55", saved.form?.threshold)
+    }
+
+    @Test
+    fun `german market switch is sent and read back`() {
+        val viewModel = loadedViewModel()
+        viewModel.onMarketChange(Market.DE, false)
+
+        viewModel.save()
+        val saved = viewModel.await { !it.saving && it.saveMessage != null }
+
+        assertTrue(putBodies.single().contains("\"disabledMarkets\":[\"NC\",\"DE\"]"))
+        assertEquals(setOf(Market.GPW, Market.SE, Market.US), saved.form?.enabledMarkets)
     }
 
     @Test

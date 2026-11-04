@@ -28,7 +28,7 @@ class XtbAvailabilityJobTest : PostgresTestBase() {
     private val clock = MutableClock(Instant.parse("2026-11-04T06:00:00Z"))
     private val xtb = mockk<XtbClient>()
     private val biznesRadar = mockk<BiznesRadarClient>()
-    private val job by lazy { XtbAvailabilityJob(xtb, biznesRadar, companies, clock) }
+    private val job by lazy { XtbAvailabilityJob(XtbAvailability(xtb, biznesRadar, companies, clock)) }
 
     @BeforeEach
     fun setUp() {
@@ -38,6 +38,7 @@ class XtbAvailabilityJobTest : PostgresTestBase() {
             XtbStock("ZUK", "Zaklady Urzadzen Kotlowych Staporkow SA"),
         )
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
+        every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { biznesRadar.tickersBySymbol() } returns mapOf("11-BIT-STUDIOS" to "11B", "ALFA" to "ALF")
     }
 
@@ -117,7 +118,7 @@ class XtbAvailabilityJobTest : PostgresTestBase() {
         assertTrue(available(alfa))
 
         every { xtb.stocks(XtbCountry.PL) } throws SourceUnavailableException(Source.XTB, RuntimeException("down"))
-        val freshJob = XtbAvailabilityJob(xtb, biznesRadar, companies, clock)
+        val freshJob = XtbAvailabilityJob(XtbAvailability(xtb, biznesRadar, companies, clock))
         every { biznesRadar.tickersBySymbol() } returns mapOf("11-BIT-STUDIOS" to "11B")
 
         freshJob.refresh()

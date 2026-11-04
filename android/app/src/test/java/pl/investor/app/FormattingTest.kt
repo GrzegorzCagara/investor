@@ -42,8 +42,15 @@ class FormattingTest {
         assertEquals("USA", Formatting.marketLabel(Market.US))
         assertEquals("SE", Formatting.marketLabel(Market.SE))
         assertEquals("Szwecja", Formatting.marketName(Market.SE))
+        assertEquals("DE", Formatting.marketLabel(Market.DE))
+        assertEquals("Niemcy", Formatting.marketName(Market.DE))
         assertEquals("GPW", Formatting.marketName(Market.GPW))
         assertEquals("USA", Formatting.marketName(Market.US))
+    }
+
+    @Test
+    fun `only covered markets are offered as filters and switches`() {
+        assertEquals(listOf(Market.GPW, Market.NC, Market.SE, Market.DE), Market.covered)
     }
 
     @Test
@@ -52,6 +59,13 @@ class FormattingTest {
         assertEquals("Mips (SE · Large Cap Stockholm)", Formatting.detailTitle(detail))
         assertEquals("Mips (GPW)", Formatting.detailTitle(detail(Market.GPW)))
         assertEquals("Nasdaq · SE · raport kwartalny, 08:00", Formatting.detailHeadline(detail, now))
+    }
+
+    @Test
+    fun `German detail title and headline`() {
+        val detail = detail(Market.DE).copy(reportNumber = "EQS", listing = "Prime Standard")
+        assertEquals("Mips (DE · Prime Standard)", Formatting.detailTitle(detail))
+        assertEquals("EQS · DE · raport kwartalny, 08:00", Formatting.detailHeadline(detail, now))
     }
 
     @Test
@@ -134,6 +148,10 @@ class FormattingTest {
                 ),
             ),
         )
+        assertEquals(
+            listOf("Umsatz vs konsensus: 82,2 wobec 80,0 mln EUR (+2,8%)"),
+            Formatting.consensusLines(listOf(ConsensusRowView("Umsatz vs konsensus", 82.2, 80.0, 2.75, "EUR"))),
+        )
     }
 
     @Test
@@ -179,11 +197,14 @@ class FormattingTest {
         assertEquals("Wydarzenia", Formatting.aiPoolLabel("NEWS"))
         assertEquals("Szwecja – wyniki", Formatting.aiPoolLabel("SE"))
         assertEquals("Szwecja – wydarzenia", Formatting.aiPoolLabel("SE_NEWS"))
+        assertEquals("Niemcy – wyniki", Formatting.aiPoolLabel("DE"))
+        assertEquals("Niemcy – wydarzenia", Formatting.aiPoolLabel("DE_NEWS"))
         assertEquals("Nasdaq (komunikaty)", Formatting.sourceLabel("NASDAQ_NORDIC"))
         assertEquals("Avanza", Formatting.sourceLabel("AVANZA"))
         assertEquals("Yahoo (indeks)", Formatting.sourceLabel("YAHOO"))
         assertEquals("Placera (konsensus)", Formatting.sourceLabel("PLACERA"))
         assertEquals("XTB (lista akcji)", Formatting.sourceLabel("XTB"))
+        assertEquals("EQS News", Formatting.sourceLabel("EQS"))
         assertEquals("Spadek w dniu raportu", Formatting.reactionLabel(Reaction.NEGATIVE))
         assertEquals("Płasko", Formatting.reactionLabel(Reaction.FLAT))
         assertEquals("Wzrost", Formatting.reactionLabel(Reaction.POSITIVE))

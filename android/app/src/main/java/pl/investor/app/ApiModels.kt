@@ -14,7 +14,18 @@ object InstantSerializer : KSerializer<Instant> {
     override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
 }
 
-enum class Market { GPW, NC, SE, US }
+enum class Market(val isCovered: Boolean = true) {
+    GPW,
+    NC,
+    SE,
+    DE,
+    US(isCovered = false),
+    ;
+
+    companion object {
+        val covered: List<Market> = entries.filter { it.isCovered }
+    }
+}
 
 enum class ReportKind { CURRENT, QUARTERLY, HALF_YEARLY, ANNUAL, OTHER }
 
@@ -22,6 +33,7 @@ enum class ReportStatus {
     NEW,
     IRRELEVANT,
     CORRECTION_SKIPPED,
+    SKIPPED_NOT_ON_XTB,
     EXTRACTED,
     SCORED,
     UNSCORED_NO_AI,

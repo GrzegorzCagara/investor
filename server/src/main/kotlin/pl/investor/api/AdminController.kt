@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import pl.investor.outcome.OutcomeJob
 import pl.investor.pipeline.MonthlySalesBackfillJob
+import pl.investor.report.Market
+import pl.investor.source.quotes.AvanzaQuotesJob
 import pl.investor.source.quotes.DailyQuotesJob
 import pl.investor.support.toWarsawDate
 import java.time.Clock
@@ -22,6 +24,7 @@ class AdminController(
     private val monthlySales: MonthlySalesBackfillJob,
     private val dailyQuotes: DailyQuotesJob,
     private val outcomes: OutcomeJob,
+    private val avanzaQuotes: AvanzaQuotesJob,
     private val clock: Clock,
 ) {
 
@@ -41,6 +44,7 @@ class AdminController(
     fun backfillQuoteHistory(): ResponseEntity<Void> = launch("Quote history backfill") {
         val today = clock.instant().toWarsawDate()
         runCatching { dailyQuotes.backfillMissing(today.minusDays(QUOTE_HISTORY_DAYS), today) }.onFailure { log.error("Quote history backfill failed", it) }
+        runCatching { avanzaQuotes.backfillHistory(Market.DE) }.onFailure { log.error("German quote history backfill failed", it) }
     }
 
     private fun launch(name: String, task: () -> Unit): ResponseEntity<Void> {

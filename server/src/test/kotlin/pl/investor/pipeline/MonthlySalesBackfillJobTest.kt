@@ -30,6 +30,10 @@ import pl.investor.source.content.ReportContentParser
 import pl.investor.source.gpw.EspiListingClient
 import pl.investor.source.gpw.EspiListingParser
 import pl.investor.source.gpw.ListingEntry
+import pl.investor.source.xtb.XtbAvailability
+import pl.investor.source.xtb.XtbClient
+import pl.investor.source.xtb.XtbCountry
+import pl.investor.source.xtb.XtbStock
 import pl.investor.source.gpw.ListingPage
 import pl.investor.support.PostgresTestBase
 import pl.investor.support.WARSAW
@@ -55,6 +59,7 @@ class MonthlySalesBackfillJobTest : PostgresTestBase() {
     private val listing = mockk<EspiListingClient>()
     private val contentClient = mockk<ReportContentClient>()
     private val biznesRadar = mockk<BiznesRadarClient>()
+    private val xtb = mockk<XtbClient>()
     private val emptyPage = ListingPage(emptyList(), 0, emptyList())
     private lateinit var server: MockWebServer
     private lateinit var job: MonthlySalesBackfillJob
@@ -72,6 +77,10 @@ class MonthlySalesBackfillJobTest : PostgresTestBase() {
         server = MockWebServer().apply { start() }
         every { biznesRadar.symbolFor(any()) } returns "ASBISC"
         every { biznesRadar.mediumNameFor(any()) } returns "ASBIS"
+        every { biznesRadar.tickersBySymbol() } returns mapOf("ASBISC" to "ASB")
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("ASB", "ASBISC Enterprises PLC"))
+        every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
+        every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { listing.page(any(), any(), any()) } returns emptyPage
         every { contentClient.fetch(any(), any()) } answers {
             val month = checkNotNull(monthlyReportFixtures[firstArg<ListingEntry>().sourceRef])
@@ -88,7 +97,9 @@ class MonthlySalesBackfillJobTest : PostgresTestBase() {
     private fun jobWith(periods: RevenuePeriodRepository, budget: AiBudget = AiBudget(aiUsage, clock)) = MonthlySalesBackfillJob(
         listing, CompanyResolver(companies, biznesRadar), companies, reports, contentClient,
         ClaudeExtractor(budget, AnthropicOkHttpClient.builder().baseUrl(server.url("/").toString().trimEnd('/')).apiKey("test-key").maxRetries(0).build()),
-        QuoteVerifier(), periods, TransactionTemplate(transactionManager), clock,
+        QuoteVerifier(), periods, TransactionTemplate(transactionManager),
+        XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), CompanyDataRefresher(biznesRadar, companies, mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), clock, mockk(relaxed = true)), companies),
+        clock,
     )
 
     private fun fixture(path: String) =
@@ -153,6 +164,17 @@ class MonthlySalesBackfillJobTest : PostgresTestBase() {
         assertEquals(requestsAfterFirstRun, server.requestCount)
         assertEquals(0, jdbc.sql("SELECT count(*) FROM score").query(Long::class.java).single())
         assertEquals(0, jdbc.sql("SELECT count(*) FROM push_log").query(Long::class.java).single())
+    }
+
+    @Test
+    fun `company that XTB does not offer is skipped without reading its reports or calling AI`() {
+        every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("XTB", "XTB SA"))
+
+        assertEquals(0, job.backfill(asbisMonthlySales(since = LocalDate.of(2025, 9, 1))))
+
+        assertEquals(0, server.requestCount)
+        assertEquals(0L, jdbc.sql("SELECT count(*) FROM report").query(Long::class.java).single())
+        verify(exactly = 0) { contentClient.fetch(any(), any()) }
     }
 
     @Test
