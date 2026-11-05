@@ -75,7 +75,7 @@ class SettingsViewModelTest {
         assertEquals(
             SettingsForm(
                 threshold = "70",
-                enabledMarkets = setOf(Market.GPW, Market.US, Market.SE, Market.DE),
+                enabledMarkets = setOf(Market.GPW, Market.US, Market.SE, Market.DE, Market.NL),
                 enabledEventTypes = setOf(EventType.RESULTS, EventType.NEWS),
                 quietEnabled = false,
                 quietFrom = "22:00",
@@ -133,7 +133,7 @@ class SettingsViewModelTest {
         val saved = viewModel.await { !it.saving && it.saveMessage != null }
 
         assertTrue(putBodies.single().contains("\"disabledMarkets\":[\"NC\",\"DE\"]"))
-        assertEquals(setOf(Market.GPW, Market.SE, Market.US), saved.form?.enabledMarkets)
+        assertEquals(setOf(Market.GPW, Market.SE, Market.NL, Market.US), saved.form?.enabledMarkets)
     }
 
     @Test
