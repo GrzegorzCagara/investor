@@ -152,4 +152,24 @@ class ScoreCalculatorTest {
         assertEquals(30.0, score.components.surprise, 1e-9)
         assertFalse(Warning.REVENUE_ALREADY_KNOWN in score.warnings)
     }
+
+    private fun orlenQ3Like() = allNull().copy(
+        sur = 1.70, revenueYoyPct = 31.1, previousYoyPcts = listOf(26.1, 3.0, -3.4, -10.2), operatingProfitYoyPct = 161.7,
+        outlook = OutlookTone.NONE, pe = 13.1, ttmNetProfitGrowthPct = 171.7, cyclical = true,
+    )
+
+    @Test fun `Orlen Q3 as a cyclical company without consensus drops from 67 to 56,5`() {
+        val score = ScoreCalculator.score(orlenQ3Like())
+
+        assertEquals(15.0, score.components.surprise, 1e-9)
+        assertEquals(56.452, score.total, 1e-9)
+        assertTrue(Warning.CYCLICAL_INDUSTRY in score.warnings)
+    }
+
+    @Test fun `cyclical company keeps a consensus surprise`() {
+        val beat = ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal(150), BigDecimal(100), "SEK", "Placera", 3)
+        val score = ScoreCalculator.score(orlenQ3Like().copy(consensus = listOf(beat)))
+
+        assertEquals(30.0, score.components.surprise, 1e-9)
+    }
 }

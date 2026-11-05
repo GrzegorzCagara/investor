@@ -447,6 +447,7 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
   - Gdy spółka podała przychody za kwartał już wcześniej (sprzedaż za wszystkie trzy miesiące albo szacunki za kwartał), raport kwartalny dostaje za niespodziankę względem własnego trendu najwyżej 15 pkt, bo rynek te przychody już znał. Niespodzianka względem konsensusu analityków liczy się normalnie.
   - AI czyta z raportu przepływy operacyjne i zysk netto za ten sam okres: za sam ostatni kwartał, a gdy raport go nie podaje, od początku roku. Gdy zysk jest dodatni, a przepływy ujemne, raport dostaje ostrzeżenie „Zysk bez gotówki” i za jakość najwyżej 7,5 pkt. Banki i ubezpieczyciele są pomijani.
   - ASBIS za III kw. 2026 miał 96 pkt (pełne 30 za niespodziankę, choć przychody z lipca, sierpnia i września były znane). Według nowych zasad ma 81 pkt, a gdy raport pokazuje ujemne przepływy operacyjne, 73,5 pkt. Stare oceny się nie zmieniają, nowe zasady działają od wdrożenia.
+  - Spółka z branży cyklicznej (paliwa, surowce, metale, chemia) bez konsensusu analityków dostaje za niespodziankę względem własnego trendu najwyżej 15 pkt. Jej przychody rosną i spadają razem z cenami surowców, które rynek widzi na bieżąco, więc skok przychodów to nie jest nowość. Niespodzianka względem konsensusu liczy się normalnie. Orlen za III kw. 2026 miał 67 pkt (25,5 za niespodziankę), choć według konsensusu PAP wypadł poniżej oczekiwań (przychody −5,7%, EBITDA LIFO −3,5%). Według nowych zasad ma 56,5 pkt.
 
 ## Wrzutka
 ssh grzegorz@minipc "rm -rf /home/grzegorz/investor/server"

@@ -103,7 +103,7 @@ object ScoreCalculator {
     fun score(raw: ScoringInput): Score {
         val input = raw.finiteOnly()
         val consensusSurprise = input.consensusSurprisePoints()
-        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage || input.revenueAlreadyKnown, NEUTRAL_SURPRISE)
+        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage || input.revenueAlreadyKnown || input.cyclical, NEUTRAL_SURPRISE)
         val components = ScoreComponents(
             surprise = oneOffSurprisePoints(consensusSurprise ?: ownTrendSurprise, input.oneOff),
             growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal).atMostNeutralWhen(input.earlyStage, NEUTRAL_GROWTH),

@@ -5,7 +5,7 @@ object WarningLabels {
     fun label(warning: Warning): String = when (warning) {
         Warning.NO_CONSENSUS -> "Brak konsensusu analityków, porównanie z własnym trendem spółki"
         Warning.ONE_OFF_QUARTER -> "Jednorazowy kwartał: niespodzianka liczona najwyżej neutralnie"
-        Warning.CYCLICAL_INDUSTRY -> "Branża cykliczna: niska wycena może oznaczać szczyt cyklu"
+        Warning.CYCLICAL_INDUSTRY -> "Branża cykliczna: wyniki zależą głównie od cen i koniunktury, niska wycena może oznaczać szczyt cyklu; niespodzianka bez konsensusu liczona najwyżej neutralnie"
         Warning.LOW_LIQUIDITY -> "Niska płynność"
         Warning.MISSING_DATA -> "Brak części danych, składowe neutralne"
         Warning.NO_AI -> "Ocena bez AI"
