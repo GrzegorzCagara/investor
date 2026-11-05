@@ -246,7 +246,7 @@ class ReportPipeline(
         val periodic = entry.kind.isPeriodic
         if (!periodic && report.status == ReportStatus.PENDING_ATTACHMENTS) return extractAwaitingAttachments(report, company, entry, allowWithoutAttachments)
         val firstContent = contentClient.fetch(entry, includeAttachments = periodic)
-        if (periodic && holdForAttachments(report, firstContent, allowWithoutAttachments)) return null
+        if ((periodic || firstContent.attachmentsPending) && holdForAttachments(report, firstContent, allowWithoutAttachments)) return null
         val first = extractFrom(report, company, firstContent) ?: return null
         val extraction = first.verified.extraction
         if (periodic || extraction.category != ReportCategory.RESULTS || extraction.primaryPeriod() != null || !firstContent.hasReadableAttachments) return first

@@ -57,10 +57,10 @@ class XtbAvailability(
     }
 
     private fun XtbOffer.lists(company: Company, gpwTickers: Map<String, String>): Boolean =
-        lists(XTB_COUNTRIES.getValue(company.market), company.tradingTicker(gpwTickers), company.name)
+        lists(XTB_COUNTRIES.getValue(company.market), company.tradingTickers(gpwTickers), company.name)
 
-    private fun Company.tradingTicker(gpwTickers: Map<String, String>): String? =
-        if (market.isCoveredByAvanza) ticker else biznesradarSymbol?.let(gpwTickers::get)
+    private fun Company.tradingTickers(gpwTickers: Map<String, String>): List<String> =
+        if (market.isCoveredByAvanza) listOfNotNull(ticker, exchangeTicker) else listOfNotNull(biznesradarSymbol?.let(gpwTickers::get))
 
     private fun offer(): XtbOffer {
         val now = clock.instant()
@@ -81,6 +81,9 @@ class XtbAvailability(
     private companion object {
         val OFFER_MAX_AGE: Duration = Duration.ofHours(23)
         val POLISH_MARKETS = setOf(Market.GPW, Market.NC)
-        val XTB_COUNTRIES = mapOf(Market.GPW to XtbCountry.PL, Market.NC to XtbCountry.PL, Market.SE to XtbCountry.SE, Market.DE to XtbCountry.DE)
+        val XTB_COUNTRIES = mapOf(
+            Market.GPW to XtbCountry.PL, Market.NC to XtbCountry.PL, Market.SE to XtbCountry.SE, Market.DE to XtbCountry.DE,
+            Market.NL to XtbCountry.NL,
+        )
     }
 }

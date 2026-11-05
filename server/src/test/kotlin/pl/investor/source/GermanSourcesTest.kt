@@ -6,6 +6,7 @@ import mockwebserver3.MockWebServer
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import pl.investor.monitoring.SourceHealthTracker
+import pl.investor.report.Market
 import pl.investor.source.avanza.AvanzaClient
 import pl.investor.source.avanza.AvanzaParser
 import pl.investor.source.avanza.AvanzaStockNotFoundException
@@ -32,7 +33,7 @@ class GermanSourcesTest {
         server.enqueue(MockResponse.Builder().body(fixture("de/avanza-search-isin-masterflex.json")).build())
         server.enqueue(MockResponse.Builder().body(fixture("de/avanza-stock-masterflex.json")).build())
 
-        val stock = AvanzaClient(http, server.url("").toString().trimEnd('/')).findStockByIsin("DE0005492938")
+        val stock = AvanzaClient(http, server.url("").toString().trimEnd('/')).findStockByIsin("DE0005492938", Market.DE)
 
         assertEquals("1748784", stock.orderBookId)
         assertEquals("MZX", stock.ticker)
@@ -51,8 +52,8 @@ class GermanSourcesTest {
         server.enqueue(MockResponse.Builder().body(fixture("de/avanza-search-isin-umweltbank.json")).build())
         val client = AvanzaClient(http, server.url("").toString().trimEnd('/'))
 
-        assertThrows<AvanzaStockNotFoundException> { client.findStockByIsin("DE0005492939") }
-        assertThrows<AvanzaStockNotFoundException> { client.findStockByIsin("DE0005570808") }
+        assertThrows<AvanzaStockNotFoundException> { client.findStockByIsin("DE0005492939", Market.DE) }
+        assertThrows<AvanzaStockNotFoundException> { client.findStockByIsin("DE0005570808", Market.DE) }
         server.close()
     }
 
@@ -86,8 +87,8 @@ class GermanSourcesTest {
 
         assertEquals(listOf("12DA", "1COV", "BSL", "CON", "MZX", "TIMA", "UN0"), stocks.map { it.ticker })
         val offer = XtbOffer(mapOf(XtbCountry.DE to stocks))
-        assertTrue(offer.lists(XtbCountry.DE, "MZX", "Masterflex SE"))
-        assertTrue(offer.lists(XtbCountry.DE, null, "ZEAL Network SE"))
-        assertFalse(offer.lists(XtbCountry.DE, null, "Daimler AG"))
+        assertTrue(offer.lists(XtbCountry.DE, listOf("MZX"), "Masterflex SE"))
+        assertTrue(offer.lists(XtbCountry.DE, emptyList(), "ZEAL Network SE"))
+        assertFalse(offer.lists(XtbCountry.DE, emptyList(), "Daimler AG"))
     }
 }

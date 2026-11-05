@@ -11,3 +11,5 @@ fun Instant.toWarsawDate(): LocalDate = atZone(WARSAW).toLocalDate()
 val STOCKHOLM: ZoneId = ZoneId.of("Europe/Stockholm")
 
 val BERLIN: ZoneId = ZoneId.of("Europe/Berlin")
+
+val AMSTERDAM: ZoneId = ZoneId.of("Europe/Amsterdam")

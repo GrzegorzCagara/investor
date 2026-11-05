@@ -34,6 +34,7 @@ class QuoteVerifier {
     private fun Market.units(): Units = when (this) {
         Market.SE -> SWEDISH
         Market.DE -> GERMAN
+        Market.NL -> DUTCH
         Market.GPW, Market.NC, Market.US -> POLISH
     }
 
@@ -91,7 +92,7 @@ class QuoteVerifier {
         val hasUnitDeclaration = units.declaration.containsMatchIn(text)
         return (listOf(source) + listOfNotNull(source.singleNumberToken(units))).distinct().any { candidate ->
             occurrences(text, candidate).any { start ->
-                hasValidBoundaries(text, candidate, start) && matchesValue(candidate, text, start, hasUnitDeclaration, units, period)
+                hasValidBoundaries(text, candidate, start, units) && matchesValue(candidate, text, start, hasUnitDeclaration, units, period)
             }
         }
     }
@@ -101,7 +102,7 @@ class QuoteVerifier {
             ?.takeIf { !units.unitWord.containsMatchIn(this) || units.unitWord.containsMatchIn(it) }
 
     private fun Amount.matchesValue(quoted: String, text: String, start: Int, hasUnitDeclaration: Boolean, units: Units, period: Period): Boolean {
-        if (valueInThousands.signum() > 0 && isPrecededByMinus(text, start)) return false
+        if (valueInThousands.signum() > 0 && isPrecededByMinus(text, start, units)) return false
         val readings = units.readings(quoted)
         if (units.labelsPriorYearInBrackets && readings.none { units.comparative(it) != null } && !isQuotedForPeriod(quoted, text, start, units, period)) return false
         return readings.any { matchesReading(it, quoted, text, start, hasUnitDeclaration, units, period) }
@@ -109,14 +110,14 @@ class QuoteVerifier {
 
     private fun isQuotedForPeriod(quoted: String, text: String, start: Int, units: Units, period: Period): Boolean {
         val valueStart = start + (units.numberToken.findAll(quoted).lastOrNull()?.range?.first ?: 0)
-        val insidePriorYearBracket = text.substring(0, valueStart).isInsidePriorYearBracket()
+        val insidePriorYearBracket = text.substring(0, valueStart).isInsidePriorYearBracket(units)
         val tableValue = !units.unitWord.containsMatchIn(quoted) && !ENGLISH_UNIT_SUFFIX.containsMatchIn(quoted)
         return if (period == Period.PREVIOUS_YEAR) insidePriorYearBracket || tableValue else !insidePriorYearBracket
     }
 
-    private fun String.isInsidePriorYearBracket(): Boolean {
+    private fun String.isInsidePriorYearBracket(units: Units): Boolean {
         val open = lastIndexOf('(')
-        return open >= 0 && indexOf(')', open) < 0 && PRIOR_YEAR_BRACKET_LABEL.containsMatchIn(substring(open))
+        return open >= 0 && indexOf(')', open) < 0 && units.priorYearLabel.containsMatchIn(substring(open))
     }
 
     private fun Amount.matchesReading(source: String, quoted: String, text: String, start: Int, hasUnitDeclaration: Boolean, units: Units, period: Period): Boolean {
@@ -149,6 +150,9 @@ class QuoteVerifier {
         val readings: (String) -> List<String> = { listOf(it) },
         val labelsPriorYearInBrackets: Boolean = false,
         val negativesInBrackets: Boolean = false,
+        val tableColumnsAfterSeparatedNumbers: Boolean = false,
+        val minusBefore: Regex = MINUS_BEFORE,
+        val priorYearLabel: Regex = PRIOR_YEAR_BRACKET_LABEL,
     ) {
         fun comparative(source: String): Comparative? {
             val match = comparativeForm?.matchEntire(source) ?: return null
@@ -164,25 +168,27 @@ class QuoteVerifier {
             text.indexOf(source, previous + 1).takeIf { it >= 0 }
         }
 
-    private fun hasValidBoundaries(text: String, source: String, start: Int): Boolean {
+    private fun hasValidBoundaries(text: String, source: String, start: Int, units: Units): Boolean {
         val before = text.substring(0, start)
         val after = text.substring(start + source.length)
         val groupedNumber = source.leadingMultiGroupNumber()
         val startsWithGroupedNumber = groupedNumber != null && groupedNumber.range.first == source.indexOfFirst(Char::isDigit)
         val endsWithGroupedNumber = groupedNumber != null && groupedNumber.range.last == source.indexOfLast(Char::isDigit)
+        val previousColumn = units.tableColumnsAfterSeparatedNumbers && SEPARATED_NUMBER_BEFORE.containsMatchIn(before)
+        val nextColumn = units.tableColumnsAfterSeparatedNumbers && SEPARATED_DIGITS_AT_END.containsMatchIn(source)
         val rejectedBefore = if (startsWithGroupedNumber) {
             SHORT_GROUP_BEFORE.containsMatchIn(before)
         } else {
-            source.firstDigitGroupHasThreeDigits() && THOUSANDS_GROUP_BEFORE.containsMatchIn(before)
+            source.firstDigitGroupHasThreeDigits() && THOUSANDS_GROUP_BEFORE.containsMatchIn(before) && !previousColumn
         }
         return !CONTINUES_NUMBER_BEFORE.containsMatchIn(before) &&
             !rejectedBefore &&
             !CONTINUES_NUMBER_AFTER.containsMatchIn(after) &&
-            !(source.last().isDigit() && !endsWithGroupedNumber && THOUSANDS_GROUP_AFTER.containsMatchIn(after))
+            !(source.last().isDigit() && !endsWithGroupedNumber && !nextColumn && THOUSANDS_GROUP_AFTER.containsMatchIn(after))
     }
 
-    private fun isPrecededByMinus(text: String, start: Int): Boolean =
-        MINUS_BEFORE.containsMatchIn(text.substring(0, start))
+    private fun isPrecededByMinus(text: String, start: Int, units: Units): Boolean =
+        units.minusBefore.containsMatchIn(text.substring(0, start))
 
     private fun String.leadingMultiGroupNumber(): MatchResult? =
         MULTI_GROUP_NUMBER.find(this)?.takeUnless { it.value.startsWith("0") }
@@ -200,8 +206,12 @@ class QuoteVerifier {
         const val POLISH_UNITS = "tys|mln|mld|thousand|million|billion"
         const val SWEDISH_UNITS = "mdsek|mdkr|msek|mnkr|mkr|ksek|tsek|tkr|miljoner|miljarder|tusen"
         const val GERMAN_UNITS = "mio|mrd|millionen|milliarden|teur|keur|meur|tsd"
+        const val DUTCH_UNITS = "miljoen|miljard|mio|mrd|duizend|meur|musd|teur|keur"
         const val POLISH_DECLARATION = "w tys\\.|w tysiącach|w mln|w milionach|tys\\. (zł|EUR|USD)"
         val WHITESPACE = Regex("[\\s\\u00A0\\u202F]+")
+        val PRIOR_YEAR_BRACKET_LABEL = Regex(":|vorjahr|vj\\.|prior[- ]year|previous year|last year", RegexOption.IGNORE_CASE)
+        val MINUS_BEFORE = Regex("-\\s?$")
+        val MINUS_AFTER_NON_LETTER_BEFORE = Regex("(?<!\\p{L})-\\s?$")
         val POLISH = Units(
             unitWord = Regex("\\b($POLISH_UNITS)", RegexOption.IGNORE_CASE),
             numberToken = Regex(
@@ -236,6 +246,23 @@ class QuoteVerifier {
             readings = ::germanReadings,
             labelsPriorYearInBrackets = true,
         )
+        val DUTCH = Units(
+            unitWord = Regex("\\b($POLISH_UNITS|$DUTCH_UNITS)", RegexOption.IGNORE_CASE),
+            numberToken = Regex(
+                "-?\\d+(?:[ .,]\\d{3})*(?:[,.]\\d+)?(?: ?(?:mln\\.?|mld\\.?|mio\\.?|mrd\\.?|miljoen|miljard|million|billion|thousand|duizend|bn|mn|m)(?!\\p{L}))?(?: ?(?:euro|eur|€|usd)(?!\\p{L}))?",
+                RegexOption.IGNORE_CASE,
+            ),
+            declaration = Regex(
+                "(?<!\\p{L})((in )?(eur|€|usd|us\\\$|\\\$) ?(millions?|thousands?|billions?|mln|miljoen|mio|m|bn|mn)|(in )?(millions?|thousands?|miljoenen|duizenden) (of )?(eur|euros?|€|usd|us dollars|dollars)|(x|in) ?(€|eur) ?1[.,]000|meur|teur|keur|musd)(?![\\p{L}\\d])",
+                RegexOption.IGNORE_CASE,
+            ),
+            comparativeForm = Regex("^(.*\\d.*?)\\s*\\(\\s*(-?\\d[\\d ]*(?:,\\d+)?)\\s*(mln|mld|tys)?\\s*\\)$"),
+            readings = ::dutchReadings,
+            labelsPriorYearInBrackets = true,
+            tableColumnsAfterSeparatedNumbers = true,
+            minusBefore = MINUS_AFTER_NON_LETTER_BEFORE,
+            priorYearLabel = Regex(":|prior[- ]year|previous year|last year|vorig jaar|\\bvs\\.?(?!\\p{L})|versus|compared (to|with)", RegexOption.IGNORE_CASE),
+        )
         val UNIT_BLOCKER = Regex(
             "^\\s*(%|r\\.|(stycz|lut|marc|kwiet|maj|czerw|lip|sierp|wrze|paźdz|listop|grud)\\p{L}*)",
             RegexOption.IGNORE_CASE,
@@ -244,7 +271,8 @@ class QuoteVerifier {
         val THOUSANDS_GROUP_BEFORE = Regex("\\d $")
         val CONTINUES_NUMBER_AFTER = Regex("^(\\d|[,.]\\d)")
         val THOUSANDS_GROUP_AFTER = Regex("^ \\d{3}(?!\\d)")
-        val MINUS_BEFORE = Regex("-\\s?$")
+        val SEPARATED_DIGITS_AT_END = Regex("\\d[.,]\\d+$")
+        val SEPARATED_NUMBER_BEFORE = Regex("\\d[.,]\\d+ $")
         val BRACKETED_NUMBER = Regex("\\((\\d(?:[\\d ,.]*\\d)?)\\)")
         val PLAIN_NUMBER = Regex("\\d(?:[\\d ,.]*\\d)?")
         val MULTI_GROUP_NUMBER = Regex("(?<!\\d)\\d{1,3}(?:[\\s\\u00A0\\u202F]\\d{3})+(?!\\d)")
@@ -287,27 +315,41 @@ class QuoteVerifier {
         val GERMAN_UNIT_SPELLING = Regex("(?<!\\p{L})(mio|mrd|millionen|milliarden|teur|keur|meur|tsd|tausend)(?!\\p{L})|T€", RegexOption.IGNORE_CASE)
         val ENGLISH_UNIT_SPELLING = Regex("(?<!\\p{L})(million|billion|thousand|mn|bn)(?!\\p{L})", RegexOption.IGNORE_CASE)
         val ENGLISH_UNIT_SUFFIX = Regex("(?<=\\d)\\s?m(?![\\p{L}\\d])")
-        val PRIOR_YEAR_BRACKET_LABEL = Regex(":|vorjahr|vj\\.|prior[- ]year|previous year|last year", RegexOption.IGNORE_CASE)
 
-        fun germanReadings(source: String): List<String> {
+        val DUTCH_THOUSANDS_UNIT = Regex("(?<!\\p{L})(teur|keur|duizend|thousand)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val DUTCH_CURRENCY = Regex("€|us\\\$|\\\$|(?<!\\p{L})(eur|euro|usd)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val DUTCH_MILLIONS_UNIT = Regex("(?<!\\p{L})(meur|musd|mio\\.?|miljoen|million|mln\\.?|mn)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val DUTCH_BILLIONS_UNIT = Regex("(?<!\\p{L})(mrd\\.?|mld\\.?|miljard|billion|bn)(?!\\p{L})", RegexOption.IGNORE_CASE)
+        val DUTCH_UNIT_SPELLING = Regex("(?<!\\p{L})(miljoen|miljard|mln|mld|mio|mrd|duizend)(?!\\p{L})", RegexOption.IGNORE_CASE)
+
+        private class Spelling(val thousands: Regex, val currency: Regex, val millions: Regex, val billions: Regex, val nativeUnits: Regex)
+
+        private val GERMAN_SPELLING = Spelling(GERMAN_THOUSANDS_UNIT, GERMAN_CURRENCY, GERMAN_MILLIONS_UNIT, GERMAN_BILLIONS_UNIT, GERMAN_UNIT_SPELLING)
+        private val DUTCH_SPELLING = Spelling(DUTCH_THOUSANDS_UNIT, DUTCH_CURRENCY, DUTCH_MILLIONS_UNIT, DUTCH_BILLIONS_UNIT, DUTCH_UNIT_SPELLING)
+
+        fun germanReadings(source: String): List<String> = continentalReadings(source, GERMAN_SPELLING)
+
+        fun dutchReadings(source: String): List<String> = continentalReadings(source, DUTCH_SPELLING)
+
+        private fun continentalReadings(source: String, spelling: Spelling): List<String> {
             val amount = source
                 .replace(COMPARATIVE_LABEL, "(")
                 .replace(COMPARATIVE_REMARK, ")")
-                .replace(GERMAN_THOUSANDS_UNIT, " tys ")
-                .replace(GERMAN_CURRENCY, " ")
-                .replace(GERMAN_MILLIONS_UNIT, " mln ")
+                .replace(spelling.thousands, " tys ")
+                .replace(spelling.currency, " ")
+                .replace(spelling.millions, " mln ")
                 .replace(MILLIONS_SUFFIX, " mln ")
-                .replace(GERMAN_BILLIONS_UNIT, " mld ")
+                .replace(spelling.billions, " mld ")
                 .replace(MINUS_BEFORE_NUMBER, "-")
                 .replace(WHITESPACE, " ")
                 .trim()
                 .replace(UNIT_BEFORE_NUMBER, "$2 $1")
-            val germanFormat = amount.replace(GERMAN_THOUSANDS_DOT, "")
+            val continentalFormat = amount.replace(GERMAN_THOUSANDS_DOT, "")
             val englishFormat = amount.replace(THOUSANDS_COMMA, "").replace(ENGLISH_DECIMAL, ",")
             return when {
-                GERMAN_UNIT_SPELLING.containsMatchIn(source) -> listOf(germanFormat)
+                spelling.nativeUnits.containsMatchIn(source) -> listOf(continentalFormat)
                 ENGLISH_UNIT_SPELLING.containsMatchIn(source) || ENGLISH_UNIT_SUFFIX.containsMatchIn(source) -> listOf(englishFormat)
-                else -> listOf(germanFormat, englishFormat).distinct()
+                else -> listOf(continentalFormat, englishFormat).distinct()
             }
         }
     }

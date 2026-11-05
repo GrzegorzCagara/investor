@@ -45,8 +45,8 @@ class ScoringInputAssembler(
             .takeIf { extraction == null || !company.market.isCoveredByAvanza || extraction.agreesWithHistory(it, currency) }
             .orEmpty()
         val primary = extraction?.primaryPeriod() ?: currentQuarter(company, report)?.toExtractedPeriod(currency)?.withPriorYearFrom(results, currency)
-        val trend = primary?.let { trend(company, report.publishedAt, it, results) } ?: Trend.EMPTY
         val comparable = primary?.withPriorYearFrom(results, currency)
+        val trend = comparable?.let { trend(company, report.publishedAt, it, results) } ?: Trend.EMPTY
         val revenueYoyPct = comparable?.let { yoyPct(it.revenue?.valueInThousands, it.revenuePrevYear?.valueInThousands) }
         val market = marketData(company, report.publishedAt)
         val valuation = valuation(company, results, market.closeRef)
@@ -130,11 +130,27 @@ class ScoringInputAssembler(
     }
 
     private fun Extraction.agreesWithHistory(results: List<QuarterResult>, currency: String): Boolean {
-        val quarter = periods.firstOrNull { it.kind == PeriodKind.QUARTER && it.currency == currency && it.revenuePrevYear != null } ?: return false
-        val reported = checkNotNull(quarter.revenuePrevYear).valueInThousands
-        val stored = results.firstOrNull { it.quarterEnd == quarter.periodEnd.minusYears(1) }?.revenue ?: return false
-        return stored.signum() > 0 && (reported - stored).abs() <= stored * HISTORY_TOLERANCE
+        val quarters = periods.filter { it.kind == PeriodKind.QUARTER && it.currency == currency }
+        val withPriorYear = quarters.firstOrNull { it.revenuePrevYear != null }
+        if (withPriorYear != null) return withPriorYear.agreesWithYearAgo(results)
+        return quarters.firstOrNull { it.revenue != null }?.agreesSequentially(results) ?: false
     }
+
+    private fun ExtractedPeriod.agreesWithYearAgo(results: List<QuarterResult>): Boolean {
+        val reported = checkNotNull(revenuePrevYear).valueInThousands
+        val stored = results.storedRevenue(periodEnd.minusYears(1)) ?: return false
+        return (reported - stored).abs() <= stored * HISTORY_TOLERANCE
+    }
+
+    private fun ExtractedPeriod.agreesSequentially(results: List<QuarterResult>): Boolean {
+        results.storedRevenue(periodEnd.minusYears(1)) ?: return false
+        val previousQuarter = results.storedRevenue(YearMonth.from(periodEnd).minusMonths(3).atEndOfMonth()) ?: return false
+        val ratio = checkNotNull(revenue).valueInThousands.toDouble() / previousQuarter.toDouble()
+        return ratio in SEQUENTIAL_RATIO_RANGE
+    }
+
+    private fun List<QuarterResult>.storedRevenue(quarterEnd: LocalDate): BigDecimal? =
+        firstOrNull { it.quarterEnd == quarterEnd }?.revenue?.takeIf { it.signum() > 0 }
 
     private fun QuarterResult.toExtractedPeriod(currency: String) = ExtractedPeriod(
         kind = PeriodKind.QUARTER,
@@ -344,6 +360,7 @@ class ScoringInputAssembler(
         const val MONTHS_IN_QUARTER = 3
         const val YEAR_END_GAP_DAYS = 10L
         val HISTORY_TOLERANCE = BigDecimal("0.05")
+        val SEQUENTIAL_RATIO_RANGE = 0.5..2.0
         val PENNY_STOCK_PRICE: BigDecimal = BigDecimal.ONE
     }
 }

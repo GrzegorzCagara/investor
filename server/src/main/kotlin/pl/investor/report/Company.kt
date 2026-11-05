@@ -13,6 +13,7 @@ data class Company(
     val listing: String? = null,
     val quoteCurrency: String? = null,
     val availableOnXtb: Boolean = false,
+    val exchangeTicker: String? = null,
 ) {
     fun isQuotedInMarketCurrency(): Boolean = quoteCurrency == null || quoteCurrency == market.currency
 }

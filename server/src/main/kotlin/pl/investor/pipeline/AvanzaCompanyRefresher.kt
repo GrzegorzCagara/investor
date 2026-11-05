@@ -99,7 +99,7 @@ class AvanzaCompanyRefresher(
     }
 
     private fun coveredStock(company: Company): AvanzaStock = when (company.market) {
-        Market.DE -> avanza.findStockByIsin(company.isin ?: throw AvanzaStockNotFoundException(company.name))
+        Market.DE, Market.NL -> avanza.findStockByIsin(company.isin ?: throw AvanzaStockNotFoundException(company.name), company.market)
         else -> avanza.stock(avanza.findStock(company.name).orderBookId)
     }
 

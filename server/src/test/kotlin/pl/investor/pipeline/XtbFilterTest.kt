@@ -46,6 +46,7 @@ class XtbFilterTest : PostgresTestBase() {
         every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("11B", "11 bit studios SA"))
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"), XtbStock("TIMA", "ZEAL Network SE"))
+        every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
         every { biznesRadar.tickersBySymbol() } returns mapOf("11-BIT-STUDIOS" to "11B", "ALFA" to "ALF")
         every { biznesRadar.mediumNameFor(any()) } returns null
     }
@@ -58,6 +59,40 @@ class XtbFilterTest : PostgresTestBase() {
         every { avanzaRefresher.identification(match { it.id == id }) } returns
             if (ticker != null) AvanzaIdentification.Identified(stored) else AvanzaIdentification.NotListed
         return stored
+    }
+
+    private fun dutch(name: String, isin: String, euronextTicker: String?, avanzaTicker: String? = null, identification: AvanzaIdentification? = null): Company {
+        val company = companies.save(Company(null, name, isin, Market.NL, null, null, false, exchangeTicker = euronextTicker))
+        val id = checkNotNull(company.id)
+        if (avanzaTicker != null) companies.updateAvanzaIdentity(id, AvanzaIdentity("2", isin, avanzaTicker, null, name, "EUR"))
+        val stored = companies.findById(id)
+        every { avanzaRefresher.identification(match { it.id == id }) } returns
+            (identification ?: if (avanzaTicker != null) AvanzaIdentification.Identified(stored) else AvanzaIdentification.NotListed)
+        return stored
+    }
+
+    @Test
+    fun `Dutch company is matched on XTB by Avanza ticker, Euronext ticker or name`() {
+        every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"), XtbStock("ENVI", "Envipco Holding NV"), XtbStock("LIGHT", "Signify NV"))
+        val asml = dutch("ASML HOLDING N.V.", "NL0010273215", euronextTicker = null, avanzaTicker = "ASML")
+        val envipco = dutch("ENVIPCO HOLDING N.V.", "NL0015000GX8", euronextTicker = "ENVI")
+        val signify = dutch("SIGNIFY NV", "NL0011821392", euronextTicker = null)
+        val bam = dutch("Koninklijke BAM Groep N.V.", "NL0000337319", euronextTicker = "BAMNB", avanzaTicker = "BAMNB")
+
+        assertFalse(filter("NL").withholdsFromAi(asml))
+        assertFalse(filter("NL").withholdsFromAi(envipco))
+        assertFalse(filter("NL").withholdsFromAi(signify))
+        assertTrue(filter("NL").withholdsFromAi(bam))
+        assertTrue(companies.findById(checkNotNull(envipco.id)).availableOnXtb)
+    }
+
+    @Test
+    fun `Dutch company with Avanza unavailable is retried unless the Euronext ticker matches`() {
+        val asml = dutch("ASML HOLDING", "NL0010273215", euronextTicker = "ASML", identification = AvanzaIdentification.Unavailable)
+        val bam = dutch("Koninklijke BAM Groep N.V.", "NL0000337319", euronextTicker = "BAMNB", identification = AvanzaIdentification.Unavailable)
+
+        assertFalse(filter("NL").withholdsFromAi(asml))
+        assertThrows<SourceUnavailableException> { filter("NL").withholdsFromAi(bam) }
     }
 
     @Test

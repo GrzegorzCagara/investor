@@ -39,6 +39,7 @@ class XtbAvailabilityJobTest : PostgresTestBase() {
         )
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
+        every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
         every { biznesRadar.tickersBySymbol() } returns mapOf("11-BIT-STUDIOS" to "11B", "ALFA" to "ALF")
     }
 

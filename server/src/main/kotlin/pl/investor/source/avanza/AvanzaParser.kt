@@ -51,7 +51,7 @@ object AvanzaParser {
         return series.flatMap { it.keys }.distinct().sortedDescending().map { quarterEnd ->
             AvanzaQuarter(
                 quarterEnd = quarterEnd,
-                reportDate = series.firstNotNullOfOrNull { it[quarterEnd]?.date },
+                reportDate = series.firstNotNullOfOrNull { it[quarterEnd]?.takeIf(QuarterValue::isReported)?.date },
                 salesInThousands = sales[quarterEnd]?.value?.divide(THOUSAND),
                 netProfitInThousands = netProfit[quarterEnd]?.value?.divide(THOUSAND),
                 priceEarnings = pe[quarterEnd]?.value,
@@ -73,7 +73,9 @@ object AvanzaParser {
             )
         }
 
-    private data class QuarterValue(val date: LocalDate?, val value: BigDecimal?)
+    private data class QuarterValue(val date: LocalDate?, val value: BigDecimal?) {
+        val isReported: Boolean get() = value != null
+    }
 
     private fun JsonNode.byQuarterEnd(): Map<LocalDate, QuarterValue> =
         elements().mapNotNull { node ->

@@ -39,8 +39,12 @@ class AttachmentTextExtractor(
         return AttachmentReading(joined(texts), nothingReadable = outcomes.isNotEmpty() && outcomes.all { it == Outcome.Unreadable })
     }
 
-    fun readNasdaqPdfs(urls: List<String>): AttachmentReading {
-        val outcomes = urls.take(MAX_ATTACHMENTS).map(::nasdaqPdfOutcome)
+    fun readNasdaqPdfs(urls: List<String>): AttachmentReading = readPdfs(urls.take(MAX_ATTACHMENTS), Source.NASDAQ_NORDIC, NORDIC_KEYWORDS)
+
+    fun readEuronextPdfs(urls: List<String>): AttachmentReading = readPdfs(urls.take(MAX_EURONEXT_PDFS), Source.EURONEXT, EURONEXT_KEYWORDS)
+
+    private fun readPdfs(urls: List<String>, source: Source, keywords: List<String>): AttachmentReading {
+        val outcomes = urls.map { pdfOutcome(it, source, keywords) }
         val texts = outcomes.filterIsInstance<Outcome.Readable>().flatMap { it.texts }
         return AttachmentReading(joined(texts), nothingReadable = outcomes.isNotEmpty() && outcomes.all { it == Outcome.Unreadable })
     }
@@ -108,9 +112,9 @@ class AttachmentTextExtractor(
             null
         }
 
-    private fun nasdaqPdfOutcome(url: String): Outcome {
+    private fun pdfOutcome(url: String, source: Source, keywords: List<String>): Outcome {
         val bytes = try {
-            http.getBytes(Source.NASDAQ_NORDIC, url, emptyMap())
+            http.getBytes(source, url, emptyMap())
         } catch (e: SourceUnavailableException) {
             log.warn("Attachment {} not available yet: {}", url, e.message)
             return Outcome.NotYetReadable
@@ -119,7 +123,7 @@ class AttachmentTextExtractor(
             return Outcome.NotYetReadable
         }
         val text = bytes.takeIf { it.size <= MAX_ATTACHMENT_BYTES }?.let { pdf ->
-            runCatching { relevantPages(pdf, PageOrder.LEADING_PAGES_FIRST, NORDIC_KEYWORDS) }
+            runCatching { relevantPages(pdf, PageOrder.LEADING_PAGES_FIRST, keywords) }
                 .onFailure { log.warn("Attachment {} is not a readable PDF: {}", url, it.message) }
                 .getOrNull()
         }
@@ -181,6 +185,7 @@ class AttachmentTextExtractor(
     private companion object {
         const val MAX_CHARS = 30_000
         const val MAX_ATTACHMENTS = 3
+        const val MAX_EURONEXT_PDFS = 2
         const val ALWAYS_KEPT_PAGES = 2
         const val ATTACHMENT_PATH = "/static/att/"
         const val XHTML_PAGE = "div.pf"
@@ -194,6 +199,10 @@ class AttachmentTextExtractor(
         val NORDIC_KEYWORDS = listOf(
             "nettoomsattning", "net sales", "revenue", "rorelseresultat", "operating profit", "ebit",
             "orderingang", "order intake", "resultat efter skatt", "net profit",
+        )
+        val EURONEXT_KEYWORDS = listOf(
+            "revenue", "net sales", "net income", "net result", "net profit", "ebit", "orders", "order intake", "outlook",
+            "omzet", "bedrijfsresultaat", "nettowinst", "nettoresultaat", "vooruitzichten",
         )
     }
 }

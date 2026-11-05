@@ -44,6 +44,6 @@ class SourceHealthChecker(
     private companion object {
         const val CHECK_INTERVAL_MS = 300_000L
         val OUTAGE_AFTER: Duration = Duration.ofMinutes(30)
-        val MONITORED = mapOf(Source.GPW_LISTING to Market.GPW, Source.NC_LISTING to Market.NC, Source.NASDAQ_NORDIC to Market.SE, Source.EQS to Market.DE)
+        val MONITORED = mapOf(Source.GPW_LISTING to Market.GPW, Source.NC_LISTING to Market.NC, Source.NASDAQ_NORDIC to Market.SE, Source.EQS to Market.DE, Source.EURONEXT to Market.NL)
     }
 }

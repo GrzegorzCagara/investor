@@ -124,6 +124,37 @@ object RoutineNewsFilter {
         "convocation (of the )?(annual general meeting|agm)",
         "voting results of the (annual )?general meeting",
     )
+    private val DUTCH_ROUTINE = patterns(
+        "transactions? (in|of) own shares",
+        "acquisition of own shares",
+        "inkoop van eigen aandelen",
+        "(buy-?back|repurchase)\\p{L}*( program\\p{L}*)? transaction",
+        "progress (on|of)\\b.*(buy-?back|repurchase|transactions)",
+        "update (of|on) (the |its )?(share )?(buy-?back|repurchase)",
+        "periodic report on the (share )?(buy-?back|repurchase)",
+        "(completes?|completion of)( its| the)? (share )?(buy-?back|repurchase)",
+        "(completes?|completion of)\\b.*\\btranche",
+        "transactions under",
+        "(weekly )?share transactions",
+        "notifications? of (share )?transactions?",
+        "\\bvoting rights",
+        "holding\\(?s?\\)? in company",
+        "transparency notification",
+        "transparantieverklaring",
+        "director/pdmr",
+        "liquidity program",
+        "net asset value",
+        "final terms",
+        "dividend timetable",
+        "\\bscrip\\b",
+        "conversion ratio",
+        "(convenes|convocation of)( an?| the)? (extraordinary |annual )?(general meeting|agm|egm)",
+        "convenes (an )?(agm|egm)",
+        "\\b(agm|egm) agenda",
+        "poster presentation",
+        "posterpresentatie",
+    )
+    private val MEETING_OUTCOME = Regex("\\b(approv\\p{L}*|results? of|voting results|resolutions? adopted)\\b")
     private val EXTRAORDINARY_MEETING = Regex("au(ß|ss)erordentlich|extraordinary|\\begm\\b")
     private val GERMAN_MATERIAL = Regex(
         "aktienruckkauf|verschmelzung|abspaltung|ubernahme|verlust der halfte|§ ?92|insolvenz|delisting|squeeze-?out|beherrschungs|kapitalerhohung|capital increase",
@@ -140,14 +171,18 @@ object RoutineNewsFilter {
 
     fun isRoutine(title: String, market: Market): Boolean {
         val text = title.foldedTitle()
+        if (market == Market.NL && text.isDutchRoutine()) return true
         if (MATERIAL.any { it.containsMatchIn(text) }) return false
         if (market == Market.DE && GERMAN_MATERIAL.containsMatchIn(text)) return false
         return ROUTINE.any { it.containsMatchIn(text) } ||
-            text.isGeneralMeetingFormality() ||
+            (text.isGeneralMeetingFormality() && !(market == Market.NL && MEETING_OUTCOME.containsMatchIn(text))) ||
             text.isSupervisoryBoardChange() ||
             text.isDirectorsReelection() ||
             (market == Market.DE && text.isGermanRoutine())
     }
+
+    private fun String.isDutchRoutine(): Boolean =
+        DUTCH_ROUTINE.any { it.containsMatchIn(this) } || ResultsKeywordFilter.isDutchResultsAnnouncement(this)
 
     private fun String.isGermanRoutine(): Boolean =
         GERMAN_ROUTINE.any { it.containsMatchIn(this) } ||

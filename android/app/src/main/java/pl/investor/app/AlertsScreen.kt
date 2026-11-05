@@ -2,7 +2,6 @@ package pl.investor.app
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +32,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.Instant
 
 private const val MUTED_ALPHA = 0.6f
-private val XTB_BADGE = Color(0xFF333333)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,7 +84,6 @@ fun AlertCard(alert: AlertItem, now: Instant, onOpen: (Long) -> Unit) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
                 )
-                if (alert.availableOnXtb) XtbBadge(Modifier.padding(end = 6.dp))
                 ScoreBadge(alert.score)
             }
             Text(
@@ -97,19 +94,6 @@ fun AlertCard(alert: AlertItem, now: Instant, onOpen: (Long) -> Unit) {
             )
         }
     }
-}
-
-@Composable
-fun XtbBadge(modifier: Modifier = Modifier) {
-    Text(
-        "XTB",
-        color = XTB_BADGE,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = modifier
-            .border(1.dp, XTB_BADGE, RoundedCornerShape(4.dp))
-            .padding(horizontal = 4.dp, vertical = 1.dp),
-    )
 }
 
 @Composable

@@ -167,8 +167,8 @@ class FixtureHttpClient(clock: Clock, tracker: SourceHealthTracker) : PoliteHttp
 
     private companion object {
         const val SYMBOLS_URL = "https://www.biznesradar.pl/service-data-js/8"
-        val XTB_LIST = Regex("""^https://www\.xtb\.com/web-api/v3/languages/pl/branches/pl/instrument-specification\?country=(PL|SE|DE)&""")
-        val XTB_FILES = mapOf("PL" to "xtb/instruments-pl-replay.json", "SE" to "xtb/instruments-se.json", "DE" to "xtb/instruments-de.json")
+        val XTB_LIST = Regex("""^https://www\.xtb\.com/web-api/v3/languages/pl/branches/pl/instrument-specification\?country=(PL|SE|DE|NL)&""")
+        val XTB_FILES = mapOf("PL" to "xtb/instruments-pl-replay.json", "SE" to "xtb/instruments-se.json", "DE" to "xtb/instruments-de.json", "NL" to "xtb/instruments-nl.json")
         const val EMPTY_ARTICLE = "<html><body></body></html>"
         val NON_SESSION_PAGE = "<!DOCTYPE html><html><body>Brak notowań</body></html>".toByteArray()
         val GPW_DETAIL = Regex("""https://www\.gpw\.pl/komunikat\?geru_id=(\d+)""")

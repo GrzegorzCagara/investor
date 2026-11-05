@@ -6,7 +6,7 @@ import pl.investor.source.Source
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 
-enum class XtbCountry { PL, SE, DE }
+enum class XtbCountry { PL, SE, DE, NL }
 
 data class XtbStock(val ticker: String, val companyName: String)
 

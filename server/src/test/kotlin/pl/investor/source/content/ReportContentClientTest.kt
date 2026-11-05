@@ -21,7 +21,7 @@ class ReportContentClientTest {
     private val http = mockk<PoliteHttpClient>()
     private val locator = mockk<BankierReportLocator>()
     private val attachments = mockk<AttachmentTextExtractor>()
-    private val client = ReportContentClient(http, ReportContentParser(), locator, attachments, NasdaqViewParser(), pl.investor.source.eqs.EqsReleaseParser())
+    private val client = ReportContentClient(http, ReportContentParser(), locator, attachments, NasdaqViewParser(), pl.investor.source.eqs.EqsReleaseParser(), pl.investor.source.euronext.EuronextReleaseParser())
 
     private val entry = ListingEntry(
         market = Market.GPW,
@@ -175,5 +175,37 @@ class ReportContentClientTest {
 
         assertTrue(content.attachmentsPending)
         assertEquals("", content.attachmentText)
+    }
+
+    private fun euronext(nid: String) = entry.copy(
+        market = Market.NL,
+        number = "Euronext",
+        sourceRef = nid,
+        detailUrl = "https://live.euronext.com/en/ajax/node/company-press-release/$nid",
+    ).also { every { http.get(Source.EURONEXT, it.detailUrl) } returns checkNotNull(javaClass.getResource("/fixtures/nl/node-$nid.html")).readText() }
+
+    @Test
+    fun `short Euronext body is completed with its PDF even before attachments are asked for`() {
+        val imcd = euronext("12921454")
+        every { attachments.readEuronextPdfs(any()) } returns AttachmentReading("Revenue EUR 3,965 million", nothingReadable = false)
+
+        val content = client.fetch(imcd)
+
+        assertEquals("Revenue EUR 3,965 million", content.attachmentText)
+        assertTrue(content.attachmentUrls.isEmpty())
+        assertFalse(content.hasReadableAttachments)
+    }
+
+    @Test
+    fun `long Euronext body is read without PDFs and a PDF not yet available leaves attachments pending`() {
+        val vopak = euronext("12921130")
+        val bam = euronext("12921499")
+        every { attachments.readEuronextPdfs(any()) } throws SourceUnavailableException(Source.EURONEXT, RuntimeException("503"))
+
+        assertEquals("", client.fetch(vopak).attachmentText)
+        verify(exactly = 0) { attachments.readEuronextPdfs(any()) }
+        val pending = client.fetch(bam)
+        assertTrue(pending.attachmentsPending)
+        assertTrue(pending.hasReadableAttachments)
     }
 }

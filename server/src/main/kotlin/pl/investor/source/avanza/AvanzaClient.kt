@@ -3,6 +3,7 @@ package pl.investor.source.avanza
 import org.springframework.stereotype.Component
 import pl.investor.history.DailyQuote
 import pl.investor.report.CompanyNames
+import pl.investor.report.Market
 import pl.investor.source.PoliteHttpClient
 import pl.investor.source.Source
 import tools.jackson.databind.json.JsonMapper
@@ -19,12 +20,17 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
             ?: throw AvanzaStockNotFoundException(companyName)
     }
 
-    fun findStockByIsin(isin: String): AvanzaStock =
-        search(isin).sortedByDescending { it.marketPlaceName == GERMAN_VENUE }.asSequence()
+    fun findStockByIsin(isin: String, market: Market): AvanzaStock =
+        isinCandidates(search(isin), market).asSequence()
             .take(MAX_ISIN_CANDIDATES)
             .map { stock(it.orderBookId) }
             .firstOrNull { it.isin == isin }
             ?: throw AvanzaStockNotFoundException(isin)
+
+    private fun isinCandidates(hits: List<AvanzaSearchHit>, market: Market): List<AvanzaSearchHit> = when (market) {
+        Market.NL -> hits.filter { it.marketPlaceName == DUTCH_VENUE }
+        else -> hits.sortedByDescending { it.marketPlaceName == GERMAN_VENUE }
+    }
 
     private fun search(query: String): List<AvanzaSearchHit> =
         AvanzaParser.searchHits(http.postJson(Source.AVANZA, "$baseUrl/_api/search/filtered-search", searchBody(query)))
@@ -55,6 +61,7 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
         private const val SWEDEN = "SE"
         private val COVERED_VENUES = setOf("Stockholmsbörsen", "First North Stockholm")
         private const val GERMAN_VENUE = "Xetra"
+        private const val DUTCH_VENUE = "Euronext Amsterdam"
         private const val MAX_ISIN_CANDIDATES = 3
         private const val SEARCH_SIZE = 5
         private const val MAX_SEARCHES = 3

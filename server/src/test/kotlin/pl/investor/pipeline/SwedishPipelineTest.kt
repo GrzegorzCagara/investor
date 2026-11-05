@@ -141,6 +141,7 @@ class SwedishPipelineTest : PostgresTestBase() {
             XtbStock("ORT", "Ortoma AB"), XtbStock("MCG", "MacGregor Group AB"),
         )
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
+        every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +14% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
         pipeline = pipelineWith(avanza)

@@ -44,13 +44,15 @@ class FormattingTest {
         assertEquals("Szwecja", Formatting.marketName(Market.SE))
         assertEquals("DE", Formatting.marketLabel(Market.DE))
         assertEquals("Niemcy", Formatting.marketName(Market.DE))
+        assertEquals("NL", Formatting.marketLabel(Market.NL))
+        assertEquals("Holandia", Formatting.marketName(Market.NL))
         assertEquals("GPW", Formatting.marketName(Market.GPW))
         assertEquals("USA", Formatting.marketName(Market.US))
     }
 
     @Test
     fun `only covered markets are offered as filters and switches`() {
-        assertEquals(listOf(Market.GPW, Market.NC, Market.SE, Market.DE), Market.covered)
+        assertEquals(listOf(Market.GPW, Market.NC, Market.SE, Market.DE, Market.NL), Market.covered)
     }
 
     @Test
@@ -199,12 +201,15 @@ class FormattingTest {
         assertEquals("Szwecja – wydarzenia", Formatting.aiPoolLabel("SE_NEWS"))
         assertEquals("Niemcy – wyniki", Formatting.aiPoolLabel("DE"))
         assertEquals("Niemcy – wydarzenia", Formatting.aiPoolLabel("DE_NEWS"))
+        assertEquals("Holandia – wyniki", Formatting.aiPoolLabel("NL"))
+        assertEquals("Holandia – wydarzenia", Formatting.aiPoolLabel("NL_NEWS"))
         assertEquals("Nasdaq (komunikaty)", Formatting.sourceLabel("NASDAQ_NORDIC"))
         assertEquals("Avanza", Formatting.sourceLabel("AVANZA"))
         assertEquals("Yahoo (indeks)", Formatting.sourceLabel("YAHOO"))
         assertEquals("Placera (konsensus)", Formatting.sourceLabel("PLACERA"))
         assertEquals("XTB (lista akcji)", Formatting.sourceLabel("XTB"))
         assertEquals("EQS News", Formatting.sourceLabel("EQS"))
+        assertEquals("Euronext Amsterdam", Formatting.sourceLabel("EURONEXT"))
         assertEquals("Spadek w dniu raportu", Formatting.reactionLabel(Reaction.NEGATIVE))
         assertEquals("Płasko", Formatting.reactionLabel(Reaction.FLAT))
         assertEquals("Wzrost", Formatting.reactionLabel(Reaction.POSITIVE))

@@ -11,8 +11,8 @@ class CompanyRepository(private val jdbc: JdbcClient) {
     fun save(company: Company): Company {
         val id = jdbc.sql(
             """
-            INSERT INTO company (name, isin, market, ticker, biznesradar_symbol, publishes_monthly_sales, short_name, avanza_id, listing, quote_currency)
-            VALUES (:name, :isin, :market, :ticker, :biznesradarSymbol, :publishesMonthlySales, :shortName, :avanzaId, :listing, :quoteCurrency)
+            INSERT INTO company (name, isin, market, ticker, biznesradar_symbol, publishes_monthly_sales, short_name, avanza_id, listing, quote_currency, exchange_ticker)
+            VALUES (:name, :isin, :market, :ticker, :biznesradarSymbol, :publishesMonthlySales, :shortName, :avanzaId, :listing, :quoteCurrency, :exchangeTicker)
             RETURNING id
             """
         )
@@ -26,6 +26,7 @@ class CompanyRepository(private val jdbc: JdbcClient) {
             .param("avanzaId", company.avanzaId)
             .param("listing", company.listing)
             .param("quoteCurrency", company.quoteCurrency)
+            .param("exchangeTicker", company.exchangeTicker)
             .query(Long::class.java)
             .single()
         return company.copy(id = id)
@@ -129,5 +130,6 @@ class CompanyRepository(private val jdbc: JdbcClient) {
         listing = getString("listing"),
         quoteCurrency = getString("quote_currency"),
         availableOnXtb = getBoolean("xtb_available"),
+        exchangeTicker = getString("exchange_ticker"),
     )
 }

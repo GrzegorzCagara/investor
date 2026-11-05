@@ -131,6 +131,7 @@ class ReportPipelineTest : PostgresTestBase() {
         every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("ASB", "ASBISC Enterprises PLC"))
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
+        every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
         every { biznesRadar.quarterly("ASBISC") } returns QuarterlyResultsParser().parse(fixture("biznesradar/ASBISC-pl-q.html"))
         every { biznesRadar.valuation("ASBISC") } returns ValuationParser().parse(fixture("biznesradar/ASBISC-valuation.html"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg<ListingEntry>().sourceRef, secondArg()) }
@@ -1263,7 +1264,7 @@ class ReportPipelineTest : PostgresTestBase() {
     fun `periodic report whose Bankier article has no attachment links yet waits for attachments`() {
         val http = mockk<pl.investor.source.PoliteHttpClient>()
         val locator = mockk<pl.investor.source.content.BankierReportLocator>()
-        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http), pl.investor.source.nasdaq.NasdaqViewParser(), pl.investor.source.eqs.EqsReleaseParser())
+        val realClient = ReportContentClient(http, ReportContentParser(), locator, pl.investor.source.content.AttachmentTextExtractor(http), pl.investor.source.nasdaq.NasdaqViewParser(), pl.investor.source.eqs.EqsReleaseParser(), pl.investor.source.euronext.EuronextReleaseParser())
         every { http.get(Source.GPW_LISTING, any()) } returns fixture("reports/asbis-ps-2026.html")
         every { locator.find(any()) } returns "https://www.bankier.pl/wiadomosc/asbis.html"
         every { http.get(Source.BANKIER, "https://www.bankier.pl/wiadomosc/asbis.html") } returns "<html><body><p>Raport półroczny</p></body></html>"

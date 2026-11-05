@@ -17,7 +17,8 @@ class CompanyResolver(private val companies: CompanyRepository, private val bizn
 
     fun resolve(entry: ListingEntry): Company = when (entry.market) {
         Market.SE -> companies.findByName(entry.companyName, Market.SE) ?: companies.save(avanzaCompany(entry))
-        Market.DE -> companies.findByIsin(checkNotNull(entry.isin) { "German release without ISIN" }, Market.DE) ?: companies.save(avanzaCompany(entry))
+        Market.DE, Market.NL -> companies.findByIsin(checkNotNull(entry.isin) { "${entry.market} release without ISIN" }, entry.market)
+            ?: companies.save(avanzaCompany(entry))
         else -> entry.isin?.let { companies.findByIsin(it, entry.market) }
             ?: companies.findByName(entry.companyName, entry.market)
             ?: companies.save(newCompany(entry))
@@ -31,6 +32,7 @@ class CompanyResolver(private val companies: CompanyRepository, private val bizn
         ticker = null,
         biznesradarSymbol = null,
         publishesMonthlySales = false,
+        exchangeTicker = entry.exchangeTicker,
     )
 
     private fun newCompany(entry: ListingEntry): Company {

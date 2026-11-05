@@ -10,6 +10,8 @@ import pl.investor.report.ReportRepository
 import pl.investor.settings.SettingRepository
 import pl.investor.source.eqs.EqsListingClient
 import pl.investor.source.eqs.EqsPoller
+import pl.investor.source.euronext.EuronextClient
+import pl.investor.source.euronext.EuronextPoller
 import pl.investor.source.gpw.EspiListingClient
 import pl.investor.source.gpw.ListingPoller
 import pl.investor.source.nasdaq.NasdaqNordicListingClient
@@ -43,6 +45,14 @@ class PollingConfig {
         clock: Clock,
         pipeline: ReportPipeline,
     ) = EqsPoller(client, reports, clock, pipeline::process)
+
+    @Bean
+    fun euronextPoller(
+        client: EuronextClient,
+        reports: ReportRepository,
+        clock: Clock,
+        pipeline: ReportPipeline,
+    ) = EuronextPoller(client, reports, clock, pipeline::process)
 }
 
 @Component
@@ -80,6 +90,18 @@ class EqsPolling(private val poller: EqsPoller) {
     fun poll() {
         runCatching { poller.poll() }
             .onFailure { log.error("Polling {} listing failed", Market.DE, it) }
+    }
+}
+
+@Component
+class EuronextPolling(private val poller: EuronextPoller) {
+
+    private val log = LoggerFactory.getLogger(EuronextPolling::class.java)
+
+    @Scheduled(fixedDelay = POLL_INTERVAL_MS)
+    fun poll() {
+        runCatching { poller.poll() }
+            .onFailure { log.error("Polling {} listing failed", Market.NL, it) }
     }
 }
 

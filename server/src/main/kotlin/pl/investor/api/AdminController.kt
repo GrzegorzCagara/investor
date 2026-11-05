@@ -45,6 +45,7 @@ class AdminController(
         val today = clock.instant().toWarsawDate()
         runCatching { dailyQuotes.backfillMissing(today.minusDays(QUOTE_HISTORY_DAYS), today) }.onFailure { log.error("Quote history backfill failed", it) }
         runCatching { avanzaQuotes.backfillHistory(Market.DE) }.onFailure { log.error("German quote history backfill failed", it) }
+        runCatching { avanzaQuotes.backfillHistory(Market.NL) }.onFailure { log.error("Dutch quote history backfill failed", it) }
     }
 
     private fun launch(name: String, task: () -> Unit): ResponseEntity<Void> {

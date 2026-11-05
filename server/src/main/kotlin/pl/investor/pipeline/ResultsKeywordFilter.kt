@@ -18,12 +18,35 @@ object ResultsKeywordFilter {
     private val RESULTS_ANNOUNCEMENT = Regex(
         "\\bto publish|einladung|invitation|conference call|earnings call|webcast|save the date|veroffentlichung .*\\bam\\b|\\btermin",
     )
+    private val DUTCH_KEYWORDS = Regex(
+        "\\b(quarter(ly)?|[1-4]q|q[1-4]|[1-4]q-?\\d{2,4}|q[1-4]-?\\d{2,4}|nine[- ]months?|9m|h1|half[- ]year|full[- ]year|annual results|" +
+            "trading update|activity update|business update|net income|ebit|ebita|ebitda|outlook|guidance|ytd|" +
+            "kwartaal|kwartaalcijfers|halfjaar|halfjaarcijfers|jaarcijfers|resultaten|omzet|winst)\\b",
+    )
+    private val DUTCH_RESULTS_ANNOUNCEMENT = Regex(
+        "\\b(to|will) (report|publish|release|announce)\\b.*\\b(results|figures|earnings)\\b.*\\bon\\b|" +
+            "\\bschedule for\\b.*\\b(release|results|earnings)\\b|" +
+            "\\b(invitation|uitnodiging)\\b.*\\b(webcast|call|presentation|presentatie|capital markets day|investor day)\\b|" +
+            "\\b(conference call|earnings call|webcast|results release and|save the date|financial calendar|sell-side|analyst consensus)\\b",
+    )
+    private const val INTERIM_DIVIDEND = "interim dividend"
     private val CORRECTION = Regex("^(korekta|correction|rattelse)")
 
     fun matches(title: String, market: Market): Boolean = title.foldedTitle().let { text ->
-        KEYWORDS.any { it in text } || ENGLISH_KEYWORDS.containsMatchIn(text) || SWEDISH_KEYWORDS.containsMatchIn(text) ||
-            (market == Market.DE && GERMAN_KEYWORDS.containsMatchIn(text))
+        when (market) {
+            Market.NL -> text.replace(INTERIM_DIVIDEND, "dividend").let { withoutDividend ->
+                !DUTCH_RESULTS_ANNOUNCEMENT.containsMatchIn(withoutDividend) &&
+                    (matchesAnyMarket(withoutDividend) || DUTCH_KEYWORDS.containsMatchIn(withoutDividend))
+            }
+            Market.DE -> matchesAnyMarket(text) || GERMAN_KEYWORDS.containsMatchIn(text)
+            else -> matchesAnyMarket(text)
+        }
     }
+
+    fun isDutchResultsAnnouncement(title: String): Boolean = DUTCH_RESULTS_ANNOUNCEMENT.containsMatchIn(title.foldedTitle())
+
+    private fun matchesAnyMarket(text: String): Boolean =
+        KEYWORDS.any { it in text } || ENGLISH_KEYWORDS.containsMatchIn(text) || SWEDISH_KEYWORDS.containsMatchIn(text)
 
     fun isResultsRelease(title: String): Boolean =
         matches(title, Market.DE) && !RESULTS_ANNOUNCEMENT.containsMatchIn(title.foldedTitle())

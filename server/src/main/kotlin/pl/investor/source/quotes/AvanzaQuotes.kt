@@ -3,6 +3,7 @@ package pl.investor.source.quotes
 import pl.investor.support.STOCKHOLM
 import org.springframework.stereotype.Component
 import pl.investor.history.DailyQuote
+import pl.investor.history.DUTCH_INDEX
 import pl.investor.history.GERMAN_INDEX
 import pl.investor.history.QuoteRepository
 import pl.investor.history.SWEDISH_INDEX
@@ -48,7 +49,11 @@ class AvanzaQuotes(
     private class YahooIndex(val symbol: String, val instrument: String)
 
     private companion object {
-        val YAHOO_INDICES = mapOf(Market.SE to YahooIndex("^OMXSPI", SWEDISH_INDEX), Market.DE to YahooIndex("^GDAXI", GERMAN_INDEX))
+        val YAHOO_INDICES = mapOf(
+            Market.SE to YahooIndex("^OMXSPI", SWEDISH_INDEX),
+            Market.DE to YahooIndex("^GDAXI", GERMAN_INDEX),
+            Market.NL to YahooIndex("^AEX", DUTCH_INDEX),
+        )
         const val HISTORY_DAYS = 915L
         val WEEKEND = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
     }

@@ -26,7 +26,7 @@ management:
 investor:
   api-token: ${INVESTOR_API_TOKEN}
   contact-email: ${CONTACT_EMAIL}
-  xtb-only-markets: ${XTB_ONLY_MARKETS:DE,GPW,NC,SE}
+  xtb-only-markets: ${XTB_ONLY_MARKETS:DE,GPW,NC,SE,NL}
   anthropic:
     base-url: https://api.anthropic.com
     api-key: ${ANTHROPIC_API_KEY}

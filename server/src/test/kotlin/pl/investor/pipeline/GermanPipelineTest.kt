@@ -114,15 +114,16 @@ class GermanPipelineTest : PostgresTestBase() {
             .apiKey("test-key")
             .maxRetries(0)
             .build()
-        every { avanza.findStockByIsin(any()) } answers { throw AvanzaStockNotFoundException(firstArg()) }
-        every { avanza.findStockByIsin(MASTERFLEX_ISIN) } returns AvanzaStock("1748784", "Masterflex SE", MASTERFLEX_ISIN, "MZX", "EUR", null)
-        every { avanza.findStockByIsin(CONTINENTAL_ISIN) } returns AvanzaStock("732305", "Continental AG", CONTINENTAL_ISIN, "CON", "EUR", null)
-        every { avanza.findStockByIsin(BASLER_ISIN) } returns AvanzaStock("5468", "Basler AG", BASLER_ISIN, "BSL", "EUR", null)
+        every { avanza.findStockByIsin(any(), any()) } answers { throw AvanzaStockNotFoundException(firstArg()) }
+        every { avanza.findStockByIsin(MASTERFLEX_ISIN, Market.DE) } returns AvanzaStock("1748784", "Masterflex SE", MASTERFLEX_ISIN, "MZX", "EUR", null)
+        every { avanza.findStockByIsin(CONTINENTAL_ISIN, Market.DE) } returns AvanzaStock("732305", "Continental AG", CONTINENTAL_ISIN, "CON", "EUR", null)
+        every { avanza.findStockByIsin(BASLER_ISIN, Market.DE) } returns AvanzaStock("5468", "Basler AG", BASLER_ISIN, "BSL", "EUR", null)
         every { avanza.quarters("1748784") } returns AvanzaParser.quarters(fixture("avanza-analysis-masterflex.json"))
         every { avanza.quarters(neq("1748784")) } returns emptyList()
         every { xtb.stocks(XtbCountry.PL) } returns listOf(XtbStock("11B", "11 bit studios SA"))
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"), XtbStock("CON", "Continental AG"), XtbStock("V3V", "FamiCord AG"))
+        every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg()) }
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +5% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
@@ -249,7 +250,7 @@ class GermanPipelineTest : PostgresTestBase() {
 
     @Test
     fun `Avanza outage without a name match keeps the release NEW for a retry instead of skipping it`() {
-        every { avanza.findStockByIsin(BASLER_ISIN) } throws SourceUnavailableException(Source.AVANZA, RuntimeException("down"))
+        every { avanza.findStockByIsin(BASLER_ISIN, Market.DE) } throws SourceUnavailableException(Source.AVANZA, RuntimeException("down"))
 
         pipeline.process(entry(BASLER))
 

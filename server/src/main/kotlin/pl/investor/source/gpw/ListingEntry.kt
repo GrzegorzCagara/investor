@@ -14,4 +14,5 @@ data class ListingEntry(
     val title: String?,
     val publishedAt: Instant,
     val detailUrl: String,
+    val exchangeTicker: String? = null,
 )

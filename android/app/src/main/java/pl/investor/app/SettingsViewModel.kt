@@ -178,7 +178,7 @@ class SettingsViewModel(private val api: InvestorApi, private val clock: Clock) 
             .map { pool -> AiUsageRow(Formatting.aiPoolLabel(pool), Formatting.aiUsage(aiSpentUsd[pool] ?: 0.0, aiLimitUsd[pool])) }
 
     companion object {
-        private val AI_POOL_ORDER = listOf("GPW", "US", "NEWS", "SE", "SE_NEWS", "DE", "DE_NEWS")
+        private val AI_POOL_ORDER = listOf("GPW", "US", "NEWS", "SE", "SE_NEWS", "DE", "DE_NEWS", "NL", "NL_NEWS")
         private const val BAD_REQUEST = 400
         const val LOAD_ERROR = "Nie udało się pobrać ustawień"
         const val STATUS_ERROR = "Nie udało się pobrać stanu serwera"

@@ -1,5 +1,6 @@
 package pl.investor.monitoring
 
+import pl.investor.support.AMSTERDAM
 import pl.investor.support.BERLIN
 import pl.investor.support.WARSAW
 import pl.investor.support.STOCKHOLM
@@ -31,6 +32,7 @@ object PublicationWindows {
         Market.GPW, Market.NC -> at.atZone(WARSAW).toLocalTime().let { time -> polishMarketWindows.any { time in it } }
         Market.SE -> at.atZone(STOCKHOLM).toLocalTime().let { time -> swedishMarketWindows.any { time in it } }
         Market.DE -> at.atZone(BERLIN).toLocalTime().let { time -> germanMarketWindows.any { time in it } }
+        Market.NL -> at.atZone(AMSTERDAM).toLocalTime().let { time -> germanMarketWindows.any { time in it } }
         Market.US -> false
     }
 }

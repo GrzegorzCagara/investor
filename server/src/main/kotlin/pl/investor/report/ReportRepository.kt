@@ -133,6 +133,21 @@ class ReportRepository(private val jdbc: JdbcClient) {
             .query { rs, _ -> rs.toReport() }
             .list()
 
+    fun titledOfIsinBetween(market: Market, isin: String, from: Instant, to: Instant): List<Report> =
+        jdbc.sql(
+            """
+            SELECT r.* FROM report r JOIN company c ON c.id = r.company_id
+            WHERE r.market = :market AND c.isin = :isin AND r.published_at BETWEEN :from AND :to AND r.title IS NOT NULL
+            ORDER BY r.published_at
+            """
+        )
+            .param("market", market.name)
+            .param("isin", isin)
+            .param("from", from.toUtc())
+            .param("to", to.toUtc())
+            .query { rs, _ -> rs.toReport() }
+            .list()
+
     fun findById(id: Long): Report =
         jdbc.sql("SELECT * FROM report WHERE id = :id")
             .param("id", id)

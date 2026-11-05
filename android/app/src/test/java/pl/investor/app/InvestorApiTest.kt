@@ -11,7 +11,6 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -95,14 +94,6 @@ class InvestorApiTest {
         assertNull(detail.ordersYoyPct)
         assertTrue(detail.pastReactions.isEmpty())
         assertTrue(detail.signals.isEmpty())
-        assertFalse(detail.availableOnXtb)
-    }
-
-    @Test
-    fun `detail parses availability on XTB`() = runBlocking {
-        enqueueJson("{$DETAIL_BASE,\"availableOnXtb\":true}")
-
-        assertTrue(api().alert(42).availableOnXtb)
     }
 
     @Test
@@ -252,17 +243,16 @@ class InvestorApiTest {
 
         assertEquals(EventType.NEWS, item.eventType)
         assertEquals(78, item.score)
-        assertFalse(item.availableOnXtb)
     }
 
     @Test
-    fun `alerts parse availability on XTB`() = runBlocking {
+    fun `alerts ignore the XTB flag the server still sends`() = runBlocking {
         enqueueJson(
             """{"items":[{"id":77,"companyName":"Mirbud","market":"GPW","eventType":"NEWS","publishedAt":"2026-11-02T08:15:00Z",""" +
                 """"score":78,"belowThreshold":false,"summary":"Umowa na 18,4 mln PLN.","status":"SCORED","availableOnXtb":true}]}""",
         )
 
-        assertTrue(api().alerts().items.single().availableOnXtb)
+        assertEquals(77L, api().alerts().items.single().id)
     }
 
     @Test
@@ -317,7 +307,6 @@ class InvestorApiTest {
         val de = api().ranking(Market.DE)
 
         assertEquals(Market.DE, de.items.single().market)
-        assertTrue(de.items.single().availableOnXtb)
         assertEquals("/api/ranking?market=DE", server.takeRequest().path)
     }
 
@@ -336,7 +325,19 @@ class InvestorApiTest {
         assertEquals(Market.DE, detail.market)
         assertEquals("EQS", detail.reportNumber)
         assertEquals("EUR", detail.revenueHistory.single().currency)
-        assertTrue(detail.availableOnXtb)
+    }
+
+    @Test
+    fun `ranking can be filtered to the Netherlands`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":96,"companyName":"ASML Holding","market":"NL","eventType":"RESULTS","publishedAt":"2026-10-14T05:00:00Z",""" +
+                """"score":74,"belowThreshold":false,"summary":"Przychody wzrosły o 55%.","status":"SCORED"}]}""",
+        )
+
+        val nl = api().ranking(Market.NL)
+
+        assertEquals(Market.NL, nl.items.single().market)
+        assertEquals("/api/ranking?market=NL", server.takeRequest().path)
     }
 
     @Test

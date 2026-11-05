@@ -47,6 +47,10 @@ class PoliteHttpClient(
         restClient.get().uri(URI(url)).fetchText()
     }
 
+    fun get(source: Source, url: String, headers: Map<String, String>): String = execute(source, url) {
+        restClient.get().uri(URI(url)).headers { target -> headers.forEach(target::set) }.fetchText()
+    }
+
     fun probe(source: Source, url: String): String? {
         waitForTurn(URI(url).hostWithPort())
         val body = try {
