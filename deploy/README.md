@@ -452,3 +452,5 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
 ssh grzegorz@minipc "rm -rf /home/grzegorz/investor/server"
 scp -r server docker-compose.yml grzegorz@minipc:/home/grzegorz/investor/
 ssh grzegorz@minipc "cd /home/grzegorz/investor && docker compose up -d --build"
+T=$(docker compose exec -T server printenv INVESTOR_API_TOKEN)
+curl -i -X POST -H "X-Investor-Token: $T" https://debian-server.tail8124e8.ts.net/investor/api/admin/backfill-quote-history
