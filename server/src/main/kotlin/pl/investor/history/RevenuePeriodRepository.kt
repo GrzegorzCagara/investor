@@ -6,7 +6,9 @@ import pl.investor.support.getLongOrNull
 import pl.investor.support.toInstant
 import pl.investor.support.toLocalDate
 import pl.investor.support.toUtc
+import java.sql.ResultSet
 import java.time.Instant
+import java.time.LocalDate
 
 @Repository
 class RevenuePeriodRepository(private val jdbc: JdbcClient) {
@@ -49,17 +51,31 @@ class RevenuePeriodRepository(private val jdbc: JdbcClient) {
             .param("kind", kind.name)
             .param("asOf", asOf.toUtc())
             .param("limit", limit)
-            .query { rs, _ ->
-                RevenuePeriod(
-                    companyId = rs.getLong("company_id"),
-                    kind = PeriodKind.valueOf(rs.getString("kind")),
-                    periodEnd = rs.toLocalDate("period_end")!!,
-                    currency = rs.getString("currency"),
-                    revenue = rs.getBigDecimal("revenue"),
-                    revenuePrevYear = rs.getBigDecimal("revenue_prev_year"),
-                    publishedAt = rs.toInstant("published_at"),
-                    reportId = rs.getLongOrNull("report_id"),
-                )
-            }
+            .query { rs, _ -> rs.toRevenuePeriod() }
             .list()
+
+    fun endingWithin(companyId: Long, from: LocalDate, to: LocalDate, publishedBefore: Instant): List<RevenuePeriod> =
+        jdbc.sql(
+            """
+            SELECT * FROM revenue_period
+            WHERE company_id = :companyId AND period_end BETWEEN :from AND :to AND published_at < :publishedBefore
+            """
+        )
+            .param("companyId", companyId)
+            .param("from", from)
+            .param("to", to)
+            .param("publishedBefore", publishedBefore.toUtc())
+            .query { rs, _ -> rs.toRevenuePeriod() }
+            .list()
+
+    private fun ResultSet.toRevenuePeriod() = RevenuePeriod(
+        companyId = getLong("company_id"),
+        kind = PeriodKind.valueOf(getString("kind")),
+        periodEnd = toLocalDate("period_end")!!,
+        currency = getString("currency"),
+        revenue = getBigDecimal("revenue"),
+        revenuePrevYear = getBigDecimal("revenue_prev_year"),
+        publishedAt = toInstant("published_at"),
+        reportId = getLongOrNull("report_id"),
+    )
 }

@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import pl.investor.extraction.AiBudget
 import pl.investor.extraction.AiPool
 import pl.investor.extraction.Amount
+import pl.investor.extraction.CashFlow
 import pl.investor.extraction.ClaudeExtractor
 import pl.investor.extraction.ExtractedPeriod
 import pl.investor.extraction.Extraction
@@ -437,6 +438,66 @@ class ScoringInputAssemblerTest : PostgresTestBase() {
         reset()
         val regular = synthetic().also { saveSessions(it, "WIG", 500_000) }
         assertFalse(assembler.assemble(regular, reportFor(regular), null).pennyStock)
+    }
+
+    private fun quarterlyReport(company: Company) = reportFor(company).copy(publishedAt = Instant.parse("2026-11-05T06:00:00Z"))
+
+    private fun saveRevenue(company: Company, kind: PeriodKind, end: String, publishedAt: String) {
+        revenuePeriods.save(
+            RevenuePeriod(company.id!!, kind, LocalDate.parse(end), "USD", BigDecimal(500), BigDecimal(300), Instant.parse(publishedAt), null)
+        )
+    }
+
+    private val q3 = periodOf(PeriodKind.QUARTER, "PLN", "2026-09-30", 2000, 900)
+
+    @Test
+    fun `revenue of all three months published before the quarterly report is already known`() {
+        val company = synthetic()
+        saveRevenue(company, PeriodKind.MONTH, "2026-07-31", "2026-08-20T06:00:00Z")
+        saveRevenue(company, PeriodKind.MONTH, "2026-08-31", "2026-09-21T06:00:00Z")
+        assertFalse(assembler.assemble(company, quarterlyReport(company), q3).revenueAlreadyKnown)
+
+        saveRevenue(company, PeriodKind.MONTH, "2026-09-30", "2026-11-06T06:00:00Z")
+        assertFalse(assembler.assemble(company, quarterlyReport(company), q3).revenueAlreadyKnown)
+
+        reset()
+        val again = synthetic()
+        saveRevenue(again, PeriodKind.MONTH, "2026-07-31", "2026-08-20T06:00:00Z")
+        saveRevenue(again, PeriodKind.MONTH, "2026-08-31", "2026-09-21T06:00:00Z")
+        saveRevenue(again, PeriodKind.MONTH, "2026-09-30", "2026-10-20T06:00:00Z")
+        assertTrue(assembler.assemble(again, quarterlyReport(again), q3).revenueAlreadyKnown)
+    }
+
+    @Test
+    fun `an earlier revenue estimate for the quarter makes it already known, the report's own revenue does not`() {
+        val company = synthetic()
+        saveRevenue(company, PeriodKind.QUARTER, "2026-09-30", "2026-11-05T06:00:00Z")
+        assertFalse(assembler.assemble(company, quarterlyReport(company), q3).revenueAlreadyKnown)
+
+        saveRevenue(company, PeriodKind.QUARTER, "2026-09-30", "2026-10-08T06:00:00Z")
+        assertTrue(assembler.assemble(company, quarterlyReport(company), q3).revenueAlreadyKnown)
+    }
+
+    @Test
+    fun `a monthly sales report is never marked as already known`() {
+        val company = synthetic()
+        saveRevenue(company, PeriodKind.MONTH, "2026-09-30", "2026-10-20T06:00:00Z")
+
+        val september = periodOf(PeriodKind.MONTH, "USD", "2026-09-30", 500, 300)
+
+        assertFalse(assembler.assemble(company, quarterlyReport(company), september).revenueAlreadyKnown)
+    }
+
+    @Test
+    fun `positive net profit with negative operating cash flow is profit without cash`() {
+        val company = synthetic()
+        fun withCashFlow(operating: Long, net: Long) =
+            q3.copy(extraction = q3.extraction.copy(cashFlow = CashFlow(Amount(BigDecimal(operating), "$operating"), Amount(BigDecimal(net), "$net"))))
+
+        assertTrue(assembler.assemble(company, quarterlyReport(company), withCashFlow(-46412, 51800)).profitWithoutCash)
+        assertFalse(assembler.assemble(company, quarterlyReport(company), withCashFlow(46412, 51800)).profitWithoutCash)
+        assertFalse(assembler.assemble(company, quarterlyReport(company), withCashFlow(-46412, -1000)).profitWithoutCash)
+        assertFalse(assembler.assemble(company, quarterlyReport(company), q3).profitWithoutCash)
     }
 
     private companion object {

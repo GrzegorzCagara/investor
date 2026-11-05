@@ -29,4 +29,6 @@ data class ScoringInput(
     val pastReactions: List<PastReaction> = emptyList(),
     val earlyStage: Boolean = false,
     val pennyStock: Boolean = false,
+    val revenueAlreadyKnown: Boolean = false,
+    val profitWithoutCash: Boolean = false,
 )

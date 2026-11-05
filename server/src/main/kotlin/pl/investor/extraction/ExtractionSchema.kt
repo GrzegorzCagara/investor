@@ -17,6 +17,12 @@ object ExtractionSchema {
         "oneOffQuarter" to mapOf("type" to "boolean"),
         "oneOffQuote" to nullable(mapOf("type" to "string")),
         "cyclicalIndustry" to mapOf("type" to "boolean"),
+        "cashFlow" to nullable(
+            obj(
+                "operatingCashFlow" to amount(),
+                "netProfit" to amount(),
+            )
+        ),
     )
 
     private fun period(): Map<String, Any> = obj(

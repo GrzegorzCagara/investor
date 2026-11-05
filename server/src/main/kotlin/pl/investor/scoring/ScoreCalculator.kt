@@ -97,18 +97,18 @@ fun runUpPenalty(priceChangePct: Double?, indexChangePct: Double?, surprisePoint
 fun oneOffSurprisePoints(surprisePoints: Double, oneOff: Boolean): Double =
     if (oneOff) min(surprisePoints, NEUTRAL_SURPRISE) else surprisePoints
 
-private fun Double.atMostNeutralWhen(earlyStage: Boolean, neutral: Double): Double = if (earlyStage) min(this, neutral) else this
+private fun Double.atMostNeutralWhen(capped: Boolean, neutral: Double): Double = if (capped) min(this, neutral) else this
 
 object ScoreCalculator {
     fun score(raw: ScoringInput): Score {
         val input = raw.finiteOnly()
         val consensusSurprise = input.consensusSurprisePoints()
-        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage, NEUTRAL_SURPRISE)
+        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage || input.revenueAlreadyKnown, NEUTRAL_SURPRISE)
         val components = ScoreComponents(
             surprise = oneOffSurprisePoints(consensusSurprise ?: ownTrendSurprise, input.oneOff),
             growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal).atMostNeutralWhen(input.earlyStage, NEUTRAL_GROWTH),
             quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly)
-                .atMostNeutralWhen(input.earlyStage, NEUTRAL_QUALITY),
+                .atMostNeutralWhen(input.earlyStage || input.profitWithoutCash, NEUTRAL_QUALITY),
             series = seriesPoints(input.consecutiveStrongBefore),
             outlook = outlookPoints(input.outlook, input.ordersYoyPct),
             valuation = valuationPoints(input.pe, input.ttmNetProfitGrowthPct, input.ps, input.psMedian20q, input.cyclical),
@@ -164,5 +164,7 @@ object ScoreCalculator {
         if (hasRunUp(input.priceChange10Pct, input.indexChange10Pct)) add(Warning.RUN_UP)
         if (input.earlyStage) add(Warning.EARLY_STAGE)
         if (input.pennyStock) add(Warning.PENNY_STOCK)
+        if (input.revenueAlreadyKnown && !hasConsensus) add(Warning.REVENUE_ALREADY_KNOWN)
+        if (input.profitWithoutCash) add(Warning.PROFIT_WITHOUT_CASH)
     }
 }

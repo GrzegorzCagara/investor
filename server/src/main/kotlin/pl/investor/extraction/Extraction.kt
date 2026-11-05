@@ -26,6 +26,10 @@ data class ExtractedPeriod(
 
 data class Outlook(val tone: OutlookTone, val quote: String?)
 
+data class CashFlow(val operatingCashFlow: Amount, val netProfit: Amount)
+
+fun CashFlow.isProfitWithoutCash(): Boolean = netProfit.valueInThousands.signum() > 0 && operatingCashFlow.valueInThousands.signum() < 0
+
 data class Extraction(
     val category: ReportCategory,
     val periods: List<ExtractedPeriod>,
@@ -33,6 +37,7 @@ data class Extraction(
     val oneOffQuarter: Boolean,
     val oneOffQuote: String?,
     val cyclicalIndustry: Boolean,
+    val cashFlow: CashFlow? = null,
 )
 
 data class VerifiedExtraction(val extraction: Extraction, val uncertainFields: Set<String>)

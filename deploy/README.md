@@ -420,6 +420,10 @@ Serwer zgłasza awarię, gdy od ostatniego udanego odczytu listy minęło 30 min
   - Spółka na wczesnym etapie (strata z 12 miesięcy i z ocenianego kwartału większa niż przychody; brak przychodów liczy się jako zero) dostaje za wzrost, jakość i niespodziankę najwyżej punkty neutralne, bo procentowy wzrost z bardzo małej bazy niewiele znaczy. Niespodzianka względem konsensusu analityków liczy się normalnie. Bez konsensusu taki raport ma najwyżej ok. 68 pkt i nie dostaje pushu (Immunovia za III kw. 2026 miała 96).
   - Ostrzeżenie „Akcja groszowa” przy kursie poniżej 1 zł lub 1 SEK nie zmienia oceny.
   - Wydarzenia: podpisanie umowy ATREM z PSE po wyborze oferty z sierpnia ma teraz 30 zamiast 82. Licencja Alligator z kwotą „do 108 mln USD” ma 40–50 zamiast 80. Umowa bez podanej kwoty (Odlewnie Polskie z PGZ) nadal ma 50. Pierwsza informacja o wyborze oferty ATREM dostałaby 70.
+- Kalibracja (2026-11-05):
+  - Gdy spółka podała przychody za kwartał już wcześniej (sprzedaż za wszystkie trzy miesiące albo szacunki za kwartał), raport kwartalny dostaje za niespodziankę względem własnego trendu najwyżej 15 pkt, bo rynek te przychody już znał. Niespodzianka względem konsensusu analityków liczy się normalnie.
+  - AI czyta z raportu przepływy operacyjne i zysk netto za ten sam okres: za sam ostatni kwartał, a gdy raport go nie podaje, od początku roku. Gdy zysk jest dodatni, a przepływy ujemne, raport dostaje ostrzeżenie „Zysk bez gotówki” i za jakość najwyżej 7,5 pkt. Banki i ubezpieczyciele są pomijani.
+  - ASBIS za III kw. 2026 miał 96 pkt (pełne 30 za niespodziankę, choć przychody z lipca, sierpnia i września były znane). Według nowych zasad ma 81 pkt, a gdy raport pokazuje ujemne przepływy operacyjne, 73,5 pkt. Stare oceny się nie zmieniają, nowe zasady działają od wdrożenia.
 
 ## Wrzutka
 ssh grzegorz@minipc "rm -rf /home/grzegorz/investor/server"

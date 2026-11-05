@@ -22,6 +22,7 @@ class QuoteVerifier {
                 outlook = extraction.outlook.verified(text),
                 oneOffQuarter = oneOffSupported,
                 oneOffQuote = extraction.oneOffQuote.takeIf { oneOffSupported },
+                cashFlow = extraction.cashFlow?.takeIf { it.isSupportedBy(text, units) },
             ),
             uncertain,
         )
@@ -51,6 +52,31 @@ class QuoteVerifier {
             orderIntake = orderIntake.check("orderIntake"),
             orderIntakePrevYear = orderIntakePrevYear.check("orderIntakePrevYear"),
         )
+    }
+
+    private fun CashFlow.isSupportedBy(text: String, units: Units): Boolean =
+        operatingCashFlow.isSupportedStatementFigure(text, units) && netProfit.isSupportedStatementFigure(text, units)
+
+    private fun Amount.isSupportedStatementFigure(text: String, units: Units): Boolean = when {
+        !units.negativesInBrackets -> isSupportedBy(text, units, Period.CURRENT)
+        valueInThousands.signum() > 0 -> isSupportedBy(text, units, Period.CURRENT) && !isQuotedOnlyInBrackets(text)
+        else -> isSupportedBy(text, units, Period.CURRENT) || isSupportedAsBracketedNegative(text, units)
+    }
+
+    private fun Amount.isQuotedOnlyInBrackets(text: String): Boolean {
+        val source = sourceText.normalized()
+        val number = BRACKETED_NUMBER.find(source)?.groupValues?.get(1)
+            ?: PLAIN_NUMBER.findAll(source).map { it.value }.singleOrNull()
+            ?: return false
+        val standalone = occurrences(text, number).filter { start -> text.getOrNull(start - 1)?.isDigit() != true }.toList()
+        return standalone.isNotEmpty() && standalone.all { start -> text.getOrNull(start - 1) == '(' && text.getOrNull(start + number.length) == ')' }
+    }
+
+    private fun Amount.isSupportedAsBracketedNegative(text: String, units: Units): Boolean {
+        val source = sourceText.normalized()
+        val bracketed = BRACKETED_NUMBER.find(source)
+        if (valueInThousands.signum() >= 0 || bracketed == null || source !in text) return false
+        return Amount(valueInThousands.negate(), bracketed.groupValues[1]).isSupportedBy(text, units, Period.CURRENT)
     }
 
     private fun Outlook.verified(text: String): Outlook =
@@ -122,6 +148,7 @@ class QuoteVerifier {
         private val comparativeForm: Regex?,
         val readings: (String) -> List<String> = { listOf(it) },
         val labelsPriorYearInBrackets: Boolean = false,
+        val negativesInBrackets: Boolean = false,
     ) {
         fun comparative(source: String): Comparative? {
             val match = comparativeForm?.matchEntire(source) ?: return null
@@ -183,6 +210,7 @@ class QuoteVerifier {
             ),
             declaration = Regex(POLISH_DECLARATION, RegexOption.IGNORE_CASE),
             comparativeForm = null,
+            negativesInBrackets = true,
         )
         val SWEDISH = Units(
             unitWord = Regex("\\b($POLISH_UNITS|$SWEDISH_UNITS)", RegexOption.IGNORE_CASE),
@@ -217,6 +245,8 @@ class QuoteVerifier {
         val CONTINUES_NUMBER_AFTER = Regex("^(\\d|[,.]\\d)")
         val THOUSANDS_GROUP_AFTER = Regex("^ \\d{3}(?!\\d)")
         val MINUS_BEFORE = Regex("-\\s?$")
+        val BRACKETED_NUMBER = Regex("\\((\\d(?:[\\d ,.]*\\d)?)\\)")
+        val PLAIN_NUMBER = Regex("\\d(?:[\\d ,.]*\\d)?")
         val MULTI_GROUP_NUMBER = Regex("(?<!\\d)\\d{1,3}(?:[\\s\\u00A0\\u202F]\\d{3})+(?!\\d)")
         val SHORT_GROUP_BEFORE = Regex("(?<!\\d)\\d{1,2} $")
         val FIRST_DIGIT_GROUP = Regex("\\d+")

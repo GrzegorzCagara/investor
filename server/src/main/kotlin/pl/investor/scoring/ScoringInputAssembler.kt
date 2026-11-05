@@ -5,6 +5,7 @@ import pl.investor.extraction.Amount
 import pl.investor.extraction.ExtractedPeriod
 import pl.investor.extraction.Extraction
 import pl.investor.extraction.VerifiedExtraction
+import pl.investor.extraction.isProfitWithoutCash
 import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResult
 import pl.investor.history.QuarterResultRepository
@@ -76,7 +77,17 @@ class ScoringInputAssembler(
             pastReactions = pastReactions.before(company, report.publishedAt),
             earlyStage = listOfNotNull(results.lossExceedsRevenueOverTrailingYear(), primary?.lossExceedsRevenue()).let { it.isNotEmpty() && it.all { loss -> loss } },
             pennyStock = market.pennyStock,
+            revenueAlreadyKnown = primary?.takeIf { it.kind == PeriodKind.QUARTER }?.let { isRevenueKnownBefore(company, report, it.periodEnd) } ?: false,
+            profitWithoutCash = extraction?.cashFlow?.isProfitWithoutCash() ?: false,
         )
+    }
+
+    private fun isRevenueKnownBefore(company: Company, report: Report, quarterEnd: LocalDate): Boolean {
+        val quarterMonth = YearMonth.from(quarterEnd)
+        val published = revenuePeriods.endingWithin(checkNotNull(company.id), quarterMonth.minusMonths(2).atDay(1), quarterMonth.atEndOfMonth(), report.publishedAt)
+        val (months, longerPeriods) = published.partition { it.kind == PeriodKind.MONTH }
+        return longerPeriods.any { YearMonth.from(it.periodEnd) == quarterMonth } ||
+            months.map { YearMonth.from(it.periodEnd) }.toSet().size == MONTHS_IN_QUARTER
     }
 
     private fun List<QuarterResult>.lossExceedsRevenueOverTrailingYear(): Boolean? {
@@ -330,6 +341,7 @@ class ScoringInputAssembler(
         const val LIQUIDITY_SESSIONS = 20
         const val MIN_AVANZA_PS_QUARTERS = 4
         const val REVERSAL_QUARTERS = 3L
+        const val MONTHS_IN_QUARTER = 3
         const val YEAR_END_GAP_DAYS = 10L
         val HISTORY_TOLERANCE = BigDecimal("0.05")
         val PENNY_STOCK_PRICE: BigDecimal = BigDecimal.ONE

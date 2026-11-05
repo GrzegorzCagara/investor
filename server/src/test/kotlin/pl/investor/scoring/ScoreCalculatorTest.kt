@@ -117,4 +117,39 @@ class ScoreCalculatorTest {
         assertTrue(Warning.PENNY_STOCK in penny.warnings)
         assertEquals(ScoreCalculator.score(asbisLike()).total, penny.total, 1e-9)
     }
+
+
+    private fun asbisQ3Like() = allNull().copy(
+        sur = 4.0, revenueYoyPct = 135.0, previousYoyPcts = listOf(90.0, 89.0, 74.0, 60.0), operatingProfitYoyPct = 330.0,
+        consecutiveStrongBefore = 2, outlook = OutlookTone.POSITIVE, pe = 15.0, ttmNetProfitGrowthPct = 150.0,
+    )
+
+    @Test fun `ASBIS Q3 with revenue known from monthly sales and profit without cash drops from 96 to 73,5`() {
+        val regular = ScoreCalculator.score(asbisQ3Like())
+        val calibrated = ScoreCalculator.score(asbisQ3Like().copy(revenueAlreadyKnown = true, profitWithoutCash = true))
+
+        assertEquals(96.0, regular.total, 1e-9)
+        assertEquals(15.0, calibrated.components.surprise, 1e-9)
+        assertEquals(7.5, calibrated.components.quality, 1e-9)
+        assertEquals(73.5, calibrated.total, 1e-9)
+        assertTrue(Warning.REVENUE_ALREADY_KNOWN in calibrated.warnings)
+        assertTrue(Warning.PROFIT_WITHOUT_CASH in calibrated.warnings)
+        assertFalse(Warning.REVENUE_ALREADY_KNOWN in regular.warnings)
+        assertFalse(Warning.PROFIT_WITHOUT_CASH in regular.warnings)
+    }
+
+    @Test fun `known revenue and missing cash never raise weak points`() {
+        val weak = allNull().copy(sur = -3.0, revenueYoyPct = 10.0, operatingProfitYoyPct = -60.0)
+        val capped = ScoreCalculator.score(weak.copy(revenueAlreadyKnown = true, profitWithoutCash = true))
+
+        assertEquals(ScoreCalculator.score(weak).total, capped.total, 1e-9)
+    }
+
+    @Test fun `known revenue keeps a consensus surprise and stays silent next to it`() {
+        val beat = ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal(150), BigDecimal(100), "SEK", "Placera", 3)
+        val score = ScoreCalculator.score(asbisQ3Like().copy(revenueAlreadyKnown = true, consensus = listOf(beat)))
+
+        assertEquals(30.0, score.components.surprise, 1e-9)
+        assertFalse(Warning.REVENUE_ALREADY_KNOWN in score.warnings)
+    }
 }

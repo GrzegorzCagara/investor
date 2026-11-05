@@ -2,6 +2,7 @@ package pl.investor.extraction
 
 import org.junit.jupiter.api.Test
 import pl.investor.history.PeriodKind
+import pl.investor.report.Market
 import pl.investor.source.content.ReportContent
 import pl.investor.source.content.SelectedDataRow
 import java.math.BigDecimal
@@ -324,5 +325,63 @@ class QuoteVerifierTest {
         )
 
         assertTrue(verified.uncertainFields.isEmpty())
+    }
+
+    private fun withCashFlow(operatingCashFlow: Amount, netProfit: Amount) =
+        extraction().copy(cashFlow = CashFlow(operatingCashFlow, netProfit))
+
+    @Test
+    fun `cash flow with a minus sign is kept`() {
+        val text = "Dane w tys. USD. Zysk netto za 9 miesięcy 2026 r. 98 765. Przepływy pieniężne netto z działalności operacyjnej -46 412."
+
+        val verified = verifier.verify(withCashFlow(Amount(BigDecimal("-46412"), "-46 412"), Amount(BigDecimal("98765"), "98 765")), text)
+
+        assertTrue(verified.extraction.cashFlow!!.isProfitWithoutCash())
+        assertTrue(verified.uncertainFields.isEmpty())
+    }
+
+    @Test
+    fun `negative cash flow in accounting brackets is kept on GPW`() {
+        val text = "Dane w tys. USD. Zysk netto 98 765. Przepływy pieniężne netto z działalności operacyjnej (46 412)."
+
+        val verified = verifier.verify(withCashFlow(Amount(BigDecimal("-46412"), "(46 412)"), Amount(BigDecimal("98765"), "98 765")), text)
+
+        assertEquals(BigDecimal("-46412"), verified.extraction.cashFlow?.operatingCashFlow?.valueInThousands)
+    }
+
+    @Test
+    fun `cash flow with the wrong sign is dropped without marking numbers uncertain`() {
+        val text = "Dane w tys. USD. Zysk netto 98 765. Przepływy pieniężne netto z działalności operacyjnej 46 412."
+
+        val verified = verifier.verify(withCashFlow(Amount(BigDecimal("-46412"), "46 412"), Amount(BigDecimal("98765"), "98 765")), text)
+
+        assertNull(verified.extraction.cashFlow)
+        assertTrue(verified.uncertainFields.isEmpty())
+    }
+
+    @Test
+    fun `a loss in accounting brackets is never read as a profit`() {
+        val text = "Dane w tys. USD. Zysk (strata) netto (1 234). Przepływy pieniężne netto z działalności operacyjnej (46 412)."
+        val operating = Amount(BigDecimal("-46412"), "(46 412)")
+
+        listOf("(1 234)", "1 234").forEach { quoted ->
+            val verified = verifier.verify(withCashFlow(operating, Amount(BigDecimal("1234"), quoted)), text)
+
+            assertNull(verified.extraction.cashFlow, quoted)
+        }
+        assertTrue(verifier.verify(withCashFlow(operating, Amount(BigDecimal("-1234"), "(1 234)")), text).extraction.cashFlow != null)
+    }
+
+    @Test
+    fun `a Swedish prior-year bracket is not read as a negative cash flow`() {
+        val text = "Kassaflöde från den löpande verksamheten uppgick till 12,3 MSEK (46,4). Periodens resultat 5,0 MSEK (3,1)."
+
+        val verified = verifier.verify(
+            withCashFlow(Amount(BigDecimal("-46400"), "(46,4)"), Amount(BigDecimal("5000"), "5,0 MSEK")),
+            text,
+            Market.SE,
+        )
+
+        assertNull(verified.extraction.cashFlow)
     }
 }
