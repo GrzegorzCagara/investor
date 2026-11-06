@@ -8,6 +8,16 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.scheduling.annotation.Scheduled
+import pl.investor.extraction.Amount
+import pl.investor.extraction.ExtractedPeriod
+import pl.investor.extraction.Extraction
+import pl.investor.extraction.ExtractionRepository
+import pl.investor.extraction.Outlook
+import pl.investor.extraction.OutlookTone
+import pl.investor.extraction.ReportCategory
+import pl.investor.extraction.VerifiedExtraction
+import pl.investor.history.PeriodKind
+import pl.investor.pipeline.ReportPipeline
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.Market
@@ -25,6 +35,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -37,11 +48,13 @@ class ConsensusJobTest : PostgresTestBase() {
     @Autowired lateinit var reports: ReportRepository
     @Autowired lateinit var scores: ScoreRepository
     @Autowired lateinit var notes: ConsensusRepository
+    @Autowired lateinit var extractions: ExtractionRepository
 
     private val now = Instant.parse("2026-08-06T05:15:00Z")
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
     private val client = mockk<ConsensusClient>()
-    private val job by lazy { ConsensusJob(notes, companies, client, clock) }
+    private val pipeline = mockk<ReportPipeline>(relaxed = true)
+    private val job by lazy { ConsensusJob(notes, ConsensusNoteFinder(notes, companies, client, clock), pipeline, clock) }
     private val published = Instant.parse("2026-08-05T22:20:21Z")
     private val window = Duration.ofHours(36)
     private val note = ConsensusNote(
@@ -157,13 +170,122 @@ class ConsensusJobTest : PostgresTestBase() {
         assertNull(notes.find(id))
     }
 
+    private fun extracted(reportId: Long, kind: PeriodKind, periodEnd: String) = extractions.save(
+        reportId,
+        VerifiedExtraction(
+            Extraction(
+                ReportCategory.RESULTS,
+                listOf(ExtractedPeriod(kind, LocalDate.parse(periodEnd), "PLN", Amount(BigDecimal(604_000), "604 mln zł"), null, null, null, null, null)),
+                Outlook(OutlookTone.NONE, null),
+                false,
+                null,
+                false,
+            ),
+            emptySet(),
+        ),
+    )
+
     @Test
     fun `current monthly sales report is skipped`() {
         val id = report(company("ASBIS"), kind = ReportKind.CURRENT, title = "Szacunkowe przychody ze sprzedaży za lipiec 2026")
+        extracted(id, PeriodKind.MONTH, "2026-07-31")
 
         job.refresh()
 
         assertNull(notes.find(id))
+    }
+
+    @Test
+    fun `current report without results in the title is checked`() {
+        val id = report(company("UNIMOT"), kind = ReportKind.CURRENT, title = "Wstępne szacunkowe wybrane dane finansowe za III kwartał 2026 r.")
+        extracted(id, PeriodKind.QUARTER, "2026-09-30")
+
+        job.refresh()
+
+        assertNotNull(notes.find(id))
+    }
+
+    @Test
+    fun `report awaiting consensus is checked`() {
+        val id = report(company("WAITING"), status = ReportStatus.AWAITING_CONSENSUS)
+
+        job.refresh()
+
+        assertNotNull(notes.find(id))
+    }
+
+    @Test
+    fun `saved note re-scores its report`() {
+        val id = report(company("ASBIS"))
+
+        job.refresh()
+
+        verify(exactly = 1) { pipeline.rescoreWithConsensus(id) }
+    }
+
+    @Test
+    fun `note saved after the score is re-scored even when no new note is found`() {
+        every { client.find(any(), any()) } returns emptyMap()
+        val id = report(company("LOST"))
+        notes.save(id, note, published.plusSeconds(60))
+
+        job.refresh()
+
+        verify(exactly = 1) { pipeline.rescoreWithConsensus(id) }
+    }
+
+    @Test
+    fun `report scored after its note was saved is not re-scored again`() {
+        val id = report(company("DONE"))
+        notes.save(id, note, published.minusSeconds(60))
+
+        job.refresh()
+
+        verify(exactly = 0) { pipeline.rescoreWithConsensus(id) }
+    }
+
+    @Test
+    fun `report outside the 36 hour window is not re-scored`() {
+        val id = report(company("OLDNOTE"), publishedAt = now.minus(window).minusSeconds(60))
+        notes.save(id, note, now)
+
+        job.refresh()
+
+        verify(exactly = 0) { pipeline.rescoreWithConsensus(id) }
+    }
+
+    @Test
+    fun `saving a note again moves its saved time`() {
+        val id = report(company("RESAVE"))
+        notes.save(id, note, published)
+        notes.save(id, note, now)
+
+        assertEquals(
+            now,
+            jdbc.sql("SELECT saved_at FROM consensus_note WHERE report_id = :id").param("id", id)
+                .query { rs, _ -> rs.getTimestamp("saved_at").toInstant() }.single(),
+        )
+    }
+
+    @Test
+    fun `report without a found note is not re-scored`() {
+        every { client.find(any(), any()) } returns emptyMap()
+        report(company("SMALL"))
+
+        job.refresh()
+
+        verify(exactly = 0) { pipeline.rescoreWithConsensus(any()) }
+    }
+
+    @Test
+    fun `failing re-score does not stop the next report`() {
+        val first = report(company("FIRST"))
+        val second = report(company("SECOND"), publishedAt = published.plusSeconds(60))
+        every { pipeline.rescoreWithConsensus(first) } throws IllegalStateException("boom")
+
+        job.refresh()
+
+        verify(exactly = 1) { pipeline.rescoreWithConsensus(second) }
     }
 
     @Test
@@ -187,7 +309,7 @@ class ConsensusJobTest : PostgresTestBase() {
     @Test
     fun `report that already has a note is not looked up again`() {
         val id = report(company("ASBIS"))
-        notes.save(id, note)
+        notes.save(id, note, now)
 
         job.refresh()
 
@@ -227,8 +349,8 @@ class ConsensusJobTest : PostgresTestBase() {
     fun `saving the same note twice keeps one row`() {
         val id = report(company("ASBIS"))
 
-        notes.save(id, note)
-        notes.save(id, note.copy(url = "https://www.bankier.pl/wiadomosc/x-2.html"))
+        notes.save(id, note, now)
+        notes.save(id, note.copy(url = "https://www.bankier.pl/wiadomosc/x-2.html"), now)
 
         assertEquals("https://www.bankier.pl/wiadomosc/x-2.html", notes.find(id)?.url)
         assertEquals(1, jdbc.sql("SELECT count(*) FROM consensus_note WHERE report_id = :id").param("id", id).query(Int::class.java).single())

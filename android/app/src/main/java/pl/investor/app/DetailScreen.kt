@@ -3,6 +3,7 @@ package pl.investor.app
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -102,6 +104,9 @@ private fun DetailContent(detail: AlertDetail, now: Instant) {
             )
         }
         detail.reaction?.let { Text(Formatting.reactionLine(it), fontSize = 13.sp) }
+        if (detail.context.isNotEmpty()) {
+            ContextSection(detail.context, detail.headlines, onOpen = { uriHandler.openUri(it) })
+        }
         if (detail.eventType == EventType.RESULTS) {
             ResultsBreakdown(detail)
         }
@@ -165,6 +170,46 @@ private fun signColor(pct: Double): Color = when (Formatting.sign(pct)) {
     1 -> BAR_GOOD
     -1 -> NEGATIVE
     else -> NEUTRAL
+}
+
+private fun directionColor(direction: ContextDirection): Color = when (direction) {
+    ContextDirection.PLUS -> BAR_GOOD
+    ContextDirection.MINUS -> NEGATIVE
+}
+
+@Composable
+private fun ContextSection(points: List<ContextPointView>, headlines: List<HeadlineView>, onOpen: (String) -> Unit) {
+    Text("Kontekst", fontSize = 11.sp, color = NEUTRAL)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        points.forEach { point ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    Formatting.contextSign(point.direction),
+                    modifier = Modifier.width(16.dp),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = directionColor(point.direction),
+                )
+                Text(point.text, modifier = Modifier.weight(1f), fontSize = 13.sp)
+            }
+        }
+    }
+    if (headlines.isNotEmpty()) {
+        Text("Nagłówki", fontSize = 11.sp, color = NEUTRAL)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            headlines.forEach { headline ->
+                Row(modifier = Modifier.fillMaxWidth().clickable { onOpen(headline.url) }) {
+                    Text(
+                        Formatting.headlineDate(headline.publishedAt),
+                        modifier = Modifier.width(44.dp),
+                        fontSize = 12.sp,
+                        color = NEUTRAL,
+                    )
+                    Text(headline.title, modifier = Modifier.weight(1f), fontSize = 13.sp, color = SIGNAL_TEXT)
+                }
+            }
+        }
+    }
 }
 
 @Composable

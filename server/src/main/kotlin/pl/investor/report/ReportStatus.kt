@@ -13,6 +13,7 @@ enum class ReportStatus {
     PENDING_DATA,
     PENDING_AI,
     PUSH_PENDING,
+    AWAITING_CONSENSUS,
     BACKFILLED,
     SKIPPED_NOT_ON_XTB,
 }

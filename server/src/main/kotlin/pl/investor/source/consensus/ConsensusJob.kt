@@ -3,16 +3,16 @@ package pl.investor.source.consensus
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import pl.investor.report.CompanyRepository
+import pl.investor.pipeline.ReportPipeline
 import pl.investor.source.SourceUnavailableException
 import java.time.Clock
-import java.time.Duration
+import java.time.Instant
 
 @Component
 class ConsensusJob(
     private val notes: ConsensusRepository,
-    private val companies: CompanyRepository,
-    private val client: ConsensusClient,
+    private val finder: ConsensusNoteFinder,
+    private val pipeline: ReportPipeline,
     private val clock: Clock,
 ) {
 
@@ -20,24 +20,26 @@ class ConsensusJob(
 
     @Scheduled(cron = "0 15 6-16,19-23 * * *", zone = "Europe/Warsaw")
     fun refresh() {
-        notes.pending(clock.instant().minus(WINDOW)).groupBy { it.companyId }.forEach { (companyId, reports) ->
-            runCatching { refresh(companyId, reports) }.onFailure { error ->
-                val reportIds = reports.map { it.reportId }
-                when (error) {
-                    is SourceUnavailableException -> log.warn("Consensus notes of reports {} unavailable: {}", reportIds, error.message)
-                    else -> log.error("Consensus notes of reports {} failed", reportIds, error)
+        val since = clock.instant().minus(ConsensusNoteFinder.NOTE_WINDOW)
+        saveNewNotes(since)
+        notes.savedAfterScoring(since).forEach(::rescore)
+    }
+
+    private fun saveNewNotes(since: Instant) {
+        notes.pending(since).groupBy { it.companyId }.forEach { (companyId, reports) ->
+            runCatching { finder.findAndSave(companyId, reports) }
+                .onFailure { error ->
+                    val reportIds = reports.map { it.reportId }
+                    when (error) {
+                        is SourceUnavailableException -> log.warn("Consensus notes of reports {} unavailable: {}", reportIds, error.message)
+                        else -> log.error("Consensus notes of reports {} failed", reportIds, error)
+                    }
                 }
-            }
         }
     }
 
-    private fun refresh(companyId: Long, reports: List<PendingConsensus>) {
-        val windows = reports.associateWith { NoteWindow(it.publishedAt, it.publishedAt.plus(WINDOW)) }
-        val found = client.find(companies.findById(companyId), windows.values.toList())
-        windows.forEach { (report, window) -> found[window]?.let { notes.save(report.reportId, it) } }
-    }
-
-    private companion object {
-        val WINDOW: Duration = Duration.ofHours(36)
+    private fun rescore(reportId: Long) {
+        runCatching { pipeline.rescoreWithConsensus(reportId) }
+            .onFailure { log.error("Re-scoring report {} with its consensus note failed", reportId, it) }
     }
 }

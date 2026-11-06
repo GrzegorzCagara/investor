@@ -34,7 +34,11 @@ import pl.investor.report.CompanyRepository
 import pl.investor.report.Market
 import pl.investor.report.Report
 import pl.investor.report.ReportKind
+import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
+import pl.investor.source.consensus.ConsensusNote
+import pl.investor.source.consensus.ConsensusRepository
+import pl.investor.source.consensus.ConsensusRow
 import pl.investor.source.biznesradar.QuarterlyResultsParser
 import pl.investor.source.biznesradar.ValuationParser
 import pl.investor.source.content.ReportContentParser
@@ -63,6 +67,8 @@ class ScoringInputAssemblerTest : PostgresTestBase() {
     @Autowired lateinit var quarterlyParser: QuarterlyResultsParser
     @Autowired lateinit var valuationParser: ValuationParser
     @Autowired lateinit var quoteVerifier: QuoteVerifier
+    @Autowired lateinit var reports: ReportRepository
+    @Autowired lateinit var consensusNotes: ConsensusRepository
 
     private lateinit var asbis: Company
 
@@ -498,6 +504,80 @@ class ScoringInputAssemblerTest : PostgresTestBase() {
         assertFalse(assembler.assemble(company, quarterlyReport(company), withCashFlow(46412, 51800)).profitWithoutCash)
         assertFalse(assembler.assemble(company, quarterlyReport(company), withCashFlow(-46412, -1000)).profitWithoutCash)
         assertFalse(assembler.assemble(company, quarterlyReport(company), q3).profitWithoutCash)
+    }
+
+    private fun savedReportWithNote(company: Company, vararg rows: ConsensusRow): Report {
+        val report = checkNotNull(reports.saveIfNew(quarterlyReport(company).copy(id = null)))
+        consensusNotes.save(checkNotNull(report.id), ConsensusNote("https://www.bankier.pl/wiadomosc/x-1.html", report.publishedAt, rows.toList()), report.publishedAt)
+        return report
+    }
+
+    private val orlenRows = arrayOf(
+        ConsensusRow("Przychody", BigDecimal("80140"), BigDecimal("85025"), -5.7),
+        ConsensusRow("EBITDA", BigDecimal("13000"), BigDecimal("14000"), -7.1),
+        ConsensusRow("EBITDA LIFO skor.", BigDecimal("14779"), BigDecimal("15316"), -3.5),
+        ConsensusRow("EBIT", BigDecimal("9000"), BigDecimal("9500"), -5.3),
+        ConsensusRow("zysk netto j.d.", BigDecimal("5610"), BigDecimal("7480"), -25.0),
+    )
+
+    @Test
+    fun `GPW consensus note becomes PAP comparisons in thousands with the adjusted EBITDA as profit`() {
+        val company = synthetic()
+        val report = savedReportWithNote(company, ConsensusRow("marża EBITDA LIFO", BigDecimal("18.4"), BigDecimal("18.0"), 0.4), *orlenRows)
+
+        assertEquals(
+            listOf(
+                ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal("80140000"), BigDecimal("85025000"), "PLN", "PAP Biznes", null),
+                ConsensusComparison(ConsensusMetric.EBIT, BigDecimal("14779000"), BigDecimal("15316000"), "PLN", "PAP Biznes", null, adjustedForOneOffs = true),
+            ),
+            assembler.assemble(company, report, q3).consensus,
+        )
+    }
+
+    @Test
+    fun `profit falls back from plain EBITDA to operating profit to net profit`() {
+        fun profitOf(vararg rows: ConsensusRow): BigDecimal? {
+            reset()
+            val company = synthetic()
+            return assembler.assemble(company, savedReportWithNote(company, *rows), q3).consensus.firstOrNull { it.metric == ConsensusMetric.EBIT }?.actual
+        }
+
+        assertEquals(BigDecimal("13000000"), profitOf(orlenRows[1], orlenRows[3], orlenRows[4]))
+        assertEquals(BigDecimal("9000000"), profitOf(ConsensusRow("Zysk operacyjny", BigDecimal("9000"), BigDecimal("9500"), -5.3), orlenRows[4]))
+        assertEquals(BigDecimal("5610000"), profitOf(orlenRows[0], orlenRows[4]))
+        assertNull(profitOf(orlenRows[0], ConsensusRow("marża EBIT", BigDecimal("11"), BigDecimal("12"), -1.0)))
+    }
+
+    @Test
+    fun `adjusted EBITDA comparison is flagged as free of one-offs and plain EBITDA is not`() {
+        val company = synthetic()
+        val adjusted = assembler.assemble(company, savedReportWithNote(company, *orlenRows), q3).consensus.single { it.metric == ConsensusMetric.EBIT }
+        reset()
+        val other = synthetic()
+        val plain = assembler.assemble(other, savedReportWithNote(other, orlenRows[1]), q3).consensus.single { it.metric == ConsensusMetric.EBIT }
+
+        assertTrue(adjusted.adjustedForOneOffs)
+        assertFalse(plain.adjustedForOneOffs)
+    }
+
+    @Test
+    fun `profit row with a consensus below one million is skipped for the next row in priority`() {
+        val company = synthetic()
+        val tinyAdjusted = ConsensusRow("EBITDA skorygowana", BigDecimal("1.2"), BigDecimal("0.5"), 140.0)
+        val report = savedReportWithNote(company, tinyAdjusted, orlenRows[1])
+
+        val profit = assembler.assemble(company, report, q3).consensus.single { it.metric == ConsensusMetric.EBIT }
+
+        assertEquals(BigDecimal("13000000"), profit.actual)
+        assertFalse(profit.adjustedForOneOffs)
+    }
+
+    @Test
+    fun `GPW monthly sales report ignores a consensus note`() {
+        val company = synthetic()
+        val report = savedReportWithNote(company, *orlenRows)
+
+        assertTrue(assembler.assemble(company, report, periodOf(PeriodKind.MONTH, "PLN", "2026-10-31", 500, 300)).consensus.isEmpty())
     }
 
     private companion object {

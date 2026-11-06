@@ -166,10 +166,72 @@ class ScoreCalculatorTest {
         assertTrue(Warning.CYCLICAL_INDUSTRY in score.warnings)
     }
 
-    @Test fun `cyclical company keeps a consensus surprise`() {
+    @Test fun `cyclical company keeps a profit consensus surprise`() {
+        val beat = ConsensusComparison(ConsensusMetric.EBIT, BigDecimal(120_000), BigDecimal(100_000), "PLN", "PAP Biznes", null)
+        val score = ScoreCalculator.score(orlenQ3Like().copy(consensus = listOf(beat)))
+
+        assertEquals(24.0, score.components.surprise, 1e-9)
+    }
+
+    @Test fun `cyclical company with only a revenue consensus falls back to its own trend`() {
         val beat = ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal(150), BigDecimal(100), "SEK", "Placera", 3)
         val score = ScoreCalculator.score(orlenQ3Like().copy(consensus = listOf(beat)))
 
-        assertEquals(30.0, score.components.surprise, 1e-9)
+        assertEquals(15.0, score.components.surprise, 1e-9)
+        assertTrue(Warning.NO_CONSENSUS in score.warnings)
+    }
+
+    private fun papConsensus(metric: ConsensusMetric, actual: Long, consensus: Long) =
+        ConsensusComparison(metric, BigDecimal(actual), BigDecimal(consensus), "PLN", "PAP Biznes", null)
+
+    private fun unimotQ3Like() = allNull().copy(
+        sur = 3.5, revenueYoyPct = 61.3, previousYoyPcts = listOf(5.0, -2.0, 8.0, 3.0), revenueOnly = true,
+        outlook = OutlookTone.NONE, pe = 6.0, ttmNetProfitGrowthPct = 158.0, cyclical = true,
+    )
+
+    private val unimotConsensus = listOf(
+        papConsensus(ConsensusMetric.REVENUE, 6_000_000, 4_776_000),
+        papConsensus(ConsensusMetric.EBIT, 133_000, 108_800),
+    )
+
+    @Test fun `cyclical company ignores the revenue consensus surprise`() {
+        assertEquals(25.346, ScoreCalculator.score(unimotQ3Like().copy(consensus = unimotConsensus)).components.surprise, 1e-3)
+    }
+
+    @Test fun `Unimot Q3 prelim with PAP consensus scores 65,3`() {
+        val score = ScoreCalculator.score(unimotQ3Like().copy(consensus = unimotConsensus))
+
+        assertEquals(20.0, score.components.growth, 1e-9)
+        assertEquals(7.5, score.components.quality, 1e-9)
+        assertEquals(0.0, score.components.series, 1e-9)
+        assertEquals(5.0, score.components.outlook, 1e-9)
+        assertEquals(7.5, score.components.valuation, 1e-9)
+        assertEquals(65.346, score.total, 1e-3)
+        assertFalse(Warning.NO_CONSENSUS in score.warnings)
+    }
+
+    @Test fun `Unimot Q3 prelim without consensus scores 55`() {
+        val score = ScoreCalculator.score(unimotQ3Like())
+
+        assertEquals(55.0, score.total, 1e-9)
+        assertTrue(Warning.NO_CONSENSUS in score.warnings)
+    }
+
+    @Test fun `Orlen Q3 with adjusted EBITDA 3,5 percent below consensus gets 9,9 surprise`() {
+        val consensus = listOf(
+            papConsensus(ConsensusMetric.REVENUE, 80_140_000, 85_025_000),
+            papConsensus(ConsensusMetric.EBIT, 14_779_000, 15_316_000),
+        )
+
+        assertEquals(9.9, ScoreCalculator.score(orlenQ3Like().copy(consensus = consensus)).components.surprise, 0.05)
+    }
+
+    @Test fun `one-off quarter keeps a beat on adjusted profit because PAP already strips one-offs`() {
+        val adjusted = ConsensusComparison(ConsensusMetric.EBIT, BigDecimal(150_000), BigDecimal(100_000), "PLN", "PAP Biznes", null, adjustedForOneOffs = true)
+        val reported = adjusted.copy(adjustedForOneOffs = false)
+
+        assertEquals(30.0, ScoreCalculator.score(allNull().copy(oneOff = true, consensus = listOf(adjusted))).components.surprise, 1e-9)
+        assertEquals(15.0, ScoreCalculator.score(allNull().copy(oneOff = true, consensus = listOf(reported))).components.surprise, 1e-9)
+        assertEquals(15.0, ScoreCalculator.score(allNull().copy(oneOff = true, sur = 10.0)).components.surprise, 1e-9)
     }
 }

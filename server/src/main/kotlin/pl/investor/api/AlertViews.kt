@@ -1,5 +1,7 @@
 package pl.investor.api
 
+import pl.investor.context.ContextDirection
+import pl.investor.context.ContextOutcome
 import pl.investor.extraction.AiPool
 import pl.investor.monitoring.SourceHealth
 import pl.investor.report.EventType
@@ -57,7 +59,15 @@ data class AlertDetail(
     val pastReactions: List<PastReactionView> = emptyList(),
     val signals: List<String> = emptyList(),
     val availableOnXtb: Boolean = false,
+    val context: List<ContextPointView> = emptyList(),
+    val headlines: List<HeadlineView> = emptyList(),
 )
+
+data class ContextPointView(val direction: ContextDirection, val text: String)
+
+data class HeadlineView(val title: String, val url: String, val publishedAt: Instant)
+
+data class ContextRewriteResponse(val outcome: ContextOutcome)
 
 data class PastReactionView(val date: LocalDate, val pct: Double)
 

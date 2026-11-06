@@ -1,6 +1,6 @@
 package pl.investor.source.euronext
 
-import pl.investor.pipeline.foldedTitle
+import pl.investor.support.foldedTitle
 import java.time.Duration
 import java.time.Instant
 

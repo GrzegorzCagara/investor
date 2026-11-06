@@ -3,6 +3,8 @@ package pl.investor.source.consensus
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.springframework.stereotype.Component
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
 import pl.investor.source.biznesradar.PolishNumbers
 import pl.investor.support.WARSAW
 import java.text.Normalizer
@@ -18,30 +20,58 @@ class ConsensusNoteParser {
 
     private class Columns(val actual: Int, val consensus: Int, val difference: Int)
 
-    fun noteLinks(html: String, baseUrl: String): List<ConsensusLink> =
-        Jsoup.parse(html, baseUrl)
-            .select("a.m-listing-article-list__anchor")
-            .filter { it.articleTitle().isConsensusNoteTitle() }
+    private val mapper = JsonMapper.builder().build()
+
+    fun articleLinks(html: String, baseUrl: String): List<ConsensusLink> =
+        listedAnchors(html, baseUrl)
             .map { ConsensusLink(it.absUrl("href"), it.listedAt()) }
+            .filter { it.url.isNotBlank() }
             .distinctBy { it.url }
 
-    fun parseNote(html: String, url: String): ConsensusNote =
-        ConsensusNote(
-            url = url,
-            publishedAt = publishedAt(html),
-            rows = Jsoup.parse(html).select("table").firstNotNullOfOrNull { it.consensusRows() }.orEmpty(),
-        )
+    fun headlines(html: String, baseUrl: String): List<BankierHeadline> =
+        listedAnchors(html, baseUrl)
+            .mapNotNull { anchor ->
+                val url = anchor.absUrl("href").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                val title = anchor.title()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                anchor.listedAt()?.let { BankierHeadline(title, url, it) }
+            }
+            .distinctBy { it.url }
 
-    private fun Element.articleTitle(): String = selectFirst(".m-listing-article-list__title")?.text() ?: text()
+    private fun listedAnchors(html: String, baseUrl: String): List<Element> =
+        Jsoup.parse(html, baseUrl).select("a.m-listing-article-list__anchor")
+
+    private fun Element.title(): String? {
+        val title = selectFirst(".m-listing-article-list__title")?.clone() ?: return null
+        val labels = title.select(".m-listing-article-list__title-label")
+        val label = labels.text().trim().takeIf { it.isNotBlank() }
+        labels.remove()
+        val text = title.text().trim().takeIf { it.isNotBlank() } ?: return null
+        return label?.let { "[$it] $text" } ?: text
+    }
+
+    fun parseArticle(html: String): BankierArticle {
+        val publishedAt = publishedAt(html)
+        val document = Jsoup.parse(html)
+        val newsArticle = document.select("script[type=application/ld+json]").firstNotNullOfOrNull { it.data().newsArticle() }
+        return BankierArticle(
+            publishedAt = publishedAt,
+            tableRows = document.select("table").firstNotNullOfOrNull { it.consensusRows() }.orEmpty(),
+            headline = newsArticle?.text("headline"),
+            body = newsArticle?.text("articleBody"),
+        )
+    }
+
+    fun mentionsConsensus(text: String): Boolean = CONSENSUS in text.normalized()
+
+    private fun String.newsArticle(): JsonNode? =
+        runCatching { mapper.readTree(this) }.getOrNull()?.takeIf { it.has("articleBody") }
+
+    private fun JsonNode.text(field: String): String? =
+        path(field).takeIf { it.isString }?.asString()?.takeIf { it.isNotBlank() }
 
     private fun Element.listedAt(): Instant? =
         selectFirst(".m-listing-article-list__date-time")?.text()?.trim()
             ?.let { runCatching { LocalDateTime.parse(it, LIST_DATE_FORMAT).atZone(WARSAW).toInstant() }.getOrNull() }
-
-    private fun String.isConsensusNoteTitle(): Boolean {
-        val tokens = normalized().split(NON_ALPHANUMERIC).toSet()
-        return "vs" in tokens && "pap" in tokens && tokens.any { it.startsWith("konsensus") }
-    }
 
     private fun publishedAt(html: String): Instant {
         val value = checkNotNull(DATE_PUBLISHED.find(html)) { "Consensus note without datePublished" }.groupValues[1]
@@ -96,6 +126,6 @@ class ConsensusNoteParser {
         val LIST_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
         val MINUS_SIGNS = Regex("[−–]")
         val DIACRITICS = Regex("\\p{M}+")
-        val NON_ALPHANUMERIC = Regex("[^a-z0-9]+")
+        const val CONSENSUS = "konsensus"
     }
 }

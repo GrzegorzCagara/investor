@@ -19,6 +19,9 @@ import pl.investor.history.trailingYearRevenueOrZero
 import pl.investor.report.Company
 import pl.investor.report.Market
 import pl.investor.report.Report
+import pl.investor.support.foldedTitle
+import pl.investor.source.consensus.ConsensusRepository
+import pl.investor.source.consensus.ConsensusRow
 import pl.investor.source.placera.ConsensusEstimate
 import pl.investor.source.placera.ConsensusPreviewRepository
 import pl.investor.support.STOCKHOLM
@@ -36,6 +39,7 @@ class ScoringInputAssembler(
     private val quotes: QuoteRepository,
     private val previews: ConsensusPreviewRepository,
     private val pastReactions: PastReactionHistory,
+    private val consensusNotes: ConsensusRepository,
 ) {
 
     fun assemble(company: Company, report: Report, verified: VerifiedExtraction?): ScoringInput {
@@ -70,7 +74,11 @@ class ScoringInputAssembler(
             lowLiquidity = market.lowLiquidity,
             aiUsed = verified != null,
             uncertainNumbers = verified?.uncertainFields?.isNotEmpty() ?: false,
-            consensus = extraction?.primaryPeriod()?.let { consensusComparisons(company, report, it) }.orEmpty(),
+            consensus = when (company.market) {
+                Market.SE -> extraction?.primaryPeriod()?.let { placeraComparisons(company, report, it) }.orEmpty()
+                Market.GPW -> papComparisons(report, primary)
+                else -> emptyList()
+            },
             trendReversal = primary?.kind == PeriodKind.QUARTER && revenueYoyPct != null && revenueYoyPct > 0 && trend.precedingQuartersAllDeclined(),
             ordersYoyPct = extraction?.ordersYoyPct(),
             ytdChangePct = market.ytdChangePct,
@@ -103,8 +111,23 @@ class ScoringInputAssembler(
 
     private fun lossExceeds(result: BigDecimal, revenue: BigDecimal): Boolean = result.signum() < 0 && result.negate() > revenue
 
-    private fun consensusComparisons(company: Company, report: Report, primary: ExtractedPeriod): List<ConsensusComparison> {
-        if (company.market != Market.SE || primary.kind != PeriodKind.QUARTER) return emptyList()
+    private fun papComparisons(report: Report, primary: ExtractedPeriod?): List<ConsensusComparison> {
+        if (primary == null || primary.kind == PeriodKind.MONTH) return emptyList()
+        val rows = report.id?.let { consensusNotes.find(it) }?.rows.orEmpty().filterNot { it.label.isMarginLabel() }
+        val revenue = rows.firstOrNull { it.label.foldedTitle().startsWith("przychody") }?.papComparison(ConsensusMetric.REVENUE)
+        val profit = PROFIT_LABEL_PRIORITY.asSequence()
+            .flatMap { label -> rows.asSequence().filter { label.matches(it.label.foldedTitle()) }.map { it.papComparison(ConsensusMetric.EBIT, label.adjusted) } }
+            .firstOrNull { ebitSurprisePct(it) != null }
+        return listOfNotNull(revenue, profit)
+    }
+
+    private fun ConsensusRow.papComparison(metric: ConsensusMetric, adjustedForOneOffs: Boolean = false) =
+        ConsensusComparison(metric, actual * THOUSAND, consensus * THOUSAND, PLN, PAP_SOURCE, null, adjustedForOneOffs)
+
+    private fun String.isMarginLabel(): Boolean = "marza" in foldedTitle()
+
+    private fun placeraComparisons(company: Company, report: Report, primary: ExtractedPeriod): List<ConsensusComparison> {
+        if (primary.kind != PeriodKind.QUARTER) return emptyList()
         val isin = company.isin ?: return emptyList()
         val preview = previews.forReport(isin, report.publishedAt.atZone(STOCKHOLM).toLocalDate(), report.publishedAt)
             ?.takeIf { it.currency == primary.currency }
@@ -314,6 +337,8 @@ class ScoringInputAssembler(
         }
     }
 
+    private class ProfitLabel(val adjusted: Boolean = false, val matches: (String) -> Boolean)
+
     private data class Observation(val periodEnd: LocalDate, val yoyPct: Double?)
 
     private data class Trend(
@@ -347,6 +372,19 @@ class ScoringInputAssembler(
 
     private companion object {
         const val BIZNESRADAR_SOURCE = "BiznesRadar"
+        const val PAP_SOURCE = "PAP Biznes"
+        const val PLN = "PLN"
+        val THOUSAND = BigDecimal(1000)
+        val ADJUSTED_MARKERS = listOf("skor", "lifo", "oczyszcz", "adj", "powtarz")
+        val PROFIT_LABEL_PRIORITY: List<ProfitLabel> = listOf(
+            ProfitLabel(adjusted = true) { label -> label.words().contains("ebitda") && ADJUSTED_MARKERS.any { it in label } },
+            ProfitLabel { label -> label.words().contains("ebitda") },
+            ProfitLabel { label -> label.words().contains("ebit") || "zysk operacyjny" in label || "wynik operacyjny" in label },
+            ProfitLabel { label -> "zysk netto" in label },
+        )
+        private val NON_ALPHANUMERIC = Regex("[^a-z0-9]+")
+
+        fun String.words(): List<String> = split(NON_ALPHANUMERIC)
         const val HISTORY_PERIODS = 12
         const val CURRENT_QUARTER_PUBLICATION_DAYS = 2L
         const val VALUATION_QUARTERS = 20

@@ -39,6 +39,7 @@ class AcceptanceReplayTest : PostgresTestBase() {
         private val anthropic = AnthropicStub()
         private val FIVE_MINUTES: Duration = Duration.ofMinutes(5)
         private val DETECTION_DELAY: Duration = Duration.ofMinutes(3)
+        private val CONSENSUS_WAIT: Duration = Duration.ofHours(2)
 
         @JvmStatic
         @DynamicPropertySource
@@ -112,6 +113,10 @@ class AcceptanceReplayTest : PostgresTestBase() {
     private fun ReplayResult.total() = checkNotNull(score) { "no score, status $status" }.total
 
     private fun ReplayResult.scoringInput() = checkNotNull(input) { "no scoring input, status $status" }
+
+    private fun ReplayResult.assertDoneWhenTheConsensusWaitEnds() {
+        assertTrue(elapsed >= CONSENSUS_WAIT.minus(DETECTION_DELAY) && elapsed < CONSENSUS_WAIT.plus(FIVE_MINUTES), "done after $elapsed")
+    }
 
     private fun ReplayResult.assertPushedWithinFiveMinutes() {
         assertEquals(1, pushes.size, "no push, status $status")
@@ -189,8 +194,9 @@ class AcceptanceReplayTest : PostgresTestBase() {
     }
 
     @Test
-    fun `4 XTB preliminary Q2 2026 is pushed within five minutes`() {
-        xtbPreliminary.assertPushedWithinFiveMinutes()
+    fun `4 XTB preliminary Q2 2026 published after the close is pushed when the PAP consensus wait ends`() {
+        assertEquals(1, xtbPreliminary.pushes.size, "no push, status ${xtbPreliminary.status}")
+        xtbPreliminary.assertDoneWhenTheConsensusWaitEnds()
     }
 
     @Test
@@ -205,7 +211,7 @@ class AcceptanceReplayTest : PostgresTestBase() {
     }
 
     @Test
-    fun `5 Creepy Jar preliminary Q1 2026 is scored within five minutes`() {
+    fun `5 Creepy Jar preliminary Q1 2026 without a known Bankier news page is scored within five minutes`() {
         assertEquals(ReportStatus.SCORED, creepyJarPreliminary.status)
         assertTrue(creepyJarPreliminary.elapsed < FIVE_MINUTES)
     }

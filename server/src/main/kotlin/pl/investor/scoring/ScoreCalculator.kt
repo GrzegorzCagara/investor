@@ -105,7 +105,8 @@ object ScoreCalculator {
         val consensusSurprise = input.consensusSurprisePoints()
         val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage || input.revenueAlreadyKnown || input.cyclical, NEUTRAL_SURPRISE)
         val components = ScoreComponents(
-            surprise = oneOffSurprisePoints(consensusSurprise ?: ownTrendSurprise, input.oneOff),
+            surprise = consensusSurprise?.let { oneOffSurprisePoints(it, input.oneOff && !input.hasAdjustedProfitConsensus()) }
+                ?: oneOffSurprisePoints(ownTrendSurprise, input.oneOff),
             growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal).atMostNeutralWhen(input.earlyStage, NEUTRAL_GROWTH),
             quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly)
                 .atMostNeutralWhen(input.earlyStage || input.profitWithoutCash, NEUTRAL_QUALITY),
@@ -124,9 +125,12 @@ object ScoreCalculator {
         )
     }
 
+    private fun ScoringInput.hasAdjustedProfitConsensus(): Boolean =
+        consensus.firstOrNull { it.metric == ConsensusMetric.EBIT }?.takeIf { ebitSurprisePct(it) != null }?.adjustedForOneOffs == true
+
     private fun ScoringInput.consensusSurprisePoints(): Double? {
         val ebit = ebitSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.EBIT })
-        val revenue = revenueSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.REVENUE })
+        val revenue = revenueSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.REVENUE }).takeUnless { cyclical }
         return if (ebit == null && revenue == null) null else consensusSurprisePoints(ebit, revenue)
     }
 

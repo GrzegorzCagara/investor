@@ -107,6 +107,13 @@ object Formatting {
     fun aiUsage(spent: Double, limit: Double?): String =
         limit?.let { "${spent.rounded(2).polish()} z ${usd(it)}" } ?: usd(spent)
 
+    fun headlineDate(at: Instant): String = dayMonth.format(at)
+
+    fun contextSign(direction: ContextDirection): String = when (direction) {
+        ContextDirection.PLUS -> "+"
+        ContextDirection.MINUS -> MINUS
+    }
+
     fun date(at: Instant, now: Instant): String =
         if (at.atZone(warsaw).year == now.atZone(warsaw).year) dayMonth.format(at) else dayMonthYear.format(at)
 

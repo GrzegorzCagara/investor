@@ -94,6 +94,31 @@ class InvestorApiTest {
         assertNull(detail.ordersYoyPct)
         assertTrue(detail.pastReactions.isEmpty())
         assertTrue(detail.signals.isEmpty())
+        assertTrue(detail.context.isEmpty())
+        assertTrue(detail.headlines.isEmpty())
+    }
+
+    @Test
+    fun `detail parses context points and headlines`() = runBlocking {
+        enqueueJson(
+            "{$DETAIL_BASE," +
+                """"context":[{"direction":"PLUS","text":"Zysk powyżej oczekiwań."},{"direction":"MINUS","text":"Przychody zależą od cen ropy."}],""" +
+                """"headlines":[{"title":"Unimot zaskoczył wynikami","url":"https://www.bankier.pl/wiadomosc/unimot-1.html","publishedAt":"2026-11-05T19:15:00Z"}]}""",
+        )
+
+        val detail = api().alert(42)
+
+        assertEquals(
+            listOf(
+                ContextPointView(ContextDirection.PLUS, "Zysk powyżej oczekiwań."),
+                ContextPointView(ContextDirection.MINUS, "Przychody zależą od cen ropy."),
+            ),
+            detail.context,
+        )
+        assertEquals(
+            listOf(HeadlineView("Unimot zaskoczył wynikami", "https://www.bankier.pl/wiadomosc/unimot-1.html", Instant.parse("2026-11-05T19:15:00Z"))),
+            detail.headlines,
+        )
     }
 
     @Test

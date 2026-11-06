@@ -43,12 +43,14 @@ import pl.investor.scoring.ScoreCalculator
 import pl.investor.scoring.ScoreComponents
 import pl.investor.scoring.ScoreRepository
 import pl.investor.scoring.StoredScore
+import pl.investor.scoring.ScoringInput
 import pl.investor.scoring.ScoringInputAssembler
 import pl.investor.scoring.primaryPeriod
 import pl.investor.settings.AlertFilters
 import pl.investor.settings.PushThreshold
 import pl.investor.settings.SettingRepository
 import pl.investor.source.SourceUnavailableException
+import pl.investor.source.consensus.ConsensusNoteFinder
 import pl.investor.source.content.ReportContent
 import pl.investor.source.content.ReportContentClient
 import pl.investor.source.eqs.isEqsCorporateNews
@@ -87,6 +89,7 @@ class ReportPipeline(
     private val newsAssessments: NewsAssessmentRepository,
     private val newsContext: NewsContextAssembler,
     private val xtbFilter: XtbFilter,
+    private val consensusNotes: ConsensusNoteFinder,
     private val clock: Clock,
 ) {
 
@@ -178,6 +181,58 @@ class ReportPipeline(
             }
         }
     }
+
+    fun rescoreWithConsensus(reportId: Long): Boolean = exclusively(reportId) {
+        val report = reports.findById(reportId)
+        rescore(report, companies.findById(report.companyId))
+    }
+
+    fun awaitConsensus(reportId: Long, mayFetchNote: Boolean): ConsensusNoteLookup {
+        var lookup = ConsensusNoteLookup.NOT_ATTEMPTED
+        exclusively(reportId) {
+            val report = reports.findById(reportId)
+            if (report.status != ReportStatus.AWAITING_CONSENSUS) return@exclusively
+            val company = companies.findById(report.companyId)
+            when {
+                consensusNotes.hasNote(reportId) -> rescore(report, company)
+                isPastConsensusDeadline(report) -> pushOnStoredScore(report, company)
+                mayFetchNote -> {
+                    lookup = findOrFetchConsensusNote(report)
+                    if (lookup == ConsensusNoteLookup.FOUND) rescore(report, company)
+                }
+            }
+        }
+        return lookup
+    }
+
+    private fun rescore(report: Report, company: Company) =
+        guarded(report) { scoreAndNotify(report, company, extractions.find(checkNotNull(report.id))) }
+
+    private fun pushOnStoredScore(report: Report, company: Company) {
+        val id = checkNotNull(report.id)
+        val stored = checkNotNull(scores.find(id)) { "Report $id has no score to push" }
+        decideResultsPush(report, company, stored.score, stored.reason, pushPeriod(report, company, extractions.find(id)))
+    }
+
+    private fun findOrFetchConsensusNote(report: Report): ConsensusNoteLookup =
+        try {
+            if (consensusNotes.findAndSave(report)) ConsensusNoteLookup.FOUND else ConsensusNoteLookup.NOT_FOUND
+        } catch (e: SourceUnavailableException) {
+            log.warn("Bankier unavailable while looking for the consensus note of report {}, it keeps waiting", report.sourceRef, e)
+            ConsensusNoteLookup.SOURCE_UNAVAILABLE
+        } catch (e: Exception) {
+            log.warn("Looking for the consensus note of report {} failed, it keeps waiting", report.sourceRef, e)
+            ConsensusNoteLookup.NOT_FOUND
+        }
+
+    private fun canFindConsensusNotes(company: Company): Boolean =
+        runCatching { consensusNotes.canFindNotesOf(company) }.getOrElse {
+            log.warn("Checking the Bankier news page of {} failed, waiting for the consensus note anyway", company.name, it)
+            true
+        }
+
+    private fun isPastConsensusDeadline(report: Report): Boolean =
+        consensusDeadline(report.publishedAt)?.let { clock.instant() >= it } ?: true
 
     private fun retryNewsPush(report: Report, company: Company, stored: StoredScore) {
         val id = checkNotNull(report.id)
@@ -401,6 +456,24 @@ class ReportPipeline(
         val reason = reasonWriter.write(company, input, score)
         scores.save(checkNotNull(report.id), score, reason, clock.instant())
         val period = pushPeriod(report, company, verified)
+        if (awaitsConsensus(report, company, input, period)) {
+            setStatus(report, ReportStatus.AWAITING_CONSENSUS)
+            return
+        }
+        decideResultsPush(report, company, score, reason, period)
+    }
+
+    private fun awaitsConsensus(report: Report, company: Company, input: ScoringInput, period: PushPeriod?): Boolean =
+        report.market == Market.GPW &&
+            period?.kind == PeriodKind.QUARTER &&
+            input.consensus.isEmpty() &&
+            report.isResultsPushEnabled() &&
+            !isAlreadyPushed(company, period) &&
+            consensusDeadline(report.publishedAt)?.let { clock.instant() < it } == true &&
+            !consensusNotes.hasNote(checkNotNull(report.id)) &&
+            canFindConsensusNotes(company)
+
+    private fun decideResultsPush(report: Report, company: Company, score: Score, reason: String, period: PushPeriod?) {
         if (score.total < pushThreshold.current() || !report.isResultsPushEnabled() || isAlreadyPushed(company, period)) {
             setStatus(report, ReportStatus.SCORED)
             return

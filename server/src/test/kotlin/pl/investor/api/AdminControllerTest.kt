@@ -4,8 +4,11 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verifyOrder
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import pl.investor.context.ContextOutcome
+import pl.investor.context.ReportContextWriter
 import pl.investor.outcome.OutcomeJob
 import pl.investor.pipeline.MonthlySalesBackfillJob
 import pl.investor.source.quotes.DailyQuotesJob
@@ -25,7 +28,8 @@ class AdminControllerTest {
     private val monthlySales = mockk<MonthlySalesBackfillJob>()
     private val dailyQuotes = mockk<DailyQuotesJob>()
     private val outcomes = mockk<OutcomeJob>(relaxed = true)
-    private val controller = AdminController(monthlySales, dailyQuotes, outcomes, mockk(relaxed = true), clock)
+    private val contextWriter = mockk<ReportContextWriter>()
+    private val controller = AdminController(monthlySales, dailyQuotes, outcomes, mockk(relaxed = true), contextWriter, clock)
     private val mvc = MockMvcBuilders.standaloneSetup(controller).build()
 
     private fun awaitAccepted() {
@@ -117,5 +121,23 @@ class AdminControllerTest {
         every { monthlySales.runAll(13) } returns 0
         every { dailyQuotes.backfill(any(), any()) } returns Unit
         awaitAccepted()
+    }
+
+    @Test
+    fun `context rewrite of one report answers with the outcome`() {
+        every { contextWriter.rewrite(1254) } returns ContextOutcome.WRITTEN
+
+        mvc.perform(post("/api/admin/reports/1254/context"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.outcome").value("WRITTEN"))
+    }
+
+    @Test
+    fun `context rewrite of an unknown report gives 404 and a failed one 502`() {
+        every { contextWriter.rewrite(1) } returns ContextOutcome.NOT_FOUND
+        every { contextWriter.rewrite(2) } returns ContextOutcome.FAILED
+
+        mvc.perform(post("/api/admin/reports/1/context")).andExpect(status().isNotFound)
+        mvc.perform(post("/api/admin/reports/2/context")).andExpect(status().isBadGateway)
     }
 }

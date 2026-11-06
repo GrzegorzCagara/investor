@@ -16,6 +16,13 @@ class FormattingTest {
     }
 
     @Test
+    fun `context sign and headline date in Warsaw`() {
+        assertEquals("+", Formatting.contextSign(ContextDirection.PLUS))
+        assertEquals("−", Formatting.contextSign(ContextDirection.MINUS))
+        assertEquals("06.11", Formatting.headlineDate(Instant.parse("2026-11-05T23:30:00Z")))
+    }
+
+    @Test
     fun `latest quote session date`() {
         assertEquals("30.10.2026", Formatting.sessionDate("2026-10-30"))
         assertEquals("brak", Formatting.sessionDate(null))

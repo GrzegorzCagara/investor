@@ -57,6 +57,7 @@ import pl.investor.source.xtb.XtbAvailability
 import pl.investor.source.xtb.XtbClient
 import pl.investor.source.xtb.XtbCountry
 import pl.investor.source.xtb.XtbStock
+import pl.investor.source.consensus.ConsensusNoteFinder
 import pl.investor.support.PostgresTestBase
 import tools.jackson.databind.json.JsonMapper
 import java.time.Clock
@@ -68,6 +69,7 @@ import kotlin.test.assertTrue
 
 class GermanPipelineTest : PostgresTestBase() {
 
+    @Autowired lateinit var consensusNoteFinder: ConsensusNoteFinder
     @Autowired lateinit var jdbc: JdbcClient
     @Autowired lateinit var companies: CompanyRepository
     @Autowired lateinit var reports: ReportRepository
@@ -139,7 +141,7 @@ class GermanPipelineTest : PostgresTestBase() {
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, xtbFilter, clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, xtbFilter, consensusNoteFinder, clock,
         )
     }
 

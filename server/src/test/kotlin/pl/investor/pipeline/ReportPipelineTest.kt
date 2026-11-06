@@ -55,6 +55,13 @@ import pl.investor.source.biznesradar.BiznesRadarClient
 import pl.investor.source.biznesradar.QuarterlyResultsParser
 import pl.investor.source.biznesradar.SymbolNotFoundException
 import pl.investor.source.biznesradar.ValuationParser
+import pl.investor.scoring.ConsensusMetric
+import pl.investor.source.consensus.ConsensusClient
+import pl.investor.source.consensus.ConsensusNote
+import pl.investor.source.consensus.ConsensusNoteFinder
+import pl.investor.source.consensus.ConsensusRepository
+import pl.investor.source.consensus.ConsensusRow
+import pl.investor.source.consensus.NoteWindow
 import pl.investor.source.content.ReportContent
 import pl.investor.source.content.ReportContentClient
 import pl.investor.source.content.ReportContentNotFoundException
@@ -72,6 +79,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -97,8 +105,15 @@ class ReportPipelineTest : PostgresTestBase() {
     @Autowired lateinit var newsAssessments: NewsAssessmentRepository
     @Autowired lateinit var newsContext: NewsContextAssembler
     @Autowired lateinit var alerts: AlertRepository
+    @Autowired lateinit var consensusNotes: ConsensusRepository
 
-    private val clock: Clock = Clock.fixed(Instant.parse("2026-09-21T06:15:00Z"), ZoneOffset.UTC)
+    private var now: Instant = Instant.parse("2026-09-21T06:15:00Z")
+    private val clock: Clock = object : Clock() {
+        override fun getZone(): ZoneId = ZoneOffset.UTC
+        override fun withZone(zone: ZoneId?): Clock = this
+        override fun instant(): Instant = now
+    }
+    private val consensusClient = mockk<ConsensusClient>()
     private val notifier = mockk<PushNotifier>(relaxed = true)
     private val contentClient = mockk<ReportContentClient>()
     private val biznesRadar = mockk<BiznesRadarClient>()
@@ -137,12 +152,15 @@ class ReportPipelineTest : PostgresTestBase() {
         every { contentClient.fetch(any(), any()) } answers { content(firstArg<ListingEntry>().sourceRef, secondArg()) }
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +91% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
+        every { consensusClient.find(any(), any()) } returns emptyMap()
+        every { consensusClient.hasNewsPage(any()) } returns true
         refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, mockk(relaxed = true))
         pipeline = ReportPipeline(
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies), clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies),
+            ConsensusNoteFinder(consensusNotes, companies, consensusClient, clock), clock,
         )
     }
 
@@ -833,6 +851,224 @@ class ReportPipelineTest : PostgresTestBase() {
         assertFalse(Warning.NO_AI in score.warnings)
         assertEquals(82.5, score.total, 0.001)
         assertEquals("QUARTER" to "2026-06-30", pushedPeriod())
+    }
+
+    private val eveningReportAt: Instant = strongReportDay.atTime(19, 43).atZone(WARSAW).toInstant()
+
+    private fun papNote(profitActual: String, profitConsensus: String) = ConsensusNote(
+        "https://www.bankier.pl/wiadomosc/asbis-1.html",
+        eveningReportAt.plusSeconds(15 * 60),
+        listOf(
+            ConsensusRow("marża EBITDA", BigDecimal("20"), BigDecimal("30"), -10.0),
+            ConsensusRow("Przychody", BigDecimal("200"), BigDecimal("200"), 0.0),
+            ConsensusRow("EBITDA skorygowana", BigDecimal(profitActual), BigDecimal(profitConsensus), 0.0),
+        ),
+    )
+
+    private fun awaitingEveningReport(sourceRef: String): Long {
+        asbis()
+        givenStrongBiznesRadarQuarter()
+        now = eveningReportAt.plusSeconds(120)
+        val id = storedReport(sourceRef, ReportKind.QUARTERLY, ReportStatus.PENDING_DATA, eveningReportAt)
+        storedExtraction(id, OutlookTone.NONE)
+        assertTrue(pipeline.retryPendingData(id))
+        return id
+    }
+
+    private fun noteFound(profitActual: String, profitConsensus: String) {
+        every { consensusClient.find(any(), any()) } answers { secondArg<List<NoteWindow>>().associateWith { papNote(profitActual, profitConsensus) } }
+    }
+
+    @Test
+    fun `GPW quarter published in the evening waits for the PAP note instead of pushing`() {
+        val id = awaitingEveningReport("88")
+
+        assertEquals(ReportStatus.AWAITING_CONSENSUS, statusOf("88"))
+        assertEquals(77.5, checkNotNull(scores.find(id)).score.total, 0.001)
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `waiting report keeps waiting while there is no note before the deadline`() {
+        val id = awaitingEveningReport("89")
+        now = eveningReportAt.plusSeconds(60 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        assertEquals(ReportStatus.AWAITING_CONSENSUS, statusOf("89"))
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `failing note lookup keeps the report waiting`() {
+        val id = awaitingEveningReport("89a")
+        every { consensusClient.find(any(), any()) } throws SourceUnavailableException(Source.BANKIER_NEWS, RuntimeException("down"))
+        now = eveningReportAt.plusSeconds(60 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        assertEquals(ReportStatus.AWAITING_CONSENSUS, statusOf("89a"))
+    }
+
+    @Test
+    fun `note below consensus re-scores the waiting report and keeps it below the threshold`() {
+        val id = awaitingEveningReport("90a")
+        noteFound("40", "60")
+        now = eveningReportAt.plusSeconds(30 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        val score = checkNotNull(scores.find(id)).score
+        assertEquals(0.0, score.components.surprise, 0.001)
+        assertFalse(Warning.NO_CONSENSUS in score.warnings)
+        assertEquals(listOf(ConsensusMetric.REVENUE, ConsensusMetric.EBIT), score.context.consensus.map { it.metric })
+        assertEquals(0, BigDecimal(40_000).compareTo(score.context.consensus.last().actual))
+        assertEquals("PAP Biznes", score.context.consensus.last().source)
+        assertEquals(ReportStatus.SCORED, statusOf("90a"))
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `note above consensus re-scores the waiting report and pushes it`() {
+        val id = awaitingEveningReport("90b")
+        noteFound("40", "30")
+        now = eveningReportAt.plusSeconds(30 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        assertEquals(30.0, checkNotNull(scores.find(id)).score.components.surprise, 0.001)
+        assertEquals(ReportStatus.SCORED, statusOf("90b"))
+        verify(exactly = 1) { notifier.send(match { it.title.startsWith("ASBIS (GPW) · WYNIKI · ocena") }) }
+        assertEquals("QUARTER" to "2026-06-30", pushedPeriod())
+    }
+
+    @Test
+    fun `deadline without a note pushes the stored score`() {
+        val id = awaitingEveningReport("90c")
+        now = eveningReportAt.plusSeconds(2 * 60 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        assertEquals(77.5, checkNotNull(scores.find(id)).score.total, 0.001)
+        assertEquals(ReportStatus.SCORED, statusOf("90c"))
+        verify(exactly = 1) { notifier.send(match { it.title.startsWith("ASBIS (GPW) · WYNIKI · ocena") }) }
+    }
+
+    @Test
+    fun `deadline without a note does not push a stored score below the threshold`() {
+        val id = awaitingEveningReport("90d")
+        settings.put("PUSH_THRESHOLD", "90")
+        now = eveningReportAt.plusSeconds(2 * 60 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        assertEquals(ReportStatus.SCORED, statusOf("90d"))
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `failing Bankier lookup is reported to the caller`() {
+        val id = awaitingEveningReport("91a")
+        every { consensusClient.find(any(), any()) } throws SourceUnavailableException(Source.BANKIER_NEWS, RuntimeException("down"))
+        now = eveningReportAt.plusSeconds(60 * 60)
+
+        assertEquals(ConsensusNoteLookup.SOURCE_UNAVAILABLE, pipeline.awaitConsensus(id, mayFetchNote = true))
+    }
+
+    @Test
+    fun `waiting report without permission to fetch keeps waiting without asking Bankier`() {
+        val id = awaitingEveningReport("91b")
+        now = eveningReportAt.plusSeconds(60 * 60)
+
+        assertEquals(ConsensusNoteLookup.NOT_ATTEMPTED, pipeline.awaitConsensus(id, mayFetchNote = false))
+
+        assertEquals(ReportStatus.AWAITING_CONSENSUS, statusOf("91b"))
+        verify(exactly = 0) { consensusClient.find(any(), any()) }
+    }
+
+    @Test
+    fun `past the deadline the push is decided without asking Bankier`() {
+        val id = awaitingEveningReport("91c")
+        every { consensusClient.find(any(), any()) } throws SourceUnavailableException(Source.BANKIER_NEWS, RuntimeException("slow"))
+        now = eveningReportAt.plusSeconds(3 * 60 * 60)
+
+        assertEquals(ConsensusNoteLookup.NOT_ATTEMPTED, pipeline.awaitConsensus(id, mayFetchNote = true))
+
+        verify(exactly = 0) { consensusClient.find(any(), any()) }
+        assertEquals(ReportStatus.SCORED, statusOf("91c"))
+        verify(exactly = 1) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `past the deadline a stored note is still used`() {
+        val id = awaitingEveningReport("91d")
+        consensusNotes.save(id, papNote("40", "60"), now)
+        now = eveningReportAt.plusSeconds(3 * 60 * 60)
+
+        pipeline.awaitConsensus(id, mayFetchNote = true)
+
+        assertEquals(0.0, checkNotNull(scores.find(id)).score.components.surprise, 0.001)
+        assertEquals(ReportStatus.SCORED, statusOf("91d"))
+        verify(exactly = 0) { notifier.send(any()) }
+        verify(exactly = 0) { consensusClient.find(any(), any()) }
+    }
+
+    @Test
+    fun `report that is no longer waiting is left alone`() {
+        val id = awaitingEveningReport("91e")
+        reports.updateStatus(id, ReportStatus.SCORED, now)
+        noteFound("40", "30")
+
+        assertEquals(ConsensusNoteLookup.NOT_ATTEMPTED, pipeline.awaitConsensus(id, mayFetchNote = true))
+
+        verify(exactly = 0) { consensusClient.find(any(), any()) }
+        verify(exactly = 0) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `company without a Bankier news page does not wait`() {
+        every { consensusClient.hasNewsPage(any()) } returns false
+        awaitingEveningReport("91f")
+
+        assertEquals(ReportStatus.SCORED, statusOf("91f"))
+        verify(exactly = 1) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `GPW quarter published during the session does not wait`() {
+        asbis()
+        givenStrongBiznesRadarQuarter()
+        now = strongReportAt.plusSeconds(120)
+        val id = storedReport("90e", ReportKind.QUARTERLY, ReportStatus.PENDING_DATA, strongReportAt)
+        storedExtraction(id, OutlookTone.NONE)
+
+        assertTrue(pipeline.retryPendingData(id))
+
+        assertEquals(ReportStatus.SCORED, statusOf("90e"))
+        verify(exactly = 1) { notifier.send(any()) }
+    }
+
+    @Test
+    fun `saved note re-scores a scored report and pushes it once it crosses the threshold`() {
+        asbis()
+        givenStrongBiznesRadarQuarter()
+        every { biznesRadar.quarterly("ASBISC") } returns strongQuarters(strongReportDay).map {
+            if (it.quarterEnd == LocalDate.parse("2026-06-30")) it.copy(revenue = BigDecimal("100")) else it
+        }
+        settings.put("PUSH_THRESHOLD", "101")
+        val id = storedReport("90f", ReportKind.QUARTERLY, ReportStatus.PENDING_DATA, strongReportAt)
+        storedExtraction(id, OutlookTone.NONE)
+        assertTrue(pipeline.retryPendingData(id))
+        val before = checkNotNull(scores.find(id)).score
+        assertTrue(before.components.surprise < 30.0)
+        settings.put("PUSH_THRESHOLD", (before.total.toInt() + 1).toString())
+        consensusNotes.save(id, papNote("40", "20"), now)
+
+        assertTrue(pipeline.rescoreWithConsensus(id))
+
+        assertEquals(30.0, checkNotNull(scores.find(id)).score.components.surprise, 0.001)
+        verify(exactly = 1) { notifier.send(any()) }
+        assertEquals(ReportStatus.SCORED, statusOf("90f"))
     }
 
     @Test

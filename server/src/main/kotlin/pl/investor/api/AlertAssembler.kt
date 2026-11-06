@@ -1,6 +1,7 @@
 package pl.investor.api
 
 import org.springframework.stereotype.Component
+import pl.investor.context.ReportContextRepository
 import pl.investor.extraction.ExtractionRepository
 import pl.investor.extraction.OutlookTone
 import pl.investor.history.PeriodKind
@@ -19,6 +20,7 @@ import pl.investor.report.ReportStatus
 import pl.investor.scoring.ConsensusComparison
 import pl.investor.scoring.ConsensusMetric
 import pl.investor.scoring.ReferenceSession
+import pl.investor.scoring.ScoreComponent
 import pl.investor.scoring.ScoreComponents
 import pl.investor.scoring.ScoreRepository
 import pl.investor.scoring.WarningLabels
@@ -43,6 +45,7 @@ class AlertAssembler(
     private val outcomes: OutcomeRepository,
     private val consensusNotes: ConsensusRepository,
     private val newsAssessments: NewsAssessmentRepository,
+    private val reportContexts: ReportContextRepository,
     private val clock: Clock,
 ) {
 
@@ -71,6 +74,7 @@ class AlertAssembler(
         val extraction = extractions.find(row.id)?.extraction.takeIf { row.eventType == EventType.RESULTS }
         val outlook = extraction?.outlook
         val context = stored?.score?.context?.takeIf { row.eventType == EventType.RESULTS }
+        val reportContext = reportContexts.find(row.id)?.takeIf { row.eventType == EventType.RESULTS }
         return AlertDetail(
             id = row.id,
             companyName = row.companyName,
@@ -87,8 +91,7 @@ class AlertAssembler(
             revenueHistory = extraction?.primaryPeriod()?.let { revenueHistory(row, it.kind) }.orEmpty(),
             sourceUrl = row.detailUrl,
             reaction = outcomes.find(row.id)?.reactionView(row.market),
-            consensus = context?.consensus?.takeIf { it.isNotEmpty() }?.map { it.view() }
-                ?: consensusNotes.find(row.id)?.rows.orEmpty().map { ConsensusRowView(it.label, it.actual, it.consensus, it.differencePct) },
+            consensus = consensusRows(row, context?.consensus.orEmpty()),
             companyHistory = scoredOutcomes(alerts.scoredBefore(row.companyId, row.publishedAt, COMPANY_HISTORY_SIZE)).map { it.toOutcomeItem() },
             eventType = row.eventType,
             news = news?.view(),
@@ -98,7 +101,17 @@ class AlertAssembler(
             pastReactions = context?.pastReactions.orEmpty().map { PastReactionView(it.date, it.pct) },
             signals = stored?.score?.signals.orEmpty().sortedBy { it.ordinal }.map { it.label },
             availableOnXtb = row.availableOnXtb,
+            context = reportContext?.points.orEmpty().map { ContextPointView(it.direction, it.text) },
+            headlines = reportContext?.headlines.orEmpty().map { HeadlineView(it.title, it.url, it.publishedAt) },
         )
+    }
+
+    private fun consensusRows(row: AlertRow, comparisons: List<ConsensusComparison>): List<ConsensusRowView> {
+        val comparisonRows = comparisons.map { it.view() }
+        if (row.market != Market.GPW && comparisonRows.isNotEmpty()) return comparisonRows
+        return consensusNotes.find(row.id)?.rows.orEmpty()
+            .map { ConsensusRowView(it.label, it.actual, it.consensus, it.differencePct) }
+            .ifEmpty { comparisonRows }
     }
 
     private fun AlertRow.displayedNumber(): String = when (market) {
@@ -164,14 +177,7 @@ class AlertAssembler(
         else -> reason.orEmpty()
     }
 
-    private fun ScoreComponents.views() = listOf(
-        ComponentView("Niespodzianka", surprise, 30.0),
-        ComponentView("Wzrost przychodów", growth, 20.0),
-        ComponentView("Jakość: zysk i marża", quality, 15.0),
-        ComponentView("Seria mocnych raportów", series, 10.0),
-        ComponentView("Zapowiedzi i zamówienia", outlook, 10.0),
-        ComponentView("Wycena („czy już w cenie”)", valuation, 15.0),
-    )
+    private fun ScoreComponents.views() = ScoreComponent.entries.map { ComponentView(it.label, it.pointsOf(this), it.max) }
 
     private fun LocalDate.quarterLabel() = "$year Q${(monthValue - 1) / 3 + 1}"
 

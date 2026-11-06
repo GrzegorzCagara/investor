@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.simple.JdbcClient
+import pl.investor.context.ContextOutcome
+import pl.investor.context.ReportContextWriter
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.Market
@@ -30,12 +32,16 @@ class PendingReportsJobTest : PostgresTestBase() {
     private var now = Instant.parse("2026-09-21T12:00:00Z")
     private val clock = mockk<Clock> { every { instant() } answers { now } }
     private val pipeline = mockk<ReportPipeline>(relaxed = true)
-    private val job by lazy { PendingReportsJob(reports, pipeline, clock) }
+    private val contextWriter = mockk<ReportContextWriter>()
+    private val job by lazy { PendingReportsJob(reports, pipeline, contextWriter, clock) }
     private var companyId = 0L
 
     @BeforeEach
     fun setUp() {
         jdbc.sql("TRUNCATE company RESTART IDENTITY CASCADE").update()
+        every { pipeline.awaitConsensus(any(), any()) } returns ConsensusNoteLookup.NOT_FOUND
+        every { contextWriter.dueReportIds() } returns emptyList()
+        every { contextWriter.writeIfDue(any()) } returns ContextOutcome.WRITTEN
         companyId = checkNotNull(companies.save(Company(null, "ASBISC ENTERPRISES PLC", "CY1000031710", Market.GPW, null, "ASBISC", false)).id)
     }
 
@@ -70,6 +76,51 @@ class PendingReportsJobTest : PostgresTestBase() {
         job.run()
 
         verify(exactly = 1) { pipeline.reprocess(id, false) }
+    }
+
+    @Test
+    fun `report awaiting consensus is handed to the pipeline`() {
+        val id = report(ReportStatus.AWAITING_CONSENSUS, Duration.ofMinutes(30))
+
+        job.run()
+
+        verify(exactly = 1) { pipeline.awaitConsensus(id, true) }
+    }
+
+    @Test
+    fun `after Bankier fails once the remaining waiting reports are not looked up in that run`() {
+        val first = report(ReportStatus.AWAITING_CONSENSUS, Duration.ofMinutes(40), sourceRef = "a1")
+        val second = report(ReportStatus.AWAITING_CONSENSUS, Duration.ofMinutes(30), sourceRef = "a2")
+        every { pipeline.awaitConsensus(first, true) } returns ConsensusNoteLookup.SOURCE_UNAVAILABLE
+
+        job.run()
+
+        verify(exactly = 1) { pipeline.awaitConsensus(second, false) }
+        verify(exactly = 0) { pipeline.awaitConsensus(second, true) }
+    }
+
+    @Test
+    fun `the next run looks up Bankier again`() {
+        val id = report(ReportStatus.AWAITING_CONSENSUS, Duration.ofMinutes(30))
+        every { pipeline.awaitConsensus(id, true) } returns ConsensusNoteLookup.SOURCE_UNAVAILABLE
+
+        job.run()
+        job.run()
+
+        verify(exactly = 2) { pipeline.awaitConsensus(id, true) }
+    }
+
+    @Test
+    fun `new reports are handled before reports awaiting consensus`() {
+        val waiting = report(ReportStatus.AWAITING_CONSENSUS, Duration.ofMinutes(30), sourceRef = "w1")
+        val fresh = report(ReportStatus.NEW, Duration.ofMinutes(11), sourceRef = "n1")
+
+        job.run()
+
+        verifyOrder {
+            pipeline.reprocess(fresh, false)
+            pipeline.awaitConsensus(waiting, true)
+        }
     }
 
     @Test
@@ -267,5 +318,43 @@ class PendingReportsJobTest : PostgresTestBase() {
 
         assertEquals(ReportStatus.FAILED, statusOf(id))
         verify(exactly = 0) { pipeline.reprocess(any(), any()) }
+    }
+
+    @Test
+    fun `contexts of due reports are written after the pending reports`() {
+        val fresh = report(ReportStatus.NEW, Duration.ofMinutes(11), sourceRef = "n2")
+        every { contextWriter.dueReportIds() } returns listOf(101L, 102L)
+
+        job.run()
+
+        verifyOrder {
+            pipeline.reprocess(fresh, false)
+            contextWriter.writeIfDue(101)
+            contextWriter.writeIfDue(102)
+        }
+    }
+
+    @Test
+    fun `contexts are not written in a run where Bankier already failed`() {
+        val waiting = report(ReportStatus.AWAITING_CONSENSUS, Duration.ofMinutes(30), sourceRef = "a3")
+        every { pipeline.awaitConsensus(waiting, true) } returns ConsensusNoteLookup.SOURCE_UNAVAILABLE
+        every { contextWriter.dueReportIds() } returns listOf(101L)
+
+        job.run()
+
+        verify(exactly = 0) { contextWriter.writeIfDue(any()) }
+    }
+
+    @Test
+    fun `unavailable Bankier during a context stops the context sweep for that run only`() {
+        every { contextWriter.dueReportIds() } returns listOf(101L, 102L)
+        every { contextWriter.writeIfDue(101) } returns ContextOutcome.SOURCE_UNAVAILABLE
+
+        job.run()
+        verify(exactly = 0) { contextWriter.writeIfDue(102) }
+
+        every { contextWriter.writeIfDue(101) } returns ContextOutcome.WRITTEN
+        job.run()
+        verify(exactly = 1) { contextWriter.writeIfDue(102) }
     }
 }

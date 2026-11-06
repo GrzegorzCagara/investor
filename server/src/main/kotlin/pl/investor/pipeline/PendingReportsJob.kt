@@ -3,6 +3,8 @@ package pl.investor.pipeline
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import pl.investor.context.ContextOutcome
+import pl.investor.context.ReportContextWriter
 import pl.investor.report.Report
 import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
@@ -14,6 +16,7 @@ import java.time.Instant
 class PendingReportsJob(
     private val reports: ReportRepository,
     private val pipeline: ReportPipeline,
+    private val contextWriter: ReportContextWriter,
     private val clock: Clock,
 ) {
 
@@ -24,22 +27,31 @@ class PendingReportsJob(
         val startedAt = clock.instant()
         val deadline = startedAt.plus(RUN_BUDGET)
         val batch = collect(startedAt)
+        val run = RunState()
         for (report in batch) {
             if (clock.instant() >= deadline) {
                 log.warn("Pending reports run hit its time budget, the rest waits for the next run")
                 return
             }
-            runCatching { handle(report, clock.instant()) }
+            runCatching { handle(report, clock.instant(), run) }
                 .onFailure { log.error("Handling pending report {} failed", report.sourceRef, it) }
+        }
+        runCatching { writeContexts(deadline, run) }.onFailure { log.error("Writing report contexts failed", it) }
+    }
+
+    private fun writeContexts(deadline: Instant, run: RunState) {
+        for (id in contextWriter.dueReportIds()) {
+            if (run.bankierUnavailable || clock.instant() >= deadline) return
+            if (contextWriter.writeIfDue(id) == ContextOutcome.SOURCE_UNAVAILABLE) run.bankierUnavailable = true
         }
     }
 
     private fun collect(now: Instant): List<Report> =
-        listOf(ReportStatus.PUSH_PENDING, ReportStatus.NEW, ReportStatus.PENDING_ATTACHMENTS, ReportStatus.PENDING_AI)
+        listOf(ReportStatus.PUSH_PENDING, ReportStatus.NEW, ReportStatus.PENDING_ATTACHMENTS, ReportStatus.PENDING_AI, ReportStatus.AWAITING_CONSENSUS)
             .flatMap { reports.findByStatus(it, LIMIT_PER_STATUS) } +
             reports.findPendingData(now.minus(DATA_RECHECK), LIMIT_PER_STATUS)
 
-    private fun handle(report: Report, now: Instant) {
+    private fun handle(report: Report, now: Instant, run: RunState) {
         val id = checkNotNull(report.id)
         val sinceDetected = Duration.between(report.detectedAt, now)
         val sinceStatusChange = Duration.between(report.statusChangedAt ?: report.detectedAt, now)
@@ -50,8 +62,14 @@ class PendingReportsJob(
             ReportStatus.PENDING_AI ->
                 if (sinceStatusChange >= AI_PATIENCE) reports.updateStatus(id, ReportStatus.FAILED, now) else pipeline.reprocess(id, allowWithoutAttachments = false)
             ReportStatus.PUSH_PENDING -> handlePushPending(report, id, sinceStatusChange, now)
+            ReportStatus.AWAITING_CONSENSUS -> awaitConsensus(id, run)
             else -> Unit
         }
+    }
+
+    private fun awaitConsensus(id: Long, run: RunState) {
+        val lookup = pipeline.awaitConsensus(id, mayFetchNote = !run.bankierUnavailable)
+        if (lookup == ConsensusNoteLookup.SOURCE_UNAVAILABLE) run.bankierUnavailable = true
     }
 
     private fun handleNew(report: Report, id: Long, age: Duration, now: Instant) {
@@ -80,6 +98,8 @@ class PendingReportsJob(
             reports.updateStatus(id, ReportStatus.SCORED, now)
         }
     }
+
+    private class RunState(var bankierUnavailable: Boolean = false)
 
     private companion object {
         const val LIMIT_PER_STATUS = 50

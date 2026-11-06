@@ -1,5 +1,6 @@
 package pl.investor.pipeline
 
+import pl.investor.support.foldedTitle
 import pl.investor.report.Market
 
 object ResultsKeywordFilter {

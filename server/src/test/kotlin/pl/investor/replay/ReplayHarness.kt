@@ -111,6 +111,7 @@ class FixtureHttpClient(clock: Clock, tracker: SourceHealthTracker) : PoliteHttp
         QUARTERLY.matchEntire(url)?.let { return fixture("biznesradar/${it.groupValues[1]}-pl-q.html", url) }
         VALUATION.matchEntire(url)?.let { return fixture("biznesradar/${it.groupValues[1]}-valuation.html", url) }
         BANKIER_LIST.matchEntire(url)?.let { return bankierList(source, it.groupValues[1], url) }
+        BANKIER_NEWS_LIST.matchEntire(url)?.let { return bankierNewsList(source, it.groupValues[1], url) }
         BANKIER_ARTICLE.matchEntire(url)?.let { return bankierArticle(it.groupValues[1], url) }
         unmapped(url)
     }
@@ -154,6 +155,12 @@ class FixtureHttpClient(clock: Clock, tracker: SourceHealthTracker) : PoliteHttp
             throw SourceUnavailableException(source, IllegalStateException("no fixture for $url"))
         }
 
+    private fun bankierNewsList(source: Source, slug: String, url: String): String =
+        Fixtures.text("bankier/${slug.lowercase()}-wiadomosci.html") ?: run {
+            notCaptured += url
+            throw SourceUnavailableException(source, IllegalStateException("no fixture for $url"))
+        }
+
     private fun bankierArticle(file: String, url: String): String {
         val path = ARTICLE_FILES[file]
         if (path == null) notCaptured += url
@@ -175,6 +182,7 @@ class FixtureHttpClient(clock: Clock, tracker: SourceHealthTracker) : PoliteHttp
         val QUARTERLY = Regex("""https://www\.biznesradar\.pl/raporty-finansowe-rachunek-zyskow-i-strat/(\w+),Q""")
         val VALUATION = Regex("""https://www\.biznesradar\.pl/wskazniki-wartosci-rynkowej/(\w+)""")
         val BANKIER_LIST = Regex("""https://www\.bankier\.pl/gielda/notowania/akcje/([^/]+)/komunikaty""")
+        val BANKIER_NEWS_LIST = Regex("""https://www\.bankier\.pl/gielda/notowania/akcje/([^/]+)/wiadomosci""")
         val BANKIER_ARTICLE = Regex("""https://www\.bankier\.pl/wiadomosc/(.+)""")
         val GPW_ARCHIVE = Regex("""https://www\.gpw\.pl/archiwum-notowan\?fetch=1&type=(10|1)&instrument=&date=(\d{2})-(\d{2})-(\d{4})""")
         val NC_DAILY = Regex("""https://newconnect\.pl/pub/NEWCONNECT/statystyki/statystyki_dzienne/NC_(\d{4})(\d{2})(\d{2})\.(xlsx?)""")
@@ -457,6 +465,7 @@ class ReplayHarness(
             ReportStatus.PENDING_AI,
             ReportStatus.PENDING_DATA,
             ReportStatus.PUSH_PENDING,
+            ReportStatus.AWAITING_CONSENSUS,
         )
     }
 }

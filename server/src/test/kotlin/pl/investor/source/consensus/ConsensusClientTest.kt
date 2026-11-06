@@ -10,6 +10,7 @@ import mockwebserver3.RecordedRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import pl.investor.extraction.AiUnavailableException
 import pl.investor.monitoring.SourceHealthTracker
 import pl.investor.report.Company
 import pl.investor.report.Market
@@ -44,6 +45,9 @@ class ConsensusClientTest {
     }
     private var newsList: String? = null
     private var notePage: String? = null
+    private val extraPages = mutableMapOf<String, String>()
+    private val statusCodes = mutableMapOf<String, Int>()
+    private val reader = mockk<ConsensusTextReader>()
     private lateinit var locator: BankierReportLocator
     private lateinit var client: ConsensusClient
 
@@ -70,11 +74,12 @@ class ConsensusClientTest {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val path = request.url.encodedPath
                 requestedPaths += path
+                statusCodes[path]?.let { return MockResponse.Builder().code(it).build() }
                 return when (path) {
                     "/gielda/notowania/akcje/ASBIS/komunikaty" -> page(fixture("bankier/asbis-komunikaty.html"))
                     "/gielda/notowania/akcje/ASBIS/wiadomosci" -> page(newsList ?: fixture("bankier/asbis-wiadomosci.html"))
                     notePath -> page(notePage ?: fixture("bankier/asbis-konsensus-q2-2026.html"))
-                    else -> MockResponse.Builder().code(404).build()
+                    else -> extraPages[path]?.let { page(it) } ?: MockResponse.Builder().code(404).build()
                 }
             }
         }
@@ -83,7 +88,7 @@ class ConsensusClientTest {
         val baseUrl = server.url("/").toString().trimEnd('/')
         val http = PoliteHttpClient(Clock.systemUTC(), "me@example.com", tracker)
         locator = BankierReportLocator(http, biznesRadar, baseUrl)
-        client = ConsensusClient(http, locator, biznesRadar, ConsensusNoteParser(), clock, baseUrl)
+        client = ConsensusClient(http, locator, biznesRadar, ConsensusNoteParser(), reader, clock, baseUrl)
     }
 
     @AfterEach
@@ -200,7 +205,7 @@ class ConsensusClientTest {
 
         find(asbis, window)
 
-        assertEquals(listOf("/gielda/notowania/akcje/ASBIS/wiadomosci", notePath), requestedPaths)
+        assertEquals(listOf("/gielda/notowania/akcje/ASBIS/wiadomosci"), requestedPaths)
         verify(exactly = 1) { biznesRadar.mediumNameFor(any()) }
     }
 
@@ -245,9 +250,239 @@ class ConsensusClientTest {
         assertEquals(listOf("/gielda/notowania/akcje/ASBISC/komunikaty", "/gielda/notowania/akcje/ASBIS/komunikaty"), requestedPaths)
     }
 
+    private val unimotNotePath = "/wiadomosc/Skorygowana-EBITDA-Unimotu-w-III-kw-wyniosla-133-mln-zl-wobec-108-8-mln-zl-konsensusu-9224554.html"
+    private val orlenNotePath = "/wiadomosc/EBITDA-LIFO-Orlen-w-III-kw-14-78-mld-zl-wynik-pod-wplywem-zmiennosci-cen-surowcow-i-geopolityki-9224444.html"
+    private val orlenTaxPath = "/wiadomosc/Orlen-zaplaci-2-4-mld-zl-podatku-Niepewnosc-takze-wokol-rafinerii-na-Litwie-9224527.html"
+    private val unimot = Company(3, "UNIMOT SA", "PLUNMOT00013", Market.GPW, null, null, true)
+    private val orlen = Company(4, "ORLEN SA", "PLPKN0000018", Market.GPW, null, null, true)
+    private val unimotPrelimAt = Instant.parse("2026-11-05T18:43:00Z")
+    private val unimotWindow = NoteWindow(unimotPrelimAt, unimotPrelimAt.plus(Duration.ofHours(36)))
+    private val unimotRows = listOf(
+        ConsensusRow("Przychody", BigDecimal("6000"), BigDecimal("4776"), 25.6),
+        ConsensusRow("EBITDA skorygowana", BigDecimal("133"), BigDecimal("108.8"), 22.2),
+    )
+
+    private fun givenUnimotNews() {
+        now = Instant.parse("2026-11-05T21:30:00Z")
+        newsList = fixture("bankier/unimot-wiadomosci.html")
+        extraPages[unimotNotePath] = fixture("bankier/unimot-konsensus-prelim-q3-2026.html")
+    }
+
+    private fun givenOrlenNews() {
+        newsList = fixture("bankier/orlen-wiadomosci.html")
+        extraPages[orlenNotePath] = fixture("bankier/orlen-konsensus-q3-2026.html")
+        extraPages[orlenTaxPath] = fixture("bankier/orlen-article-podatek-2026-11-05.html")
+    }
+
+    @Test
+    fun `Unimot prelim note without a consensus title is read from its text`() {
+        givenUnimotNews()
+        every { reader.read(any(), any()) } returns unimotRows
+
+        val note = assertNotNull(find(unimot, unimotWindow)[unimotWindow])
+
+        assertEquals(server.url(unimotNotePath).toString(), note.url)
+        assertEquals(Instant.parse("2026-11-05T18:58:00Z"), note.publishedAt)
+        assertEquals(unimotRows, note.rows)
+        verify(exactly = 1) {
+            reader.read("UNIMOT SA", match { "Analitycy ankietowani przez PAP Biznes spodziewali się 108,8 mln zł skorygowanej EBITDA" in it })
+        }
+    }
+
+    @Test
+    fun `checked article is neither fetched nor read again`() {
+        givenUnimotNews()
+        every { reader.read(any(), any()) } returns unimotRows
+
+        find(unimot, unimotWindow)
+        find(unimot, unimotWindow)
+
+        assertEquals(1, requestedPaths.count { it == unimotNotePath })
+        verify(exactly = 1) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `text without consensus rows is remembered as no note`() {
+        givenUnimotNews()
+        every { reader.read(any(), any()) } returns emptyList()
+
+        assertNull(find(unimot, unimotWindow)[unimotWindow])
+        assertNull(find(unimot, unimotWindow)[unimotWindow])
+
+        verify(exactly = 1) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `text is read again later when AI was unavailable`() {
+        givenUnimotNews()
+        every { reader.read(any(), any()) } throws AiUnavailableException(RuntimeException("overloaded")) andThen unimotRows
+
+        assertNull(find(unimot, unimotWindow)[unimotWindow])
+        assertNotNull(find(unimot, unimotWindow)[unimotWindow])
+
+        assertEquals(1, requestedPaths.count { it == unimotNotePath })
+        verify(exactly = 2) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `Orlen table note with a rewritten title is found without AI and later articles are not fetched`() {
+        givenOrlenNews()
+        val published = Instant.parse("2026-11-05T16:02:00Z")
+        val window = NoteWindow(published, published.plus(Duration.ofHours(36)))
+
+        val note = assertNotNull(find(orlen, window)[window])
+
+        assertEquals(Instant.parse("2026-11-05T16:16:00Z"), note.publishedAt)
+        assertEquals(ConsensusRow("Przychody", BigDecimal("80140"), BigDecimal("85025"), -5.7), note.rows.first())
+        assertTrue(note.rows.any { it.label.startsWith("EBITDA LIFO") && it.differencePct == -3.5 })
+        assertTrue(orlenTaxPath !in requestedPaths)
+        verify(exactly = 0) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `article without a consensus mention is not sent to AI`() {
+        givenOrlenNews()
+        val published = Instant.parse("2026-11-05T17:30:00Z")
+        val window = NoteWindow(published, published.plus(Duration.ofHours(36)))
+
+        assertNull(find(orlen, window)[window])
+
+        assertTrue(orlenTaxPath in requestedPaths)
+        assertTrue(orlenNotePath !in requestedPaths)
+        verify(exactly = 0) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `article that is gone is not fetched again`() {
+        newsList = fixture("bankier/unimot-wiadomosci.html")
+
+        find(unimot, unimotWindow)
+        find(unimot, unimotWindow)
+
+        assertEquals(1, requestedPaths.count { it == unimotNotePath })
+    }
+
+    @Test
+    fun `forbidden article is fetched again later`() {
+        newsList = fixture("bankier/unimot-wiadomosci.html")
+        statusCodes[unimotNotePath] = 403
+
+        find(unimot, unimotWindow)
+        find(unimot, unimotWindow)
+
+        assertEquals(2, requestedPaths.count { it == unimotNotePath })
+    }
+
+    @Test
+    fun `article that cannot be parsed is fetched again later`() {
+        newsList = fixture("bankier/unimot-wiadomosci.html")
+        extraPages[unimotNotePath] = "<p>Brak daty</p>"
+
+        find(unimot, unimotWindow)
+        find(unimot, unimotWindow)
+
+        assertEquals(2, requestedPaths.count { it == unimotNotePath })
+    }
+
+    @Test
+    fun `fresh article without rows is fetched and read again because the consensus may be added later`() {
+        givenUnimotNews()
+        now = Instant.parse("2026-11-05T19:30:00Z")
+        every { reader.read(any(), any()) } returns emptyList()
+
+        find(unimot, unimotWindow)
+        find(unimot, unimotWindow)
+
+        assertEquals(2, requestedPaths.count { it == unimotNotePath })
+        verify(exactly = 2) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `rows are read separately for each company`() {
+        givenUnimotNews()
+        val otherUnimot = Company(5, "UNIMOT INVESTMENTS SA", "PLUNMOT00099", Market.GPW, null, null, true)
+        every { reader.read(any(), any()) } returns unimotRows
+
+        find(unimot, unimotWindow)
+        find(otherUnimot, unimotWindow)
+
+        verify(exactly = 1) { reader.read("UNIMOT SA", any()) }
+        verify(exactly = 1) { reader.read("UNIMOT INVESTMENTS SA", any()) }
+    }
+
+    @Test
+    fun `article that does not name the company is not sent to AI`() {
+        givenUnimotNews()
+        val xtb = Company(6, "XTB SPÓŁKA AKCYJNA", "PLXTRDM00011", Market.GPW, null, null, true)
+
+        assertNull(find(xtb, unimotWindow)[unimotWindow])
+
+        verify(exactly = 0) { reader.read(any(), any()) }
+    }
+
+    @Test
+    fun `inflected company name in the article is recognised`() {
+        givenUnimotNews()
+        every { reader.read(any(), any()) } returns unimotRows
+
+        assertNotNull(find(unimot.copy(name = "UNIMOT SPÓŁKA AKCYJNA"), unimotWindow)[unimotWindow])
+    }
+
+    @Test
+    fun `failed reading is retried but malformed output is remembered`() {
+        givenUnimotNews()
+        every { reader.read(any(), any()) } throws ConsensusReadingFailedException("API error") andThenThrows
+            MalformedConsensusReadingException("bad json", RuntimeException()) andThen unimotRows
+
+        assertNull(find(unimot, unimotWindow)[unimotWindow])
+        assertNull(find(unimot, unimotWindow)[unimotWindow])
+        assertNull(find(unimot, unimotWindow)[unimotWindow])
+
+        verify(exactly = 2) { reader.read(any(), any()) }
+    }
+
     @Test
     fun `US company has no note`() {
         assertEquals(emptyMap(), find(asbis.copy(market = Market.US), window))
         assertEquals(emptyList<String>(), requestedPaths)
+    }
+
+    @Test
+    fun `headlines are the listed articles of the range, newest first, up to the limit`() {
+        newsList = fixture("bankier/orlen-wiadomosci.html")
+
+        val headlines = client.headlines(asbis, Instant.parse("2026-11-04T00:00:00Z"), Instant.parse("2026-11-05T16:30:00Z"), 3)
+
+        assertEquals(
+            listOf(
+                "Orlen zwiększył zysk netto o 163 proc. rdr. Konsensus pozostał poza zasięgiem",
+                "Litwa chce sięgnąć po zyski Orlenu. Koncern rozważa zamknięcie rafinerii",
+                "Orlen rozważa wycofanie się z Możejek. Litewski minister: Nie mamy żadnych informacji",
+            ),
+            headlines.map { it.title },
+        )
+        assertEquals(
+            listOf("2026-11-05T16:16:00Z", "2026-11-05T13:17:00Z", "2026-11-04T13:20:00Z").map(Instant::parse),
+            headlines.map { it.publishedAt },
+        )
+        assertTrue(headlines.first().url.startsWith(server.url("/wiadomosc/").toString()))
+    }
+
+    @Test
+    fun `company without a Bankier page has no headlines`() {
+        every { biznesRadar.mediumNameFor(any()) } returns null
+
+        assertEquals(emptyList(), client.headlines(unknown, Instant.EPOCH, now, 15))
+        assertTrue(requestedPaths.none { it.endsWith("/wiadomosci") })
+    }
+
+    @Test
+    fun `headlines linking outside Bankier are dropped`() {
+        newsList = """<ul><li><a class="m-listing-article-list__anchor" href="https://evil.example/x.html"><div class="m-listing-article-list__date-time">2026-11-05 18:00</div><div class="m-listing-article-list__title">Obca strona</div></a></li>""" +
+            """<li><a class="m-listing-article-list__anchor" href="/wiadomosc/a-1.html"><div class="m-listing-article-list__date-time">2026-11-05 17:00</div><div class="m-listing-article-list__title">Własna strona</div></a></li></ul>"""
+
+        val headlines = client.headlines(asbis, Instant.parse("2026-11-01T00:00:00Z"), Instant.parse("2026-11-06T00:00:00Z"), 15)
+
+        assertEquals(listOf("Własna strona"), headlines.map { it.title })
     }
 }

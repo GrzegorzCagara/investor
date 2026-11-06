@@ -12,6 +12,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import pl.investor.context.ContextDirection
+import pl.investor.context.ContextPoint
+import pl.investor.context.ReportContext
+import pl.investor.context.ReportContextRepository
 import pl.investor.news.NewsAssessment
 import pl.investor.news.ContractCurrency
 import pl.investor.news.NewsAssessmentRepository
@@ -27,9 +31,13 @@ import pl.investor.report.Report
 import pl.investor.report.ReportKind
 import pl.investor.report.ReportRepository
 import pl.investor.report.ReportStatus
+import pl.investor.scoring.ConsensusComparison
+import pl.investor.scoring.ConsensusMetric
 import pl.investor.scoring.Score
+import pl.investor.scoring.ScoreContext
 import pl.investor.scoring.ScoreComponents
 import pl.investor.scoring.ScoreRepository
+import pl.investor.source.consensus.BankierHeadline
 import pl.investor.source.consensus.ConsensusNote
 import pl.investor.source.consensus.ConsensusRepository
 import pl.investor.source.consensus.ConsensusRow
@@ -53,6 +61,7 @@ class ReadApiTest : PostgresTestBase() {
     @Autowired lateinit var outcomes: OutcomeRepository
     @Autowired lateinit var consensus: ConsensusRepository
     @Autowired lateinit var newsAssessments: NewsAssessmentRepository
+    @Autowired lateinit var reportContexts: ReportContextRepository
 
     private lateinit var mvc: MockMvc
     private val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
@@ -280,6 +289,38 @@ class ReadApiTest : PostgresTestBase() {
     }
 
     @Test
+    fun `detail carries the stored context points and headlines`() {
+        val current = report(company("Alfa"), 1, total = 77.5)
+        reportContexts.save(
+            current,
+            ReportContext(
+                listOf(
+                    ContextPoint(ContextDirection.PLUS, "Zysk wyraźnie powyżej oczekiwań analityków."),
+                    ContextPoint(ContextDirection.MINUS, "Przychody zależą od cen ropy."),
+                ),
+                listOf(BankierHeadline("Alfa zaskoczyła wynikami", "https://www.bankier.pl/wiadomosc/alfa-1.html", Instant.parse("2026-11-05T19:15:00Z"))),
+                now,
+            ),
+        )
+        val withoutContext = report(company("Beta"), 1, total = 60.0)
+
+        mvc.perform(authorized("/api/alerts/$current"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.context.length()").value(2))
+            .andExpect(jsonPath("\$.context[0].direction").value("PLUS"))
+            .andExpect(jsonPath("\$.context[0].text").value("Zysk wyraźnie powyżej oczekiwań analityków."))
+            .andExpect(jsonPath("\$.context[1].direction").value("MINUS"))
+            .andExpect(jsonPath("\$.headlines.length()").value(1))
+            .andExpect(jsonPath("\$.headlines[0].title").value("Alfa zaskoczyła wynikami"))
+            .andExpect(jsonPath("\$.headlines[0].url").value("https://www.bankier.pl/wiadomosc/alfa-1.html"))
+            .andExpect(jsonPath("\$.headlines[0].publishedAt").value("2026-11-05T19:15:00Z"))
+        mvc.perform(authorized("/api/alerts/$withoutContext"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.context.length()").value(0))
+            .andExpect(jsonPath("\$.headlines.length()").value(0))
+    }
+
+    @Test
     fun `detail carries the reaction, consensus rows and the company history`() {
         val alfa = company("Alfa")
         val first = report(alfa, 40, total = 82.0)
@@ -295,6 +336,7 @@ class ReadApiTest : PostgresTestBase() {
                 now,
                 listOf(ConsensusRow("Przychody", BigDecimal("1696.7"), BigDecimal("1686.3"), 0.6), ConsensusRow("EBIT", BigDecimal("52.1"), BigDecimal("48.0"), 8.5)),
             ),
+            now,
         )
         report(alfa, 5, total = 90.0)
         report(company("Beta"), 30, total = 85.0)
@@ -321,6 +363,33 @@ class ReadApiTest : PostgresTestBase() {
             .andExpect(jsonPath("\$.companyHistory[1].score").value(82))
             .andExpect(jsonPath("\$.companyHistory[1].companyName").value("Alfa"))
             .andExpect(jsonPath("\$.companyHistory[1].excess5Pct").value(10.0))
+    }
+
+    @Test
+    fun `GPW detail shows the full PAP table rather than the scored comparisons`() {
+        val current = report(company("Unimot"), 1)
+        val comparison = ConsensusComparison(ConsensusMetric.EBIT, BigDecimal(133_000), BigDecimal(108_800), "PLN", "PAP Biznes", null)
+        scores.save(
+            current,
+            Score(65.3, ScoreComponents(25.3, 20.0, 7.5, 0.0, 5.0, 7.5), 0.0, emptySet(), context = ScoreContext(null, null, emptyList(), listOf(comparison))),
+            "Powód.",
+            now,
+        )
+        consensus.save(
+            current,
+            ConsensusNote(
+                "https://example.test/konsensus",
+                now,
+                listOf(ConsensusRow("Przychody", BigDecimal("6000"), BigDecimal("4776"), 25.6), ConsensusRow("EBITDA skorygowana", BigDecimal("133"), BigDecimal("108.8"), 22.2)),
+            ),
+            now,
+        )
+
+        mvc.perform(authorized("/api/alerts/$current"))
+            .andExpect(jsonPath("\$.consensus.length()").value(2))
+            .andExpect(jsonPath("\$.consensus[0].label").value("Przychody"))
+            .andExpect(jsonPath("\$.consensus[1].label").value("EBITDA skorygowana"))
+            .andExpect(jsonPath("\$.consensus[1].differencePct").value(22.2))
     }
 
     @Test

@@ -44,6 +44,7 @@ enum class ReportStatus {
     PENDING_DATA,
     PENDING_AI,
     PUSH_PENDING,
+    AWAITING_CONSENSUS,
     BACKFILLED,
 }
 
@@ -101,10 +102,24 @@ data class AlertDetail(
     val ordersYoyPct: Double? = null,
     val pastReactions: List<PastReactionView> = emptyList(),
     val signals: List<String> = emptyList(),
+    val context: List<ContextPointView> = emptyList(),
+    val headlines: List<HeadlineView> = emptyList(),
 )
 
 @Serializable
 data class PastReactionView(val date: String, val pct: Double)
+
+enum class ContextDirection { PLUS, MINUS }
+
+@Serializable
+data class ContextPointView(val direction: ContextDirection, val text: String)
+
+@Serializable
+data class HeadlineView(
+    val title: String,
+    val url: String,
+    @Serializable(with = InstantSerializer::class) val publishedAt: Instant,
+)
 
 @Serializable
 data class NewsView(

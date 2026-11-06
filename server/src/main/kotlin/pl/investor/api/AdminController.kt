@@ -4,9 +4,12 @@ import jakarta.annotation.PreDestroy
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import pl.investor.context.ContextOutcome
+import pl.investor.context.ReportContextWriter
 import pl.investor.outcome.OutcomeJob
 import pl.investor.pipeline.MonthlySalesBackfillJob
 import pl.investor.report.Market
@@ -25,6 +28,7 @@ class AdminController(
     private val dailyQuotes: DailyQuotesJob,
     private val outcomes: OutcomeJob,
     private val avanzaQuotes: AvanzaQuotesJob,
+    private val contextWriter: ReportContextWriter,
     private val clock: Clock,
 ) {
 
@@ -46,6 +50,18 @@ class AdminController(
         runCatching { dailyQuotes.backfillMissing(today.minusDays(QUOTE_HISTORY_DAYS), today) }.onFailure { log.error("Quote history backfill failed", it) }
         runCatching { avanzaQuotes.backfillHistory(Market.DE) }.onFailure { log.error("German quote history backfill failed", it) }
         runCatching { avanzaQuotes.backfillHistory(Market.NL) }.onFailure { log.error("Dutch quote history backfill failed", it) }
+    }
+
+    @PostMapping("/reports/{id}/context")
+    fun rewriteContext(@PathVariable id: Long): ResponseEntity<ContextRewriteResponse> {
+        val outcome = contextWriter.rewrite(id)
+        val status = when (outcome) {
+            ContextOutcome.WRITTEN, ContextOutcome.NOTHING_TO_ADD -> HttpStatus.OK
+            ContextOutcome.NOT_FOUND -> HttpStatus.NOT_FOUND
+            ContextOutcome.NOT_ELIGIBLE -> HttpStatus.UNPROCESSABLE_CONTENT
+            ContextOutcome.SOURCE_UNAVAILABLE, ContextOutcome.FAILED -> HttpStatus.BAD_GATEWAY
+        }
+        return ResponseEntity.status(status).body(ContextRewriteResponse(outcome))
     }
 
     private fun launch(name: String, task: () -> Unit): ResponseEntity<Void> {

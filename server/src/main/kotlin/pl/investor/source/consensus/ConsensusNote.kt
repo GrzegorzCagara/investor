@@ -8,3 +8,7 @@ data class ConsensusRow(val label: String, val actual: BigDecimal, val consensus
 data class ConsensusNote(val url: String, val publishedAt: Instant, val rows: List<ConsensusRow>)
 
 data class ConsensusLink(val url: String, val listedAt: Instant?)
+
+data class BankierArticle(val publishedAt: Instant, val tableRows: List<ConsensusRow>, val headline: String?, val body: String?)
+
+data class BankierHeadline(val title: String, val url: String, val publishedAt: Instant)

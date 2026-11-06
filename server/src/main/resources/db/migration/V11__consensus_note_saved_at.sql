@@ -1,0 +1,1 @@
+ALTER TABLE consensus_note ADD COLUMN saved_at TIMESTAMPTZ NOT NULL DEFAULT now();
