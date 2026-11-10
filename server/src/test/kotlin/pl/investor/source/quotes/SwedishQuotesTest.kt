@@ -23,7 +23,7 @@ class SwedishQuotesTest {
     private val company = Company(1, "Mips AB", "SE0009216278", Market.SE, "MIPS", null, false, avanzaId = "740416")
     private val today = LocalDate.parse("2026-11-02")
 
-    private fun quotes(at: String) = AvanzaQuotes(avanza, yahoo, repository, Clock.fixed(Instant.parse(at), ZoneOffset.UTC))
+    private fun quotes(at: String) = AvanzaQuotes(avanza, yahoo, repository, Clock.fixed(Instant.parse(at), ZoneOffset.UTC), mockk(relaxed = true))
 
     private fun bar(instrument: String, date: LocalDate) = DailyQuote(instrument, date, BigDecimal.TEN, 100, BigDecimal(1000))
 

@@ -72,7 +72,7 @@ class SwedishScoringLiveTest : PostgresTestBase() {
         val lines = cases.map { case ->
             val entry = NasdaqNewsParser.parse(http.get(Source.NASDAQ_NORDIC, searchUrl(case)))
                 .single { it.disclosureId == case.disclosureId }
-                .toListingEntry()
+                .toListingEntry(Market.SE)
             val company = companies.save(Company(null, entry.companyName, null, Market.SE, null, null, false))
             refresher.refresh(company, force = true)
             val identified = companies.findById(checkNotNull(company.id))

@@ -30,6 +30,11 @@ object ResultsKeywordFilter {
             "\\b(invitation|uitnodiging)\\b.*\\b(webcast|call|presentation|presentatie|capital markets day|investor day)\\b|" +
             "\\b(conference call|earnings call|webcast|results release and|save the date|financial calendar|sell-side|analyst consensus)\\b",
     )
+    private val FINNISH_KEYWORDS = Regex(
+        "\\b(guidance|outlook|preliminary (information|results?|figures)|business review)\\b|" +
+            "tulosvaroitu|tulosohjeistu|tulosohjau|tulosennust|alustav\\p{L}*(?: \\p{L}+){0,3} (tulos|tuloks|tied|tiet|luvu|luku)|" +
+            "ohjeistu|nakym|ennakkotiet|osavuosikatsau|puolivuosikatsau|liiketoimintakatsau|tilinpaatostiedot|liikevaih|liikevoit",
+    )
     private const val INTERIM_DIVIDEND = "interim dividend"
     private val CORRECTION = Regex("^(korekta|correction|rattelse)")
 
@@ -40,6 +45,7 @@ object ResultsKeywordFilter {
                     (matchesAnyMarket(withoutDividend) || DUTCH_KEYWORDS.containsMatchIn(withoutDividend))
             }
             Market.DE -> matchesAnyMarket(text) || GERMAN_KEYWORDS.containsMatchIn(text)
+            Market.FI -> matchesAnyMarket(text) || FINNISH_KEYWORDS.containsMatchIn(text)
             else -> matchesAnyMarket(text)
         }
     }

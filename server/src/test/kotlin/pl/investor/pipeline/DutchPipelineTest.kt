@@ -132,11 +132,12 @@ class DutchPipelineTest : PostgresTestBase() {
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"), XtbStock("BESI", "BE Semiconductor Industries NV"), XtbStock("MT", "ArcelorMittal"), XtbStock("WKL", "Wolters Kluwer NV"), XtbStock("IMCD", "IMCD NV"))
+        every { xtb.stocks(XtbCountry.FI) } returns listOf(XtbStock("NOKIA", "Nokia OYJ", "Nokia"))
         every { http.get(Source.EURONEXT, any()) } answers { fixture("node-${secondArg<String>().substringAfterLast('/')}.html") }
         every { http.getBytes(Source.EURONEXT, any(), any()) } returns checkNotNull(resource("pdf-12917844-besi-q3-2026.pdf")).readBytes()
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +114% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
-        val avanzaRefresher = AvanzaCompanyRefresher(avanza, mockk<AvanzaQuotes>(relaxed = true), companies, quarterResults, valuations, quotes, settings, clock)
+        val avanzaRefresher = AvanzaCompanyRefresher(avanza, mockk<AvanzaQuotes>(relaxed = true), companies, quarterResults, valuations, quotes, settings, clock, mockk(relaxed = true))
         val biznesRadar = mockk<BiznesRadarClient>()
         val refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, avanzaRefresher)
         val xtbFilter = XtbFilter("DE,GPW,NC,SE,NL", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies)

@@ -126,6 +126,7 @@ class GermanPipelineTest : PostgresTestBase() {
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"), XtbStock("CON", "Continental AG"), XtbStock("V3V", "FamiCord AG"))
         every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
+        every { xtb.stocks(XtbCountry.FI) } returns listOf(XtbStock("NOKIA", "Nokia OYJ", "Nokia"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg()) }
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +5% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
@@ -133,7 +134,7 @@ class GermanPipelineTest : PostgresTestBase() {
     }
 
     private fun pipelineWith(avanzaClient: AvanzaClient): ReportPipeline {
-        val avanzaRefresher = AvanzaCompanyRefresher(avanzaClient, mockk<AvanzaQuotes>(relaxed = true), companies, quarterResults, valuations, quotes, settings, clock)
+        val avanzaRefresher = AvanzaCompanyRefresher(avanzaClient, mockk<AvanzaQuotes>(relaxed = true), companies, quarterResults, valuations, quotes, settings, clock, mockk(relaxed = true))
         val biznesRadar = mockk<BiznesRadarClient>()
         val refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, avanzaRefresher)
         val xtbFilter = XtbFilter("DE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies)

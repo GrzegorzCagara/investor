@@ -55,6 +55,7 @@ import pl.investor.source.content.ReportContent
 import pl.investor.source.content.ReportContentClient
 import pl.investor.source.eqs.isEqsCorporateNews
 import pl.investor.source.gpw.ListingEntry
+import pl.investor.source.nasdaq.NASDAQ_MARKETS
 import pl.investor.source.nasdaq.isIgnoredNasdaqCategory
 import pl.investor.support.toWarsawDate
 import java.time.Clock
@@ -133,7 +134,7 @@ class ReportPipeline(
         val title = entry.title?.takeIf { it.isNotBlank() }
         return when {
             entry.isIgnoredNasdaqCategory() -> Step.Skip(ReportStatus.IRRELEVANT)
-            isOutsideSwedishCoverage(company) -> Step.Skip(ReportStatus.IRRELEVANT)
+            isOutsideNordicCoverage(company) -> Step.Skip(ReportStatus.IRRELEVANT)
             title?.let(ResultsKeywordFilter::isCorrection) == true -> Step.Skip(ReportStatus.CORRECTION_SKIPPED)
             report.eventType == EventType.NEWS -> Step.News
             entry.kind.isPeriodic -> Step.Results
@@ -145,20 +146,25 @@ class ReportPipeline(
         }
     }
 
-    private fun isOutsideSwedishCoverage(company: Company): Boolean {
-        if (company.market != Market.SE) return false
+    private fun isOutsideNordicCoverage(company: Company): Boolean {
+        val listedElsewhere = LISTED_ELSEWHERE_GUARD[company.market] ?: return false
         return when (val identification = refresher.avanzaIdentification(company)) {
             AvanzaIdentification.NotListed -> true
-            is AvanzaIdentification.Identified -> companies.existsInMarkets(identification.isin, POLISH_MARKETS) || hasPolishNamesake(company)
+            is AvanzaIdentification.Identified -> isFollowedElsewhere(company, identification.isin, listedElsewhere) || hasPolishNamesake(company)
             AvanzaIdentification.Unavailable -> hasPolishNamesake(company)
         }
     }
+
+    private fun isFollowedElsewhere(company: Company, isin: String, markets: List<Market>): Boolean =
+        companies.existsInMarkets(isin, markets).also { followed ->
+            if (followed) log.warn("{} ({}) release dropped: ISIN {} is already followed in one of {}", company.name, company.market, isin, markets)
+        }
 
     private fun hasPolishNamesake(company: Company): Boolean =
         companies.namesInMarkets(POLISH_MARKETS).any { CompanyNames.sameCompany(it, company.name) }
 
     private fun isCopyOfKnownRelease(entry: ListingEntry, company: Company): Boolean =
-        entry.market == Market.SE && reports.existsSameRelease(checkNotNull(company.id), entry.number, entry.publishedAt, SAME_RELEASE_WINDOW)
+        entry.market in NASDAQ_MARKETS && reports.existsSameRelease(checkNotNull(company.id), entry.number, entry.publishedAt, SAME_RELEASE_WINDOW)
 
     fun reprocess(reportId: Long, allowWithoutAttachments: Boolean): Boolean = exclusively(reportId) {
         val report = reports.findById(reportId)
@@ -574,6 +580,7 @@ class ReportPipeline(
     private companion object {
         val SAME_RELEASE_WINDOW: Duration = Duration.ofMinutes(15)
         val POLISH_MARKETS = listOf(Market.GPW, Market.NC)
+        val LISTED_ELSEWHERE_GUARD = mapOf(Market.SE to POLISH_MARKETS + Market.FI, Market.FI to POLISH_MARKETS + Market.SE)
         val NO_COMPONENTS = ScoreComponents(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 }

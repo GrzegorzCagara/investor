@@ -13,3 +13,5 @@ val STOCKHOLM: ZoneId = ZoneId.of("Europe/Stockholm")
 val BERLIN: ZoneId = ZoneId.of("Europe/Berlin")
 
 val AMSTERDAM: ZoneId = ZoneId.of("Europe/Amsterdam")
+
+val HELSINKI: ZoneId = ZoneId.of("Europe/Helsinki")

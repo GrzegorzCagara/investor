@@ -7,7 +7,8 @@ enum class Market(val currency: String, val lowLiquidityTurnover: Double?) {
     SE("SEK", 300_000.0),
     DE("EUR", lowLiquidityTurnover = null),
     NL("EUR", lowLiquidityTurnover = null),
+    FI("EUR", lowLiquidityTurnover = null),
     ;
 
-    val isCoveredByAvanza: Boolean get() = this == SE || this == DE || this == NL
+    val isCoveredByAvanza: Boolean get() = this == SE || this == DE || this == NL || this == FI
 }

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.Instant
 
-private const val EXPLANATION = "Zwrot ponad indeks (WIG/NCIndex/OMXSPI) po 5, 20 i 60 sesjach od zamknięcia sesji po raporcie."
+private const val EXPLANATION = "Zwrot ponad indeks (WIG/NCIndex/OMXSPI/DAX/AEX/OMXH25) po 5, 20 i 60 sesjach od zamknięcia sesji po raporcie."
 private const val LABEL_WEIGHT = 1.5f
 private const val ALERTS_WEIGHT = 0.8f
 private const val CELL_WEIGHT = 1.2f

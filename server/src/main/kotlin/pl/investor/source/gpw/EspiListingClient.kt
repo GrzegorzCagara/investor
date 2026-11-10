@@ -20,7 +20,7 @@ class EspiListingClient(
         when (market) {
             Market.GPW -> gpwForm(offset, date)
             Market.NC -> ncForm(offset, date)
-            Market.US, Market.SE, Market.DE, Market.NL -> error("No ESPI listing for $market")
+            Market.US, Market.SE, Market.DE, Market.NL, Market.FI -> error("No ESPI listing for $market")
         }
 
     private fun gpwForm(offset: Int, date: LocalDate) =
@@ -53,13 +53,13 @@ class EspiListingClient(
     private fun Market.source() = when (this) {
         Market.GPW -> Source.GPW_LISTING
         Market.NC -> Source.NC_LISTING
-        Market.US, Market.SE, Market.DE, Market.NL -> error("No ESPI listing for $this")
+        Market.US, Market.SE, Market.DE, Market.NL, Market.FI -> error("No ESPI listing for $this")
     }
 
     private fun Market.endpoint() = when (this) {
         Market.GPW -> GPW_ENDPOINT
         Market.NC -> "https://newconnect.pl/ajaxindex.php"
-        Market.US, Market.SE, Market.DE, Market.NL -> error("No ESPI listing for $this")
+        Market.US, Market.SE, Market.DE, Market.NL, Market.FI -> error("No ESPI listing for $this")
     }
 
     companion object {

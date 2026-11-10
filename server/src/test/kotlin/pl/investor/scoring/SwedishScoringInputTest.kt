@@ -70,7 +70,7 @@ class SwedishScoringInputTest : PostgresTestBase() {
         every { avanza.findStock("Mips AB") } returns AvanzaSearchHit("740416", "Mips", "SE", "Stockholmsbörsen")
         every { avanza.stock("740416") } returns AvanzaParser.stock(fixture("avanza-stock-mips.json"))
         every { avanza.quarters("740416") } returns AvanzaParser.quarters(fixture("avanza-analysis-mips.json"))
-        refresher = AvanzaCompanyRefresher(avanza, avanzaQuotes, companies, quarterResults, valuations, quotes, settings, clock)
+        refresher = AvanzaCompanyRefresher(avanza, avanzaQuotes, companies, quarterResults, valuations, quotes, settings, clock, mockk(relaxed = true))
     }
 
     private fun mips(): Company = companies.save(Company(null, "Mips AB", null, Market.SE, null, null, false))
@@ -190,8 +190,8 @@ class SwedishScoringInputTest : PostgresTestBase() {
             listOf(quote("SE0009216278", "2026-10-21", "390.0", 2_000)).filter { !it.date.isAfter(arg<LocalDate>(3)) && !it.date.isBefore(arg<LocalDate>(2)) }
         }
         val yahoo = mockk<YahooChartClient> { every { daily(any(), any(), any(), any()) } returns emptyList() }
-        val liveQuotes = AvanzaQuotes(avanza, yahoo, quotes, movingClock)
-        val liveRefresher = AvanzaCompanyRefresher(avanza, liveQuotes, companies, quarterResults, valuations, quotes, settings, movingClock)
+        val liveQuotes = AvanzaQuotes(avanza, yahoo, quotes, movingClock, companies)
+        val liveRefresher = AvanzaCompanyRefresher(avanza, liveQuotes, companies, quarterResults, valuations, quotes, settings, movingClock, mockk(relaxed = true))
         val company = refreshedMips(liveRefresher)
         verify(exactly = 0) { avanza.dailyQuotes(any(), any(), any(), any()) }
 

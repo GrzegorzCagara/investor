@@ -82,6 +82,7 @@ class MonthlySalesBackfillJobTest : PostgresTestBase() {
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
+        every { xtb.stocks(XtbCountry.FI) } returns listOf(XtbStock("NOKIA", "Nokia OYJ", "Nokia"))
         every { listing.page(any(), any(), any()) } returns emptyPage
         every { contentClient.fetch(any(), any()) } answers {
             val month = checkNotNull(monthlyReportFixtures[firstArg<ListingEntry>().sourceRef])

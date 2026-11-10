@@ -12,11 +12,13 @@ import java.time.LocalDate
 @Component
 class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: String = BASE_URL) {
 
-    fun findStock(companyName: String): AvanzaSearchHit {
+    fun findStock(companyName: String): AvanzaSearchHit = findShareClasses(companyName, Market.SE).first()
+
+    fun findShareClasses(companyName: String, market: Market): List<AvanzaSearchHit> {
         val wanted = searchQuery(companyName)
         return searchQueries(companyName).asSequence()
-            .mapNotNull { bestMatch(wanted, search(it)) }
-            .firstOrNull()
+            .map { matches(wanted, search(it), market) }
+            .firstOrNull { it.isNotEmpty() }
             ?: throw AvanzaStockNotFoundException(companyName)
     }
 
@@ -26,6 +28,16 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
             .map { stock(it.orderBookId) }
             .firstOrNull { it.isin == isin }
             ?: throw AvanzaStockNotFoundException(isin)
+
+    fun findStockByTicker(ticker: String, market: Market): AvanzaStock {
+        val venues = COVERED_VENUES.getValue(market)
+        return search(ticker).asSequence()
+            .filter { it.flagCode == venues.flagCode && it.marketPlaceName in venues.marketPlaces }
+            .take(MAX_ISIN_CANDIDATES)
+            .map { stock(it.orderBookId) }
+            .firstOrNull { it.ticker.equals(ticker, ignoreCase = true) }
+            ?: throw AvanzaStockNotFoundException(ticker)
+    }
 
     private fun isinCandidates(hits: List<AvanzaSearchHit>, market: Market): List<AvanzaSearchHit> = when (market) {
         Market.NL -> hits.filter { it.marketPlaceName == DUTCH_VENUE }
@@ -58,8 +70,10 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
 
     companion object {
         private const val BASE_URL = "https://www.avanza.se"
-        private const val SWEDEN = "SE"
-        private val COVERED_VENUES = setOf("Stockholmsbörsen", "First North Stockholm")
+        private val COVERED_VENUES = mapOf(
+            Market.SE to NameSearchVenues("SE", setOf("Stockholmsbörsen", "First North Stockholm")),
+            Market.FI to NameSearchVenues("FI", setOf("Helsingforsbörsen", "First North Helsingfors")),
+        )
         private const val GERMAN_VENUE = "Xetra"
         private const val DUTCH_VENUE = "Euronext Amsterdam"
         private const val MAX_ISIN_CANDIDATES = 3
@@ -67,7 +81,8 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
         private const val MAX_SEARCHES = 3
         private const val MIN_FIRST_WORD_LETTERS = 4
         private val GENERIC_TRAILING_WORDS = setOf("group", "holding", "holdings", "bank")
-        private val FIRST_WORD = Regex("^[\\p{L}\\p{N}]+")
+        private val SHARE_CLASS_WORD = Regex("[a-z]{1,2}|\\p{L}*osake")
+        private val FIRST_WORD =Regex("^[\\p{L}\\p{N}]+")
         private val mapper = JsonMapper.builder().build()
 
         fun searchQuery(companyName: String): String = CompanyNames.withoutLegalForm(companyName)
@@ -79,11 +94,25 @@ class AvanzaClient(private val http: PoliteHttpClient, private val baseUrl: Stri
             return listOfNotNull(full, withoutGenericWords, firstWord).filter { it.isNotBlank() }.distinct().take(MAX_SEARCHES)
         }
 
-        fun bestMatch(query: String, hits: List<AvanzaSearchHit>): AvanzaSearchHit? {
-            val swedish = hits.filter { it.flagCode == SWEDEN && it.marketPlaceName in COVERED_VENUES }
-            val wanted = CompanyNames.key(query).takeIf { it.isNotEmpty() } ?: return null
-            return swedish.firstOrNull { CompanyNames.key(it.name) == wanted }
-                ?: swedish.firstOrNull { hit -> CompanyNames.key(hit.name).let { it.isNotEmpty() && (it.startsWith(wanted) || wanted.startsWith(it)) } }
+        fun matches(query: String, hits: List<AvanzaSearchHit>, market: Market): List<AvanzaSearchHit> {
+            val venues = COVERED_VENUES.getValue(market)
+            val covered = hits.filter { it.flagCode == venues.flagCode && it.marketPlaceName in venues.marketPlaces }
+            val wanted = CompanyNames.key(query).takeIf { it.isNotEmpty() } ?: return emptyList()
+            val byName = covered.filter { CompanyNames.key(it.name) == wanted }
+                .ifEmpty { covered.filter { hit -> CompanyNames.key(hit.name).let { it.isNotEmpty() && (it.startsWith(wanted) || wanted.startsWith(it)) } } }
+            return if (market == Market.FI) shareClassesOf(query, covered).ifEmpty { byName.take(1) } else byName
         }
+
+        private fun shareClassesOf(query: String, hits: List<AvanzaSearchHit>): List<AvanzaSearchHit> {
+            val wanted = words(query)
+            return hits.filter { hit ->
+                val name = words(hit.name)
+                name.take(wanted.size) == wanted && name.drop(wanted.size).let { extra -> extra.isEmpty() || (extra.size == 1 && SHARE_CLASS_WORD.matches(extra.single())) }
+            }
+        }
+
+        private fun words(name: String): List<String> = CompanyNames.withoutLegalForm(name).split(" ").map(CompanyNames::key).filter { it.isNotEmpty() }
     }
+
+    private data class NameSearchVenues(val flagCode: String, val marketPlaces: Set<String>)
 }

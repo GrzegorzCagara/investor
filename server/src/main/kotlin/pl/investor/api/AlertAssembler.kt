@@ -115,7 +115,7 @@ class AlertAssembler(
     }
 
     private fun AlertRow.displayedNumber(): String = when (market) {
-        Market.SE -> SWEDISH_REPORT_NUMBER
+        Market.SE, Market.FI -> NASDAQ_REPORT_NUMBER
         Market.DE -> GERMAN_REPORT_NUMBER
         else -> reportNumber
     }
@@ -183,7 +183,7 @@ class AlertAssembler(
 
     private companion object {
         const val HISTORY_SIZE = 8
-        const val SWEDISH_REPORT_NUMBER = "Nasdaq"
+        const val NASDAQ_REPORT_NUMBER = "Nasdaq"
         const val GERMAN_REPORT_NUMBER = "EQS"
         val THOUSAND = BigDecimal(1000)
         const val COMPANY_HISTORY_SIZE = 5

@@ -46,6 +46,7 @@ object Formatting {
         Market.SE -> "SE"
         Market.DE -> "DE"
         Market.NL -> "NL"
+        Market.FI -> "FI"
     }
 
     fun marketName(m: Market): String = when (m) {
@@ -55,6 +56,7 @@ object Formatting {
         Market.SE -> "Szwecja"
         Market.DE -> "Niemcy"
         Market.NL -> "Holandia"
+        Market.FI -> "Finlandia"
     }
 
     fun detailTitle(detail: AlertDetail): String =
@@ -188,6 +190,8 @@ object Formatting {
         "DE_NEWS" -> "Niemcy – wydarzenia"
         "NL" -> "Holandia – wyniki"
         "NL_NEWS" -> "Holandia – wydarzenia"
+        "FI" -> "Finlandia – wyniki"
+        "FI_NEWS" -> "Finlandia – wydarzenia"
         else -> pool
     }
 

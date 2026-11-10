@@ -147,6 +147,7 @@ class ReportPipelineTest : PostgresTestBase() {
         every { xtb.stocks(XtbCountry.SE) } returns listOf(XtbStock("VOLVB", "Volvo AB"))
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
+        every { xtb.stocks(XtbCountry.FI) } returns listOf(XtbStock("NOKIA", "Nokia OYJ", "Nokia"))
         every { biznesRadar.quarterly("ASBISC") } returns QuarterlyResultsParser().parse(fixture("biznesradar/ASBISC-pl-q.html"))
         every { biznesRadar.valuation("ASBISC") } returns ValuationParser().parse(fixture("biznesradar/ASBISC-valuation.html"))
         every { contentClient.fetch(any(), any()) } answers { content(firstArg<ListingEntry>().sourceRef, secondArg()) }

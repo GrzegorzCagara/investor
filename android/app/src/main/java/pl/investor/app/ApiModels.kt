@@ -20,6 +20,7 @@ enum class Market(val isCovered: Boolean = true) {
     SE,
     DE,
     NL,
+    FI,
     US(isCovered = false),
     ;
 

@@ -65,6 +65,8 @@ class PushMessageFactory {
         AiPool.DE_NEWS -> "Do końca miesiąca wydarzenia z Niemiec nie są oceniane"
         AiPool.NL -> "Do końca miesiąca raporty z Holandii są oceniane bez AI"
         AiPool.NL_NEWS -> "Do końca miesiąca wydarzenia z Holandii nie są oceniane"
+        AiPool.FI -> "Do końca miesiąca raporty z Finlandii są oceniane bez AI"
+        AiPool.FI_NEWS -> "Do końca miesiąca wydarzenia z Finlandii nie są oceniane"
     }
 
     private companion object {

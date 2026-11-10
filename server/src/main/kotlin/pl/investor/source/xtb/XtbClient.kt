@@ -6,9 +6,9 @@ import pl.investor.source.Source
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper
 
-enum class XtbCountry { PL, SE, DE, NL }
+enum class XtbCountry { PL, SE, DE, NL, FI }
 
-data class XtbStock(val ticker: String, val companyName: String)
+data class XtbStock(val ticker: String, val companyName: String, val friendlyName: String? = null)
 
 class UnexpectedXtbListException(message: String) : RuntimeException(message)
 
@@ -34,7 +34,7 @@ class XtbClient(private val http: PoliteHttpClient, private val baseUrl: String 
             val suffix = ".${country.name}"
             return stocks
                 .filter { it.path("symbol").asString("").endsWith(suffix) && !it.isCloseOnly() }
-                .map { XtbStock(it.path("symbol").asString().removeSuffix(suffix), it.path("companyName").asString("")) }
+                .map { XtbStock(it.path("symbol").asString().removeSuffix(suffix), it.path("companyName").asString(""), it.path("friendlyName").asString("").ifBlank { null }) }
                 .ifEmpty { throw UnexpectedXtbListException("XTB list has no tradable stocks for $country") }
         }
 

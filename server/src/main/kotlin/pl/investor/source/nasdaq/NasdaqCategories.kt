@@ -18,4 +18,6 @@ object NasdaqCategories {
     fun kindOf(category: String): ReportKind = KINDS[category.trim().lowercase()] ?: ReportKind.OTHER
 }
 
-fun ListingEntry.isIgnoredNasdaqCategory(): Boolean = market == Market.SE && kind == ReportKind.OTHER
+fun ListingEntry.isIgnoredNasdaqCategory(): Boolean = market in NASDAQ_MARKETS && kind == ReportKind.OTHER
+
+val NASDAQ_MARKETS: Set<Market> = NasdaqList.entries.map(NasdaqList::market).toSet()

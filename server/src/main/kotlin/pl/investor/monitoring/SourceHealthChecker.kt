@@ -38,12 +38,18 @@ class SourceHealthChecker(
     private fun SourceHealth.isOutage(now: Instant): Boolean =
         !outageNotified &&
             lastSuccessAt != null &&
-            PublicationWindows.isOpen(now, MONITORED.getValue(source)) &&
+            MONITORED.getValue(source).any { PublicationWindows.isOpen(now, it) } &&
             Duration.between(lastSuccessAt, now) >= OUTAGE_AFTER
 
     private companion object {
         const val CHECK_INTERVAL_MS = 300_000L
         val OUTAGE_AFTER: Duration = Duration.ofMinutes(30)
-        val MONITORED = mapOf(Source.GPW_LISTING to Market.GPW, Source.NC_LISTING to Market.NC, Source.NASDAQ_NORDIC to Market.SE, Source.EQS to Market.DE, Source.EURONEXT to Market.NL)
+        val MONITORED = mapOf(
+            Source.GPW_LISTING to listOf(Market.GPW),
+            Source.NC_LISTING to listOf(Market.NC),
+            Source.NASDAQ_NORDIC to listOf(Market.SE, Market.FI),
+            Source.EQS to listOf(Market.DE),
+            Source.EURONEXT to listOf(Market.NL),
+        )
     }
 }

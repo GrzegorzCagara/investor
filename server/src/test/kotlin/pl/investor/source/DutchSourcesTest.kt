@@ -129,10 +129,10 @@ class DutchSourcesTest {
         assertEquals(57, stocks.size)
         assertTrue(listOf("HDG", "RDSA", "URW").none { closeOnly -> stocks.any { it.ticker == closeOnly } })
         val offer = XtbOffer(mapOf(XtbCountry.NL to stocks))
-        assertTrue(offer.lists(XtbCountry.NL, listOf("SHELL"), "Shell plc"))
-        assertTrue(offer.lists(XtbCountry.NL, listOf("XXX", "LIGHT"), "SIGNIFY NV"))
-        assertTrue(offer.lists(XtbCountry.NL, emptyList(), "Envipco Holding N.V."))
-        assertFalse(offer.lists(XtbCountry.NL, listOf("BAMNB"), "Koninklijke BAM Groep N.V."))
+        assertTrue(offer.lists(listOf(XtbCountry.NL), listOf("SHELL"), "Shell plc"))
+        assertTrue(offer.lists(listOf(XtbCountry.NL), listOf("XXX", "LIGHT"), "SIGNIFY NV"))
+        assertTrue(offer.lists(listOf(XtbCountry.NL), emptyList(), "Envipco Holding N.V."))
+        assertFalse(offer.lists(listOf(XtbCountry.NL), listOf("BAMNB"), "Koninklijke BAM Groep N.V."))
     }
 
     @Test

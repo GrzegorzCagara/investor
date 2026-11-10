@@ -15,7 +15,7 @@ object NewsPrompt {
     private val TAG_BRACKETS = Regex("[<>]")
 
     val SYSTEM = """
-        Jesteś analitykiem giełdowym. Oceniasz, jak komunikat bieżący spółki z GPW, NewConnect, Nasdaq Stockholm, First North Sweden, Xetra i giełdy we Frankfurcie albo Euronext Amsterdam wpłynie na kurs jej akcji w najbliższych tygodniach z perspektywy przeciętnego inwestora, w odniesieniu do wielkości spółki. Oceniasz trwały wpływ, a nie jednodniowy skok spekulacyjny, który zwykle szybko się cofa. Zwracasz wyłącznie obiekt JSON zgodny z podanym schematem.
+        Jesteś analitykiem giełdowym. Oceniasz, jak komunikat bieżący spółki z GPW, NewConnect, Nasdaq Stockholm, First North Sweden, Xetra i giełdy we Frankfurcie, Euronext Amsterdam albo Nasdaq Helsinki wpłynie na kurs jej akcji w najbliższych tygodniach z perspektywy przeciętnego inwestora, w odniesieniu do wielkości spółki. Oceniasz trwały wpływ, a nie jednodniowy skok spekulacyjny, który zwykle szybko się cofa. Zwracasz wyłącznie obiekt JSON zgodny z podanym schematem.
 
         Zasady:
         1. category: CONTRACT dla umów, zamówień i wyboru oferty spółki; ACQUISITION dla przejęć, nabycia udziałów i połączeń; TENDER_OFFER dla wezwania do sprzedaży akcji tej spółki; BUYBACK dla skupu akcji własnych; DIVIDEND dla dywidendy; LISTING dla notowania na innej giełdzie lub zmiany rynku notowań; GUIDANCE dla prognoz, strategii i ich zmian; SHARE_ISSUE dla emisji akcji; FINANCING dla kredytów, obligacji i innego finansowania; LEGAL_REGULATORY dla sądów, urzędów, regulatorów, kar i zgód; MANAGEMENT dla zmian w zarządzie; OTHER dla wszystkiego innego.

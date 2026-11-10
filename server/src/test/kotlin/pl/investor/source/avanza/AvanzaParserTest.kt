@@ -10,6 +10,7 @@ import tools.jackson.databind.json.JsonMapper
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
+import pl.investor.report.Market
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -78,10 +79,10 @@ class AvanzaParserTest {
             AvanzaSearchHit("3", "Lyckegard Group", "NO", "Oslo"),
             AvanzaSearchHit("4", "Lyckegård Group", "SE", "First North Stockholm"),
         )
-        assertEquals("4", AvanzaClient.bestMatch("Lyckegård Group", hits)?.orderBookId)
-        assertEquals("1", AvanzaClient.bestMatch("Investor", hits)?.orderBookId)
-        assertNull(AvanzaClient.bestMatch("Nelly", hits))
-        assertNull(AvanzaClient.bestMatch("", hits))
+        assertEquals("4", AvanzaClient.matches("Lyckegård Group", hits, Market.SE).firstOrNull()?.orderBookId)
+        assertEquals("1", AvanzaClient.matches("Investor", hits, Market.SE).firstOrNull()?.orderBookId)
+        assertNull(AvanzaClient.matches("Nelly", hits, Market.SE).firstOrNull())
+        assertNull(AvanzaClient.matches("", hits, Market.SE).firstOrNull())
     }
 
     @Test
@@ -92,8 +93,8 @@ class AvanzaParserTest {
             AvanzaSearchHit("7", "Nellyx", "SE", "Spotlight Stock Market"),
         )
 
-        assertNull(AvanzaClient.bestMatch("Nelly", hits))
-        assertEquals("8", AvanzaClient.bestMatch("Nelly", hits + AvanzaSearchHit("8", "Nelly Group", "SE", "Stockholmsbörsen"))?.orderBookId)
+        assertNull(AvanzaClient.matches("Nelly", hits, Market.SE).firstOrNull())
+        assertEquals("8", AvanzaClient.matches("Nelly", hits + AvanzaSearchHit("8", "Nelly Group", "SE", "Stockholmsbörsen"), Market.SE).firstOrNull()?.orderBookId)
     }
 
     @Test
@@ -162,7 +163,7 @@ class AvanzaParserTest {
     @Test
     fun `a fallback hit must still match the full name so Neem never accepts Neemo Tech`() {
         val neemoTech = AvanzaSearchHit("99", "Neemo Tech", "SE", "First North Stockholm")
-        assertNull(AvanzaClient.bestMatch("Neems Hill", listOf(neemoTech)))
+        assertNull(AvanzaClient.matches("Neems Hill", listOf(neemoTech), Market.SE).firstOrNull())
         val neemoTechResponse = fixture("avanza-search-neem.json").replace("Neem's Hill B (NEEMS B)", "Neemo Tech (NEEMO)")
         withAvanza(NO_HITS, neemoTechResponse) { client, server ->
             assertFailsWith<AvanzaStockNotFoundException> { client.findStock("Neem's Hill AB") }

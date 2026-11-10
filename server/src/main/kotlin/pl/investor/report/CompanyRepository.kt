@@ -81,6 +81,17 @@ class CompanyRepository(private val jdbc: JdbcClient) {
             .query { rs, _ -> rs.getString("name") }
             .list()
 
+    fun hasEarlierNamesakeByIsin(company: Company, markets: Collection<Market>): Boolean {
+        val isin = company.isin ?: return false
+        return jdbc.sql("SELECT EXISTS (SELECT 1 FROM company WHERE isin = :isin AND id < :id AND market <> :market AND market IN (:markets))")
+            .param("isin", isin)
+            .param("id", checkNotNull(company.id))
+            .param("market", company.market.name)
+            .param("markets", markets.map { it.name })
+            .query(Boolean::class.java)
+            .single()
+    }
+
     fun findInMarkets(markets: Collection<Market>): List<Company> =
         jdbc.sql("SELECT * FROM company WHERE market IN (:markets) ORDER BY id")
             .param("markets", markets.map { it.name })

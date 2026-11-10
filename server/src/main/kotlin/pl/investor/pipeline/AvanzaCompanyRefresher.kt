@@ -16,7 +16,10 @@ import pl.investor.source.avanza.AvanzaClient
 import pl.investor.source.avanza.AvanzaQuarter
 import pl.investor.source.avanza.AvanzaStock
 import pl.investor.source.avanza.AvanzaStockNotFoundException
+import pl.investor.source.avanza.AvanzaSearchHit
 import pl.investor.source.quotes.AvanzaQuotes
+import pl.investor.source.xtb.XtbAvailability
+import pl.investor.source.xtb.XtbCountry
 import pl.investor.support.toWarsawDate
 import java.math.BigDecimal
 import java.time.Clock
@@ -34,6 +37,7 @@ class AvanzaCompanyRefresher(
     private val quotes: QuoteRepository,
     private val settings: SettingRepository,
     private val clock: Clock,
+    private val xtb: XtbAvailability,
 ) {
 
     private val log = LoggerFactory.getLogger(AvanzaCompanyRefresher::class.java)
@@ -90,7 +94,7 @@ class AvanzaCompanyRefresher(
             settings.put(attemptKey, IdentityAttempt.NOT_LISTED.name)
             return AvanzaIdentification.NotListed
         } catch (e: SourceUnavailableException) {
-            log.warn("Avanza unavailable while identifying {}, retrying in {} min", company.name, UNAVAILABLE_RETRY_AFTER.toMinutes())
+            log.warn("{} unavailable while identifying {}, retrying in {} min", e.source, company.name, UNAVAILABLE_RETRY_AFTER.toMinutes())
             settings.put(attemptKey, UNAVAILABLE_PREFIX + clock.instant())
             return AvanzaIdentification.Unavailable
         }
@@ -100,7 +104,23 @@ class AvanzaCompanyRefresher(
 
     private fun coveredStock(company: Company): AvanzaStock = when (company.market) {
         Market.DE, Market.NL -> avanza.findStockByIsin(company.isin ?: throw AvanzaStockNotFoundException(company.name), company.market)
+        Market.FI -> finnishStock(company)
         else -> avanza.stock(avanza.findStock(company.name).orderBookId)
+    }
+
+    private fun finnishStock(company: Company): AvanzaStock =
+        try {
+            preferredShareClass(avanza.findShareClasses(company.name, Market.FI))
+        } catch (e: AvanzaStockNotFoundException) {
+            xtb.tickerNamed(XtbCountry.FI, company.name)?.let { avanza.findStockByTicker(it, Market.FI) } ?: throw e
+        }
+
+    private fun preferredShareClass(hits: List<AvanzaSearchHit>): AvanzaStock {
+        if (hits.size == 1) return avanza.stock(hits.single().orderBookId)
+        val classes = hits.map { avanza.stock(it.orderBookId) }
+        return classes.firstOrNull { stock -> stock.ticker?.let { xtb.offersTicker(XtbCountry.FI, it) } == true }
+            ?: classes.firstOrNull { !it.listing.equals(PRELIST, ignoreCase = true) }
+            ?: classes.first()
     }
 
     private fun refreshKey(companyId: Long) = "AVANZA_REFRESHED_$companyId"
@@ -111,6 +131,7 @@ class AvanzaCompanyRefresher(
 
     private companion object {
         const val MAX_QUOTE_GAP_DAYS = 10L
+        const val PRELIST = "Prelist"
         const val UNAVAILABLE_PREFIX = "UNAVAILABLE_AT_"
         val UNAVAILABLE_RETRY_AFTER: Duration = Duration.ofMinutes(15)
     }

@@ -5,7 +5,7 @@ import java.text.Normalizer
 object CompanyNames {
 
     private val LEGAL_FORM = Regex(
-        "\\(publ\\)|(?<![\\p{L}\\p{N}])(w restrukturyzacji|w likwidacji|w upad[lł]o[sś]ci|alternatywna sp[oó][lł]ka inwestycyjna|sp[oó][lł]ka akcyjna|s\\.a\\.?|n\\.v\\.?|hf\\.?|ltd\\.?|ab|ad|asa|oyj|plc|publ|sa|se|nv)(?![\\p{L}\\p{N}])",
+        "\\(publ\\)|(?<![\\p{L}\\p{N}])(w restrukturyzacji|w likwidacji|w upad[lł]o[sś]ci|alternatywna sp[oó][lł]ka inwestycyjna|sp[oó][lł]ka akcyjna|s\\.a\\.?|n\\.v\\.?|hf\\.?|ltd\\.?|ab|abp|ad|asa|oy|oyj|plc|publ|sa|se|nv)(?![\\p{L}\\p{N}])",
         RegexOption.IGNORE_CASE,
     )
     private val APOSTROPHES = Regex("['’`´]")

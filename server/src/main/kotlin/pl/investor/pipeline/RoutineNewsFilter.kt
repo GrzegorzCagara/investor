@@ -155,6 +155,11 @@ object RoutineNewsFilter {
         "poster presentation",
         "posterpresentatie",
     )
+    private val FINNISH_ROUTINE = patterns(
+        "omien osakkeiden (hankinta|takaisinosto)\\p{L}* \\d",
+        "liputusilmoitus",
+        "johtohenkiloiden liiketoimet",
+    )
     private val MEETING_OUTCOME = Regex("\\b(approv\\p{L}*|results? of|voting results|resolutions? adopted)\\b")
     private val EXTRAORDINARY_MEETING = Regex("au(ß|ss)erordentlich|extraordinary|\\begm\\b")
     private val GERMAN_MATERIAL = Regex(
@@ -179,7 +184,8 @@ object RoutineNewsFilter {
             (text.isGeneralMeetingFormality() && !(market == Market.NL && MEETING_OUTCOME.containsMatchIn(text))) ||
             text.isSupervisoryBoardChange() ||
             text.isDirectorsReelection() ||
-            (market == Market.DE && text.isGermanRoutine())
+            (market == Market.DE && text.isGermanRoutine()) ||
+            (market == Market.FI && FINNISH_ROUTINE.any { it.containsMatchIn(text) })
     }
 
     private fun String.isDutchRoutine(): Boolean =

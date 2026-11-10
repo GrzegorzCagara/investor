@@ -144,13 +144,14 @@ class SwedishPipelineTest : PostgresTestBase() {
         )
         every { xtb.stocks(XtbCountry.DE) } returns listOf(XtbStock("MZX", "Masterflex SE"))
         every { xtb.stocks(XtbCountry.NL) } returns listOf(XtbStock("ASML", "ASML Holding NV"))
+        every { xtb.stocks(XtbCountry.FI) } returns listOf(XtbStock("NOKIA", "Nokia OYJ", "Nokia"))
         every { reasonWriter.write(any(), any(), any()) } returns "Przychody +14% r/r. Reszta uzasadnienia."
         every { notifier.send(any()) } answers { pushLog.save(firstArg<PushMessage>(), clock.instant()) }
         pipeline = pipelineWith(avanza)
     }
 
     private fun pipelineWith(avanzaClient: AvanzaClient): ReportPipeline {
-        val avanzaRefresher = AvanzaCompanyRefresher(avanzaClient, avanzaQuotes, companies, quarterResults, valuations, quotes, settings, clock)
+        val avanzaRefresher = AvanzaCompanyRefresher(avanzaClient, avanzaQuotes, companies, quarterResults, valuations, quotes, settings, clock, mockk(relaxed = true))
         val biznesRadar = mockk<BiznesRadarClient>()
         val refresher = CompanyDataRefresher(biznesRadar, companies, quarterResults, valuations, settings, clock, avanzaRefresher)
         return ReportPipeline(
@@ -167,7 +168,7 @@ class SwedishPipelineTest : PostgresTestBase() {
         settings.put("PUSH_THRESHOLD", "70")
     }
 
-    private fun entry(disclosureId: String): ListingEntry = news.single { it.disclosureId == disclosureId }.toListingEntry()
+    private fun entry(disclosureId: String): ListingEntry = news.single { it.disclosureId == disclosureId }.toListingEntry(Market.SE)
 
     private fun content(entry: ListingEntry): ReportContent =
         if (entry.sourceRef == OPTER) {

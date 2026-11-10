@@ -58,7 +58,7 @@ class EspiListingParser {
     private fun Market.detailBaseUrl() = when (this) {
         Market.GPW -> "https://www.gpw.pl/komunikat?geru_id="
         Market.NC -> "https://newconnect.pl/komunikat?geru_id="
-        Market.US, Market.SE, Market.DE, Market.NL -> error("No ESPI listing for $this")
+        Market.US, Market.SE, Market.DE, Market.NL, Market.FI -> error("No ESPI listing for $this")
     }
 
     private companion object {

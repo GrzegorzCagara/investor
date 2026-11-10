@@ -25,7 +25,7 @@ class ReportContentClient(
 
     fun fetch(entry: ListingEntry, includeAttachments: Boolean = false): ReportContent =
         when (entry.market) {
-            Market.SE -> fetchNasdaq(entry, includeAttachments)
+            Market.SE, Market.FI -> fetchNasdaq(entry, includeAttachments)
             Market.DE -> eqsParser.parse(http.get(Source.EQS, entry.detailUrl), entry.detailUrl)
             Market.NL -> fetchEuronext(entry, includeAttachments)
             Market.GPW, Market.NC -> fetchEspi(entry, includeAttachments)
@@ -73,13 +73,13 @@ class ReportContentClient(
     private fun Market.espiSource() = when (this) {
         Market.GPW -> Source.GPW_LISTING
         Market.NC -> Source.NC_LISTING
-        Market.SE, Market.DE, Market.NL, Market.US -> error("No ESPI listing for $this")
+        Market.SE, Market.DE, Market.NL, Market.FI, Market.US -> error("No ESPI listing for $this")
     }
 
     private fun Market.espiBaseUrl() = when (this) {
         Market.GPW -> "https://www.gpw.pl/"
         Market.NC -> "https://newconnect.pl/"
-        Market.SE, Market.DE, Market.NL, Market.US -> error("No ESPI page for $this")
+        Market.SE, Market.DE, Market.NL, Market.FI, Market.US -> error("No ESPI page for $this")
     }
 
     private companion object {

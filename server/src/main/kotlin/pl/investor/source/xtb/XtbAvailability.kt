@@ -34,6 +34,10 @@ class XtbAvailability(
         return listed
     }
 
+    fun offersTicker(country: XtbCountry, ticker: String): Boolean = offer().listsTicker(country, ticker)
+
+    fun tickerNamed(country: XtbCountry, companyName: String): String? = offer().tickerNamed(country, companyName)
+
     fun refreshAll() {
         val offer = try {
             offer()
@@ -82,8 +86,12 @@ class XtbAvailability(
         val OFFER_MAX_AGE: Duration = Duration.ofHours(23)
         val POLISH_MARKETS = setOf(Market.GPW, Market.NC)
         val XTB_COUNTRIES = mapOf(
-            Market.GPW to XtbCountry.PL, Market.NC to XtbCountry.PL, Market.SE to XtbCountry.SE, Market.DE to XtbCountry.DE,
-            Market.NL to XtbCountry.NL,
+            Market.GPW to listOf(XtbCountry.PL),
+            Market.NC to listOf(XtbCountry.PL),
+            Market.SE to listOf(XtbCountry.SE, XtbCountry.FI),
+            Market.DE to listOf(XtbCountry.DE),
+            Market.NL to listOf(XtbCountry.NL),
+            Market.FI to listOf(XtbCountry.FI, XtbCountry.SE),
         )
     }
 }

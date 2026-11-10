@@ -11,7 +11,7 @@ import pl.investor.source.xtb.XtbAvailability
 
 @Component
 class XtbFilter(
-    @Value("\${investor.xtb-only-markets:DE,GPW,NC,SE,NL}") xtbOnlyMarkets: String,
+    @Value("\${investor.xtb-only-markets:DE,GPW,NC,SE,NL,FI}") xtbOnlyMarkets: String,
     private val availability: XtbAvailability,
     private val refresher: CompanyDataRefresher,
     private val companies: CompanyRepository,

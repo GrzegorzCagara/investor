@@ -87,8 +87,8 @@ class GermanSourcesTest {
 
         assertEquals(listOf("12DA", "1COV", "BSL", "CON", "MZX", "TIMA", "UN0"), stocks.map { it.ticker })
         val offer = XtbOffer(mapOf(XtbCountry.DE to stocks))
-        assertTrue(offer.lists(XtbCountry.DE, listOf("MZX"), "Masterflex SE"))
-        assertTrue(offer.lists(XtbCountry.DE, emptyList(), "ZEAL Network SE"))
-        assertFalse(offer.lists(XtbCountry.DE, emptyList(), "Daimler AG"))
+        assertTrue(offer.lists(listOf(XtbCountry.DE), listOf("MZX"), "Masterflex SE"))
+        assertTrue(offer.lists(listOf(XtbCountry.DE), emptyList(), "ZEAL Network SE"))
+        assertFalse(offer.lists(listOf(XtbCountry.DE), emptyList(), "Daimler AG"))
     }
 }

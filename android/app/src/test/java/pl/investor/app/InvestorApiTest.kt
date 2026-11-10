@@ -366,6 +366,19 @@ class InvestorApiTest {
     }
 
     @Test
+    fun `ranking can be filtered to Finland`() = runBlocking {
+        enqueueJson(
+            """{"items":[{"id":97,"companyName":"Raisio","market":"FI","eventType":"RESULTS","publishedAt":"2026-11-10T05:30:00Z",""" +
+                """"score":58,"belowThreshold":true,"summary":"Sprzedaż wzrosła o 2%.","status":"SCORED"}]}""",
+        )
+
+        val fi = api().ranking(Market.FI)
+
+        assertEquals(Market.FI, fi.items.single().market)
+        assertEquals("/api/ranking?market=FI", server.takeRequest().path)
+    }
+
+    @Test
     fun `alerts parse the not on XTB status`() = runBlocking {
         enqueueJson(
             """{"items":[{"id":96,"companyName":"Uniper","market":"DE","eventType":"NEWS","publishedAt":"2026-11-04T07:00:00Z",""" +

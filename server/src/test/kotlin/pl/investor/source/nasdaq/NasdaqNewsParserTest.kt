@@ -35,8 +35,8 @@ class NasdaqNewsParserTest {
         val english = firstNorth.single { it.disclosureId == "1473457" }
         val swedish = firstNorth.single { it.disclosureId == "1473458" }
 
-        assertTrue(english.isEnglish)
-        assertFalse(swedish.isEnglish)
+        assertEquals(0, english.languagePreference)
+        assertEquals(1, swedish.languagePreference)
         assertEquals(english.company, swedish.company)
         assertEquals(english.category, swedish.category)
         assertEquals(english.publishedAt, swedish.publishedAt)
@@ -50,7 +50,7 @@ class NasdaqNewsParserTest {
 
     @Test
     fun `listing entry carries the category as number and the disclosure id as source ref`() {
-        val entry = firstNorth.single { it.disclosureId == "1473716" }.toListingEntry()
+        val entry = firstNorth.single { it.disclosureId == "1473716" }.toListingEntry(Market.SE)
 
         assertEquals(Market.SE, entry.market)
         assertEquals("Opter AB", entry.companyName)
@@ -76,7 +76,7 @@ class NasdaqNewsParserTest {
 
     @Test
     fun `only Swedish entries of other categories are ignored`() {
-        val swedish = firstNorth.first { it.category == "Investor News" }.toListingEntry()
+        val swedish = firstNorth.first { it.category == "Investor News" }.toListingEntry(Market.SE)
         val polish = ListingEntry(Market.GPW, "X", null, ReportKind.OTHER, "1/2026", "1", "t", Instant.EPOCH, "u")
 
         assertTrue(swedish.isIgnoredNasdaqCategory())

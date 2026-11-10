@@ -53,13 +53,15 @@ class FormattingTest {
         assertEquals("Niemcy", Formatting.marketName(Market.DE))
         assertEquals("NL", Formatting.marketLabel(Market.NL))
         assertEquals("Holandia", Formatting.marketName(Market.NL))
+        assertEquals("FI", Formatting.marketLabel(Market.FI))
+        assertEquals("Finlandia", Formatting.marketName(Market.FI))
         assertEquals("GPW", Formatting.marketName(Market.GPW))
         assertEquals("USA", Formatting.marketName(Market.US))
     }
 
     @Test
     fun `only covered markets are offered as filters and switches`() {
-        assertEquals(listOf(Market.GPW, Market.NC, Market.SE, Market.DE, Market.NL), Market.covered)
+        assertEquals(listOf(Market.GPW, Market.NC, Market.SE, Market.DE, Market.NL, Market.FI), Market.covered)
     }
 
     @Test
@@ -210,6 +212,8 @@ class FormattingTest {
         assertEquals("Niemcy – wydarzenia", Formatting.aiPoolLabel("DE_NEWS"))
         assertEquals("Holandia – wyniki", Formatting.aiPoolLabel("NL"))
         assertEquals("Holandia – wydarzenia", Formatting.aiPoolLabel("NL_NEWS"))
+        assertEquals("Finlandia – wyniki", Formatting.aiPoolLabel("FI"))
+        assertEquals("Finlandia – wydarzenia", Formatting.aiPoolLabel("FI_NEWS"))
         assertEquals("Nasdaq (komunikaty)", Formatting.sourceLabel("NASDAQ_NORDIC"))
         assertEquals("Avanza", Formatting.sourceLabel("AVANZA"))
         assertEquals("Yahoo (indeks)", Formatting.sourceLabel("YAHOO"))

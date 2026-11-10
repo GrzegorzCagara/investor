@@ -199,6 +199,7 @@ class AttachmentTextExtractor(
         val NORDIC_KEYWORDS = listOf(
             "nettoomsattning", "net sales", "revenue", "rorelseresultat", "operating profit", "ebit",
             "orderingang", "order intake", "resultat efter skatt", "net profit",
+            "liikevaihto", "liikevoitto", "tilikauden tulos", "saadut tilaukset", "tilauskanta", "comparable ebit", "operative ebit",
         )
         val EURONEXT_KEYWORDS = listOf(
             "revenue", "net sales", "net income", "net result", "net profit", "ebit", "orders", "order intake", "outlook",

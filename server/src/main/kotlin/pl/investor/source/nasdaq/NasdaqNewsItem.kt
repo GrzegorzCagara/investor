@@ -14,10 +14,10 @@ data class NasdaqNewsItem(
     val market: String,
     val company: String,
 ) {
-    val isEnglish: Boolean get() = language == ENGLISH
+    val languagePreference: Int get() = PREFERRED_LANGUAGES.indexOf(language).takeIf { it >= 0 } ?: PREFERRED_LANGUAGES.size
 
-    fun toListingEntry() = ListingEntry(
-        market = Market.SE,
+    fun toListingEntry(market: Market) = ListingEntry(
+        market = market,
         companyName = company,
         isin = null,
         kind = NasdaqCategories.kindOf(category),
@@ -29,6 +29,6 @@ data class NasdaqNewsItem(
     )
 
     private companion object {
-        const val ENGLISH = "en"
+        val PREFERRED_LANGUAGES = listOf("en", "sv", "fi")
     }
 }
