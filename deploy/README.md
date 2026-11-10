@@ -172,10 +172,10 @@ Robisz to na drugim komputerze.
 - Przez plik: prześlij APK na telefon, otwórz go i zezwól na instalację z nieznanych źródeł.
 - Przy pierwszym uruchomieniu zezwól na powiadomienia.
 
-## 10. Ekran konfiguracji w apce
+## 10. Konfiguracja w apce
 
-1. Adres serwera: `https://debian-server.tail8124e8.ts.net/investor`, z `/investor` na końcu i bez `:8080`.
-2. Token: ten sam, co `INVESTOR_API_TOKEN`.
+1. Adres serwera i token API są wpisane na stałe w apce (`ConnectionSettings.kt`: `DEFAULT_SERVER_URL` i `DEFAULT_API_TOKEN`), więc przy instalacji nie trzeba ich podawać.
+2. Po zmianie `INVESTOR_API_TOKEN` w `.env` zaktualizuj `DEFAULT_API_TOKEN` w apce i zbuduj nowy APK.
 3. Tailscale ani VPN na telefonie nie są potrzebne. Aplikację Tailscale możesz odinstalować.
 4. Sprawdź, że `GET /api/status` zwraca dane przez `curl` jak wyżej.
 

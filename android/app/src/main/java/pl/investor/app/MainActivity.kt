@@ -14,8 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -28,7 +26,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -66,25 +63,12 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun InvestorApp() {
-        val configured by produceState<Boolean?>(initialValue = null) {
-            container.settings.connection.collect { value = it != null }
-        }
-        val scope = rememberCoroutineScope()
-
-        when (configured) {
-            null -> Unit
-            false -> SetupScreen(onSave = { url, token ->
-                scope.launch { container.settings.save(url, token) }
-            })
-            true -> {
-                LaunchedEffect(Unit) {
-                    lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                        container.deviceRegistration.syncCurrentToken()
-                    }
-                }
-                InvestorNavigation()
+        LaunchedEffect(Unit) {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                container.deviceRegistration.syncCurrentToken()
             }
         }
+        InvestorNavigation()
     }
 
     @Composable
