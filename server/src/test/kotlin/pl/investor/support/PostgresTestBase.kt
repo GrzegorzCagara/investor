@@ -5,7 +5,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.postgresql.PostgreSQLContainer
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = ["investor.scheduling.enabled=false", "investor.api-token=test-token", "investor.contact-email=test@example.com", "investor.anthropic.api-key=test-key"])
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = ["investor.scheduling.enabled=false", "investor.api-token=test-token", "investor.contact-email=test@example.com", "investor.anthropic.api-key=test-key", "investor.effectiveness-since=2000-01-01"])
 @Testcontainers
 abstract class PostgresTestBase {
 

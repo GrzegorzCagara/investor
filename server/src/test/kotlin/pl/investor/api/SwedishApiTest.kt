@@ -46,6 +46,7 @@ class SwedishApiTest : PostgresTestBase() {
     @Autowired lateinit var reports: ReportRepository
     @Autowired lateinit var scores: ScoreRepository
     @Autowired lateinit var outcomes: OutcomeRepository
+    @Autowired lateinit var alerts: AlertRepository
 
     private lateinit var mvc: MockMvc
     private val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
@@ -161,6 +162,20 @@ class SwedishApiTest : PostgresTestBase() {
             .andExpect(jsonPath("\$.bySignal[1].horizons[0].avgExcessPct").value(4.0))
             .andExpect(jsonPath("\$.bySignal[2].alerts").value(0))
             .andExpect(jsonPath("\$.bySignal[3].signal").value("CONSISTENT_REACTION"))
+    }
+
+    @Test
+    fun `effectiveness skips reports published before the counting start`() {
+        val beforeStart = report(Market.SE, 12)
+        score(beforeStart, 80.0, setOf(Signal.TREND_REVERSAL))
+        outcome(beforeStart, r5 = 5.0, i5 = 1.0)
+        val afterStart = report(Market.SE, 8)
+        score(afterStart, 80.0, setOf(Signal.TREND_REVERSAL))
+        outcome(afterStart, r5 = -2.0, i5 = 0.0)
+        val start = now.minus(10, ChronoUnit.DAYS)
+
+        assertEquals(listOf(afterStart), alerts.scoredOutcomes(start).map { it.id })
+        assertEquals(listOf(-2.0), alerts.signalOutcomes(start).map { it.outcome.return5Pct })
     }
 
     @Test

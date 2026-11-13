@@ -69,7 +69,7 @@ class AlertRepository(private val jdbc: JdbcClient) {
             .query { rs, _ -> rs.toRow() }
             .list()
 
-    fun scoredOutcomes(): List<ScoredOutcome> =
+    fun scoredOutcomes(since: Instant): List<ScoredOutcome> =
         jdbc.sql(
             """
             SELECT r.id, c.name, c.short_name, r.market, r.event_type, r.published_at, s.total,
@@ -77,24 +77,26 @@ class AlertRepository(private val jdbc: JdbcClient) {
                 o.return5_pct, o.index5_pct, o.return20_pct, o.index20_pct, o.return60_pct, o.index60_pct
             $FROM
             LEFT JOIN report_outcome o ON o.report_id = r.id
-            WHERE $SCORED AND round(s.total::numeric) >= :minScore
+            WHERE $SCORED AND round(s.total::numeric) >= :minScore AND r.published_at >= :since
             ORDER BY r.published_at DESC, r.id DESC
             """
         )
             .param("minScore", EffectivenessCalculator.MIN_SCORE)
+            .param("since", since.toUtc())
             .query { rs, _ -> rs.toScoredOutcome() }
             .list()
 
-    fun signalOutcomes(): List<SignalOutcome> =
+    fun signalOutcomes(since: Instant): List<SignalOutcome> =
         jdbc.sql(
             """
             SELECT array_to_string(s.signals, ',') AS signals, o.base_date, o.reaction_pct, o.reaction_index_pct, o.volume_multiple,
                 o.return5_pct, o.index5_pct, o.return20_pct, o.index20_pct, o.return60_pct, o.index60_pct
             $FROM
             JOIN report_outcome o ON o.report_id = r.id
-            WHERE $SCORED AND r.event_type = 'RESULTS' AND cardinality(s.signals) > 0
+            WHERE $SCORED AND r.event_type = 'RESULTS' AND cardinality(s.signals) > 0 AND r.published_at >= :since
             """
         )
+            .param("since", since.toUtc())
             .query { rs, _ ->
                 SignalOutcome(
                     signals = rs.getString("signals").split(",").filter { it.isNotEmpty() }.map(Signal::valueOf).toSet(),
