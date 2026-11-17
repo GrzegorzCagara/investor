@@ -1527,4 +1527,81 @@ class ReportPipelineTest : PostgresTestBase() {
         assertEquals(2, server.requestCount)
         verify(exactly = 0) { contentClient.fetch(any(), true) }
     }
+
+    private val yanosikLikeQuarters = listOf(
+        ParsedQuarter(LocalDate.parse("2024-03-31"), BigDecimal("12000"), BigDecimal("900"), BigDecimal("800"), LocalDate.parse("2024-05-15")),
+        ParsedQuarter(LocalDate.parse("2024-06-30"), BigDecimal("13000"), BigDecimal("1000"), BigDecimal("900"), LocalDate.parse("2024-09-02")),
+        ParsedQuarter(LocalDate.parse("2024-09-30"), BigDecimal("14437"), BigDecimal("1200"), BigDecimal("1000"), LocalDate.parse("2024-11-14")),
+        ParsedQuarter(LocalDate.parse("2024-12-31"), BigDecimal("16232"), BigDecimal("2000"), BigDecimal("1800"), LocalDate.parse("2025-02-19")),
+        ParsedQuarter(LocalDate.parse("2025-03-31"), BigDecimal("13954"), BigDecimal("1000"), BigDecimal("900"), LocalDate.parse("2025-05-22")),
+        ParsedQuarter(LocalDate.parse("2025-06-30"), BigDecimal("15023"), BigDecimal("1100"), BigDecimal("1000"), LocalDate.parse("2025-09-02")),
+        ParsedQuarter(LocalDate.parse("2025-09-30"), BigDecimal("15206"), BigDecimal("2572"), BigDecimal("2100"), LocalDate.parse("2025-11-20")),
+        ParsedQuarter(LocalDate.parse("2025-12-31"), BigDecimal("19208"), BigDecimal("4500"), BigDecimal("4090"), LocalDate.parse("2026-02-19")),
+        ParsedQuarter(LocalDate.parse("2026-03-31"), BigDecimal("16800"), BigDecimal("3000"), BigDecimal("2600"), LocalDate.parse("2026-05-19")),
+        ParsedQuarter(LocalDate.parse("2026-06-30"), BigDecimal("19650"), BigDecimal("3900"), BigDecimal("3100"), LocalDate.parse("2026-09-15")),
+    )
+
+    private fun Int.grouped(): String = "%,d".format(java.util.Locale.US, this).replace(',', ' ')
+
+    private fun amountJson(value: Int) = """{\"valueInThousands\":$value,\"sourceText\":\"${value.grouped()} tys. zł\"}"""
+
+    private fun periodJson(kind: PeriodKind, figures: List<Int>) =
+        """{\"kind\":\"${kind.name}\",\"periodEnd\":\"2026-09-30\",\"currency\":\"PLN\",""" +
+            listOf("revenue", "revenuePrevYear", "operatingProfit", "operatingProfitPrevYear", "netProfit", "netProfitPrevYear")
+                .zip(figures) { field, value -> """\"$field\":${amountJson(value)}""" }
+                .joinToString(",") + "}"
+
+    private fun enqueueResults(kind: PeriodKind, figures: List<Int>) = server.enqueue(
+        json(
+            """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"RESULTS\",\"periods\":[${periodJson(kind, figures)}],\"outlook\":{\"tone\":\"NONE\",\"quote\":null},\"oneOffQuarter\":false,\"oneOffQuote\":null,\"cyclicalIndustry\":false}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
+        )
+    )
+
+    private fun resultsText(figures: List<Int>): String {
+        val amounts = figures.map { "${it.grouped()} tys. zł" }
+        return "Przychody netto ze sprzedaży wyniosły ${amounts[0]} wobec ${amounts[1]} rok wcześniej. " +
+            "Zysk z działalności operacyjnej wyniósł ${amounts[2]} wobec ${amounts[3]}. Zysk netto wyniósł ${amounts[4]} wobec ${amounts[5]}."
+    }
+
+    private fun givenContent(sourceRef: String, figures: List<Int>) {
+        every { contentClient.fetch(match { it.sourceRef == sourceRef }, any()) } returns ReportContent(resultsText(figures), emptyList(), emptyList())
+    }
+
+    @Test
+    fun `preliminary nine months are scored and pushed as the quarter, and the later quarterly report is already known`() {
+        asbis()
+        every { biznesRadar.quarterly("ASBISC") } returns yanosikLikeQuarters
+        every { biznesRadar.valuation("ASBISC") } returns emptyList()
+        every { consensusClient.hasNewsPage(any()) } returns false
+        val nineMonths = listOf(59984, 44183, 12468, 4672, 10192, 4000)
+        val thirdQuarter = listOf(23534, 15206, 5568, 2572, 4492, 2100)
+        givenContent("140", nineMonths)
+        givenContent("141", thirdQuarter)
+        enqueueResults(PeriodKind.NINE_MONTHS, nineMonths)
+        enqueueResults(PeriodKind.QUARTER, thirdQuarter)
+
+        now = Instant.parse("2026-11-10T21:10:00Z")
+        pipeline.process(entry("140", "Wstępne wybrane dane finansowe za III kwartał 2026").copy(publishedAt = Instant.parse("2026-11-10T21:06:33Z")))
+        now = Instant.parse("2026-11-16T21:35:00Z")
+        pipeline.process(entry("141", "SA-Q 3/2026", ReportKind.QUARTERLY).copy(publishedAt = Instant.parse("2026-11-16T21:31:50Z")))
+
+        assertEquals("RESULTS", eventTypeOf("140"))
+        assertEquals(ReportStatus.SCORED, statusOf("140"))
+        val preliminary = checkNotNull(scores.find(reportId("140"))).score
+        assertEquals(30.0, preliminary.components.surprise, 0.001)
+        assertFalse(Warning.REVENUE_ALREADY_KNOWN in preliminary.warnings)
+        assertEquals(0, extractions.uncertainFields(reportId("140")).size)
+        assertEquals(
+            BigDecimal("23534"),
+            revenuePeriods.endingWithin(1L, LocalDate.parse("2026-09-30"), LocalDate.parse("2026-09-30"), now).single { it.kind == PeriodKind.QUARTER }.revenue.stripTrailingZeros(),
+        )
+        assertEquals("QUARTER" to "2026-09-30", pushedPeriod())
+
+        assertEquals(ReportStatus.SCORED, statusOf("141"))
+        val quarterly = checkNotNull(scores.find(reportId("141"))).score
+        assertTrue(Warning.REVENUE_ALREADY_KNOWN in quarterly.warnings)
+        assertEquals(15.0, quarterly.components.surprise, 0.001)
+        assertEquals(preliminary.total - 15.0, quarterly.total, 0.001)
+        verify(exactly = 1) { notifier.send(match { it.title.startsWith("ASBIS (GPW) · WYNIKI") }) }
+    }
 }

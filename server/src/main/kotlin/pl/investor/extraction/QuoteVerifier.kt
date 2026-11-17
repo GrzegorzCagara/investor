@@ -53,8 +53,13 @@ class QuoteVerifier {
             netProfitPrevYear = netProfitPrevYear.check("netProfitPrevYear"),
             orderIntake = orderIntake.check("orderIntake"),
             orderIntakePrevYear = orderIntakePrevYear.check("orderIntakePrevYear"),
+            revenueLines = revenueLines.mapNotNull { it.verified(text, units) },
         )
     }
+
+    private fun RevenueLine.verified(text: String, units: Units): RevenueLine? =
+        takeIf { name.isNotBlank() && revenue.isSupportedBy(text, units, Period.CURRENT) }
+            ?.copy(revenuePrevYear = revenuePrevYear?.takeIf { it.isSupportedBy(text, units, Period.PREVIOUS_YEAR) })
 
     private fun CashFlow.isSupportedBy(text: String, units: Units): Boolean =
         operatingCashFlow.isSupportedStatementFigure(text, units) && netProfit.isSupportedStatementFigure(text, units)

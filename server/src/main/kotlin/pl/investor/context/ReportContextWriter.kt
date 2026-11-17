@@ -3,6 +3,7 @@ package pl.investor.context
 import org.slf4j.LoggerFactory
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Component
+import pl.investor.extraction.ExtractedPeriod
 import pl.investor.extraction.ExtractionRepository
 import pl.investor.news.EarlierReport
 import pl.investor.report.Company
@@ -74,11 +75,12 @@ class ReportContextWriter(
         val company = companies.findById(report.companyId)
         val headlines = consensusClient.headlines(company, report.publishedAt.minus(HEADLINES_BEFORE), headlinesUntil(report), HEADLINES_LIMIT)
         val earlierReports = earlierReports(company, report)
-        if (headlines.isEmpty() && earlierReports.isEmpty()) {
+        val period = extractions.find(id)?.extraction?.primaryPeriod()
+        if (headlines.isEmpty() && earlierReports.isEmpty() && period?.concentratedRevenueGrowth() == null) {
             contexts.save(id, ReportContext(emptyList(), emptyList(), clock.instant()))
             return ContextOutcome.NOTHING_TO_ADD
         }
-        val points = pointsWriter.write(input(company, report, score, headlines, earlierReports))
+        val points = pointsWriter.write(input(company, report, score, period, headlines, earlierReports))
         if (points.isEmpty()) {
             log.warn("Context of report {} has no usable points", report.sourceRef)
             return ContextOutcome.FAILED
@@ -89,13 +91,20 @@ class ReportContextWriter(
 
     private fun headlinesUntil(report: Report): Instant = minOf(clock.instant(), report.publishedAt.plus(HEADLINES_AFTER))
 
-    private fun input(company: Company, report: Report, score: Score, headlines: List<BankierHeadline>, earlierReports: List<EarlierReport>): ContextInput {
+    private fun input(
+        company: Company,
+        report: Report,
+        score: Score,
+        period: ExtractedPeriod?,
+        headlines: List<BankierHeadline>,
+        earlierReports: List<EarlierReport>,
+    ): ContextInput {
         val id = checkNotNull(report.id)
         return ContextInput(
             companyName = company.name,
             reportTitle = report.title,
             publishedAt = report.publishedAt,
-            period = extractions.find(id)?.extraction?.primaryPeriod(),
+            period = period,
             consensus = consensusNotes.find(id)?.rows.orEmpty(),
             components = score.components,
             warnings = score.warnings,

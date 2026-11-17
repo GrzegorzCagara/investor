@@ -22,7 +22,10 @@ data class ExtractedPeriod(
     val netProfitPrevYear: Amount?,
     val orderIntake: Amount? = null,
     val orderIntakePrevYear: Amount? = null,
+    val revenueLines: List<RevenueLine> = emptyList(),
 )
+
+data class RevenueLine(val name: String, val revenue: Amount, val revenuePrevYear: Amount?)
 
 data class Outlook(val tone: OutlookTone, val quote: String?)
 

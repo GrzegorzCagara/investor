@@ -59,6 +59,25 @@ class QuoteVerifierTest {
     }
 
     @Test
+    fun `revenue lines keep only figures found in the text and never make the report uncertain`() {
+        val text = "Przychody ze sprzedaży wyniosły 23 532 tys. zł, w tym towarów 14 407 tys. zł wobec 7 547 tys. zł, a produktów 9 125 tys. zł wobec 7 658 tys. zł."
+        val base = extraction(revenue = Amount(BigDecimal("23532"), "23 532 tys. zł"))
+        val lines = listOf(
+            RevenueLine("Sprzedaż towarów", Amount(BigDecimal("14407"), "14 407 tys. zł"), Amount(BigDecimal("7547"), "7 547 tys. zł")),
+            RevenueLine("Sprzedaż produktów", Amount(BigDecimal("9125"), "9 125 tys. zł"), Amount(BigDecimal("9999"), "9 999 tys. zł")),
+            RevenueLine("Sprzedaż usług", Amount(BigDecimal("5000"), "5 000 tys. zł"), null),
+        )
+
+        val verified = verifier.verify(base.copy(periods = listOf(base.periods.single().copy(revenueLines = lines))), text)
+
+        val kept = verified.extraction.periods.single().revenueLines
+        assertEquals(listOf("Sprzedaż towarów", "Sprzedaż produktów"), kept.map { it.name })
+        assertEquals(BigDecimal("7547"), kept.first().revenuePrevYear?.valueInThousands)
+        assertNull(kept.last().revenuePrevYear)
+        assertEquals(emptySet(), verified.uncertainFields)
+    }
+
+    @Test
     fun `verifier tolerates non-breaking spaces and thousands separators`() {
         val text = "przychody 1 052,3 mln USD"
 

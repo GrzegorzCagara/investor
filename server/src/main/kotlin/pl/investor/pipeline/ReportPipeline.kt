@@ -297,10 +297,18 @@ class ReportPipeline(
             !report.kind.isPeriodic && category != ReportCategory.RESULTS -> newsUnlessCorporate(report, company, entry, extracted.content)
             category == ReportCategory.OTHER -> setStatus(report, ReportStatus.IRRELEVANT)
             else -> {
-                extractions.save(checkNotNull(report.id), extracted.verified)
-                afterExtraction(report, company, entry, extracted.verified, extracted.content)
+                val verified = withQuarterFromNineMonths(report, company, extracted.verified)
+                extractions.save(checkNotNull(report.id), verified)
+                afterExtraction(report, company, entry, verified, extracted.content)
             }
         }
+    }
+
+    private fun withQuarterFromNineMonths(report: Report, company: Company, verified: VerifiedExtraction): VerifiedExtraction {
+        if (verified.extraction.periods.none { it.kind == PeriodKind.NINE_MONTHS }) return verified
+        val refreshed = refreshedQuietly(company)
+        val history = quarterResults.publishedBefore(checkNotNull(refreshed.id), report.publishedAt.toWarsawDate(), NINE_MONTHS_HISTORY_QUARTERS)
+        return verified.copy(extraction = verified.extraction.withQuarterFromNineMonths(history, refreshed.market.currency))
     }
 
     private fun extractWithBodyFirst(report: Report, company: Company, entry: ListingEntry, allowWithoutAttachments: Boolean): Extracted? {
@@ -579,6 +587,7 @@ class ReportPipeline(
 
     private companion object {
         val SAME_RELEASE_WINDOW: Duration = Duration.ofMinutes(15)
+        const val NINE_MONTHS_HISTORY_QUARTERS = 8
         val POLISH_MARKETS = listOf(Market.GPW, Market.NC)
         val LISTED_ELSEWHERE_GUARD = mapOf(Market.SE to POLISH_MARKETS + Market.FI, Market.FI to POLISH_MARKETS + Market.SE)
         val NO_COMPONENTS = ScoreComponents(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)

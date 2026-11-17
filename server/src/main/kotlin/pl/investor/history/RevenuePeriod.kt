@@ -4,7 +4,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 
-enum class PeriodKind { MONTH, QUARTER, HALF_YEAR, YEAR }
+enum class PeriodKind { MONTH, QUARTER, HALF_YEAR, NINE_MONTHS, YEAR }
 
 data class RevenuePeriod(
     val companyId: Long,

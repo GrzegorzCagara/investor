@@ -210,7 +210,7 @@ class ScoringInputAssembler(
         when (primary.kind) {
             PeriodKind.MONTH -> monthlyTrend(company, publishedAt, primary)
             PeriodKind.QUARTER -> quarterlyTrend(primary, results, anchored = true, withSur = primary.currency == company.market.currency)
-            PeriodKind.HALF_YEAR, PeriodKind.YEAR -> quarterlyTrend(primary, results, anchored = false, withSur = false)
+            PeriodKind.HALF_YEAR, PeriodKind.NINE_MONTHS, PeriodKind.YEAR -> quarterlyTrend(primary, results, anchored = false, withSur = false)
         }
 
     private fun monthlyTrend(company: Company, publishedAt: Instant, primary: ExtractedPeriod): Trend {

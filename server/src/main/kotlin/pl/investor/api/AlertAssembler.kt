@@ -159,7 +159,7 @@ class AlertAssembler(
             .map { RevenuePoint(it.periodEnd.format(MONTH_LABEL), it.revenue.toDouble(), it.currency) }
         PeriodKind.QUARTER -> quarterResults.publishedBefore(row.companyId, row.publishedAt.toWarsawDate().plusDays(1), HISTORY_SIZE)
             .mapNotNull { result -> result.revenue?.let { RevenuePoint(result.quarterEnd.quarterLabel(), it.toDouble(), row.market.currency) } }
-        PeriodKind.HALF_YEAR, PeriodKind.YEAR -> emptyList()
+        PeriodKind.HALF_YEAR, PeriodKind.NINE_MONTHS, PeriodKind.YEAR -> emptyList()
     }.reversed()
 
     private fun AlertRow.hasScore(): Boolean = status in SCORED_STATUSES

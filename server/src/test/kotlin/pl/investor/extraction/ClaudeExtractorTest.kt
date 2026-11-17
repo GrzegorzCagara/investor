@@ -146,6 +146,24 @@ class ClaudeExtractorTest {
     }
 
     @Test
+    fun `revenue lines are required by the schema and mapped from the answer`() {
+        val line = """{\"name\":\"Sprzedaż towarów\",\"revenue\":{\"valueInThousands\":14407,\"sourceText\":\"14 407\"},\"revenuePrevYear\":null}"""
+        val period = """{\"kind\":\"QUARTER\",\"periodEnd\":\"2026-09-30\",\"currency\":\"PLN\",\"revenue\":null,\"revenuePrevYear\":null,""" +
+            """\"operatingProfit\":null,\"operatingProfitPrevYear\":null,\"netProfit\":null,\"netProfitPrevYear\":null,""" +
+            """\"orderIntake\":null,\"orderIntakePrevYear\":null,\"revenueLines\":[$line]}"""
+        val answer = """{\"category\":\"RESULTS\",\"periods\":[$period],\"outlook\":{\"tone\":\"NONE\",\"quote\":null},""" +
+            """\"oneOffQuarter\":false,\"oneOffQuote\":null,\"cyclicalIndustry\":false,\"cashFlow\":null}"""
+        server.enqueue(json(message(stopReason = "end_turn", content = """[{"type":"text","text":"$answer"}]""")))
+
+        val extraction = extractor.extract(content("reports/asbis-rb-23-2026.html"), "ASBIS", AiPool.GPW)
+
+        val mapped = extraction.periods.single().revenueLines.single()
+        assertEquals("Sprzedaż towarów", mapped.name)
+        assertEquals(BigDecimal("14407"), mapped.revenue.valueInThousands)
+        assertTrue("\"revenueLines\"" in server.takeRequest().body.readUtf8())
+    }
+
+    @Test
     fun `invalid json throws ExtractionFailedException`() {
         server.enqueue(json(message(stopReason = "end_turn", content = """[{"type":"text","text":"not json"}]""")))
 

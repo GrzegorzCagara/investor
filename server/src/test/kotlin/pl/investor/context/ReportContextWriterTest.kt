@@ -13,7 +13,16 @@ import org.junit.jupiter.api.Test
 import org.springframework.dao.EmptyResultDataAccessException
 import pl.investor.extraction.AiBudget
 import pl.investor.extraction.AiPool
+import pl.investor.extraction.Amount
+import pl.investor.extraction.ExtractedPeriod
+import pl.investor.extraction.Extraction
 import pl.investor.extraction.ExtractionRepository
+import pl.investor.extraction.Outlook
+import pl.investor.extraction.OutlookTone
+import pl.investor.extraction.ReportCategory
+import pl.investor.extraction.RevenueLine
+import pl.investor.extraction.VerifiedExtraction
+import pl.investor.history.PeriodKind
 import pl.investor.report.Company
 import pl.investor.report.CompanyRepository
 import pl.investor.report.EventType
@@ -32,9 +41,11 @@ import pl.investor.source.consensus.BankierHeadline
 import pl.investor.source.consensus.ConsensusClient
 import pl.investor.source.consensus.ConsensusRepository
 import tools.jackson.module.kotlin.jacksonObjectMapper
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
 
@@ -198,6 +209,34 @@ class ReportContextWriterTest {
         assertEquals(ContextOutcome.NOTHING_TO_ADD, writer.writeIfDue(1254))
         assertEquals(0, server.requestCount)
         verify(exactly = 1) { contexts.save(1254, ReportContext(emptyList(), emptyList(), now)) }
+    }
+
+    @Test
+    fun `growth concentrated in one revenue line is worth a context even without headlines and ESPI titles`() {
+        respondWithPoints()
+        every { consensusClient.headlines(any(), any(), any(), any()) } returns emptyList()
+        val quarter = ExtractedPeriod(
+            kind = PeriodKind.QUARTER,
+            periodEnd = LocalDate.parse("2026-09-30"),
+            currency = "PLN",
+            revenue = Amount(BigDecimal("23532"), "23 532"),
+            revenuePrevYear = Amount(BigDecimal("15205"), "15 205"),
+            operatingProfit = null,
+            operatingProfitPrevYear = null,
+            netProfit = null,
+            netProfitPrevYear = null,
+            revenueLines = listOf(
+                RevenueLine("Sprzedaż towarów", Amount(BigDecimal("14407"), "14 407"), Amount(BigDecimal("7547"), "7 547")),
+                RevenueLine("Sprzedaż produktów", Amount(BigDecimal("9125"), "9 125"), Amount(BigDecimal("7658"), "7 658")),
+            ),
+        )
+        every { extractions.find(1254) } returns VerifiedExtraction(
+            Extraction(ReportCategory.RESULTS, listOf(quarter), Outlook(OutlookTone.NONE, null), false, null, false),
+            emptySet(),
+        )
+
+        assertEquals(ContextOutcome.WRITTEN, writer.writeIfDue(1254))
+        assertEquals(1, server.requestCount)
     }
 
     @Test
