@@ -16,6 +16,7 @@ class QuoteVerifier {
             period.verified(text, units) { field -> uncertain += "periods[$index].$field" }
         }
         val oneOffSupported = extraction.oneOffQuarter && extraction.oneOffQuote.isQuotedIn(text)
+        val acquisitionSupported = extraction.acquisitionInPeriod && extraction.acquisitionQuote.isQuotedIn(text)
         return VerifiedExtraction(
             extraction.copy(
                 periods = periods,
@@ -23,6 +24,9 @@ class QuoteVerifier {
                 oneOffQuarter = oneOffSupported,
                 oneOffQuote = extraction.oneOffQuote.takeIf { oneOffSupported },
                 cashFlow = extraction.cashFlow?.takeIf { it.isSupportedBy(text, units) },
+                acquisitionInPeriod = acquisitionSupported,
+                acquisitionQuote = extraction.acquisitionQuote.takeIf { acquisitionSupported },
+                forecast = extraction.forecast?.verified(text, units),
             ),
             uncertain,
         )
@@ -56,6 +60,17 @@ class QuoteVerifier {
             revenueLines = revenueLines.mapNotNull { it.verified(text, units) },
         )
     }
+
+    private fun Forecast.verified(text: String, units: Units): Forecast? =
+        copy(
+            revenue = revenue?.verified(text, units),
+            operatingProfit = operatingProfit?.verified(text, units),
+            netProfit = netProfit?.verified(text, units),
+        ).takeIf { it.revenue != null || it.operatingProfit != null || it.netProfit != null }
+
+    private fun ForecastAmount.verified(text: String, units: Units): ForecastAmount? =
+        takeIf { low.isSupportedBy(text, units, Period.CURRENT) }
+            ?.copy(high = high?.takeIf { it.isSupportedBy(text, units, Period.CURRENT) })
 
     private fun RevenueLine.verified(text: String, units: Units): RevenueLine? =
         takeIf { name.isNotBlank() && revenue.isSupportedBy(text, units, Period.CURRENT) }

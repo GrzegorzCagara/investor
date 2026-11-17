@@ -121,7 +121,7 @@ class AlertAssembler(
     }
 
     private fun ConsensusComparison.view() = ConsensusRowView(
-        label = "${metric.label()} vs konsensus $source${analysts?.let { " (${it.analystsText()})" }.orEmpty()}",
+        label = if (companyForecast) "${metric.label()} (tempo na cały rok) vs prognoza spółki" else "${metric.label()} vs konsensus $source${analysts?.let { " (${it.analystsText()})" }.orEmpty()}",
         actual = actual.inMillions(),
         consensus = consensus.inMillions(),
         differencePct = differencePct(),

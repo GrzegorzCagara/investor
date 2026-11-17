@@ -6,6 +6,7 @@ import pl.investor.extraction.ExtractedPeriod
 import pl.investor.extraction.Extraction
 import pl.investor.extraction.VerifiedExtraction
 import pl.investor.extraction.isProfitWithoutCash
+import pl.investor.history.CompanyForecastRepository
 import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResult
 import pl.investor.history.QuarterResultRepository
@@ -40,6 +41,7 @@ class ScoringInputAssembler(
     private val previews: ConsensusPreviewRepository,
     private val pastReactions: PastReactionHistory,
     private val consensusNotes: ConsensusRepository,
+    private val forecasts: CompanyForecastRepository,
 ) {
 
     fun assemble(company: Company, report: Report, verified: VerifiedExtraction?): ScoringInput {
@@ -87,7 +89,14 @@ class ScoringInputAssembler(
             pennyStock = market.pennyStock,
             revenueAlreadyKnown = primary?.takeIf { it.kind == PeriodKind.QUARTER }?.let { isRevenueKnownBefore(company, report, it.periodEnd) } ?: false,
             profitWithoutCash = extraction?.cashFlow?.isProfitWithoutCash() ?: false,
+            acquisition = extraction?.acquisitionInPeriod ?: false,
+            forecast = primary?.let { forecastComparisons(company, report, it, results) }.orEmpty(),
         )
+    }
+
+    private fun forecastComparisons(company: Company, report: Report, primary: ExtractedPeriod, results: List<QuarterResult>): List<ConsensusComparison> {
+        if (primary.kind == PeriodKind.MONTH) return emptyList()
+        return forecasts.latestForYearOf(checkNotNull(company.id), primary.periodEnd, report.publishedAt)?.paceComparisons(primary, results).orEmpty()
     }
 
     private fun isRevenueKnownBefore(company: Company, report: Report, quarterEnd: LocalDate): Boolean {

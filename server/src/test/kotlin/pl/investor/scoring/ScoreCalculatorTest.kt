@@ -153,6 +153,62 @@ class ScoreCalculatorTest {
         assertFalse(Warning.REVENUE_ALREADY_KNOWN in score.warnings)
     }
 
+    private fun imsQ3Like() = allNull().copy(
+        sur = 3.0, revenueYoyPct = 43.4, previousYoyPcts = listOf(19.7, 11.1, -1.0, 10.0), operatingProfitYoyPct = 72.4,
+        outlook = OutlookTone.NONE, ps = 2.0, psMedian20q = 2.5, ttmNetProfitGrowthPct = -1.9,
+    )
+
+    @Test fun `IMS Q3 grown by the acquired Digitall Concept gets a neutral surprise and falls below the push threshold`() {
+        val regular = ScoreCalculator.score(imsQ3Like())
+        val acquired = ScoreCalculator.score(imsQ3Like().copy(acquisition = true))
+
+        assertEquals(79.7, regular.total, 0.1)
+        assertEquals(15.0, acquired.components.surprise, 1e-9)
+        assertEquals(regular.total - 15.0, acquired.total, 1e-9)
+        assertTrue(Warning.ACQUIRED_GROWTH in acquired.warnings)
+        assertFalse(Warning.ACQUIRED_GROWTH in regular.warnings)
+    }
+
+    @Test fun `acquisition keeps a consensus surprise because analysts already count the acquired company`() {
+        val beat = ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal(150), BigDecimal(100), "PLN", "PAP Biznes", null)
+
+        assertEquals(30.0, ScoreCalculator.score(imsQ3Like().copy(acquisition = true, consensus = listOf(beat))).components.surprise, 1e-9)
+    }
+
+    private fun againstForecast(metric: ConsensusMetric, pace: Int, forecast: Int) =
+        ConsensusComparison(metric, BigDecimal(pace), BigDecimal(forecast), "PLN", "spółki", null, companyForecast = true)
+
+    @Test fun `IMS without analysts is measured against its own annual forecast instead of its trend`() {
+        val forecast = listOf(againstForecast(ConsensusMetric.REVENUE, 82906, 80000))
+        val score = ScoreCalculator.score(imsQ3Like().copy(forecast = forecast))
+
+        assertEquals(16.36, score.components.surprise, 0.01)
+        assertTrue(Warning.COMPANY_FORECAST in score.warnings)
+        assertFalse(Warning.NO_CONSENSUS in score.warnings)
+        assertEquals(forecast, score.context.consensus)
+    }
+
+    @Test fun `analysts consensus wins over the company forecast`() {
+        val analysts = ConsensusComparison(ConsensusMetric.REVENUE, BigDecimal(150), BigDecimal(100), "PLN", "PAP Biznes", null)
+        val score = ScoreCalculator.score(imsQ3Like().copy(consensus = listOf(analysts), forecast = listOf(againstForecast(ConsensusMetric.REVENUE, 70000, 80000))))
+
+        assertEquals(30.0, score.components.surprise, 1e-9)
+        assertFalse(Warning.COMPANY_FORECAST in score.warnings)
+        assertEquals(listOf(analysts), score.context.consensus)
+    }
+
+    @Test fun `acquisition does not cap a surprise against a forecast that already includes it`() {
+        val forecast = listOf(againstForecast(ConsensusMetric.REVENUE, 92000, 80000))
+
+        assertEquals(30.0, ScoreCalculator.score(imsQ3Like().copy(acquisition = true, forecast = forecast)).components.surprise, 1e-9)
+    }
+
+    @Test fun `results behind the forecast pace give a low surprise`() {
+        val forecast = listOf(againstForecast(ConsensusMetric.REVENUE, 72000, 80000), againstForecast(ConsensusMetric.EBIT, 9000, 12000))
+
+        assertEquals(0.0, ScoreCalculator.score(imsQ3Like().copy(forecast = forecast)).components.surprise, 1e-9)
+    }
+
     private fun orlenQ3Like() = allNull().copy(
         sur = 1.70, revenueYoyPct = 31.1, previousYoyPcts = listOf(26.1, 3.0, -3.4, -10.2), operatingProfitYoyPct = 161.7,
         outlook = OutlookTone.NONE, pe = 13.1, ttmNetProfitGrowthPct = 171.7, cyclical = true,

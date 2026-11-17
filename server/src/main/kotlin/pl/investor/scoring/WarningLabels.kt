@@ -14,6 +14,8 @@ object WarningLabels {
         Warning.EARLY_STAGE -> "Strata większa niż przychody: wzrost, marża i niespodzianka liczone najwyżej neutralnie"
         Warning.PENNY_STOCK -> "Akcja groszowa (kurs poniżej 1 zł lub 1 SEK): ruchy w ciągu dnia to w dużej mierze szum"
         Warning.REVENUE_ALREADY_KNOWN -> "Przychody za ten kwartał spółka podała już wcześniej (sprzedaż miesięczna, szacunki lub wstępne dane): niespodzianka liczona najwyżej neutralnie"
+        Warning.ACQUIRED_GROWTH -> "Wzrost częściowo z przejętej spółki, której rok wcześniej nie było w wynikach: bez konsensusu i prognozy spółki niespodzianka liczona najwyżej neutralnie"
+        Warning.COMPANY_FORECAST -> "Brak konsensusu analityków: niespodzianka liczona względem rocznej prognozy spółki (tempo wyników od początku roku przy zwykłej sezonowości)"
         Warning.PROFIT_WITHOUT_CASH -> "Zysk bez gotówki: przepływy operacyjne ujemne mimo zysku netto, jakość liczona najwyżej neutralnie"
     }
 }

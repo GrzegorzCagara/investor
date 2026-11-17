@@ -17,6 +17,17 @@ object ExtractionSchema {
         "oneOffQuarter" to mapOf("type" to "boolean"),
         "oneOffQuote" to nullable(mapOf("type" to "string")),
         "cyclicalIndustry" to mapOf("type" to "boolean"),
+        "acquisitionInPeriod" to mapOf("type" to "boolean"),
+        "acquisitionQuote" to nullable(mapOf("type" to "string")),
+        "forecast" to nullable(
+            obj(
+                "periodEnd" to mapOf("type" to "string"),
+                "currency" to mapOf("type" to "string"),
+                "revenue" to nullable(forecastAmount()),
+                "operatingProfit" to nullable(forecastAmount()),
+                "netProfit" to nullable(forecastAmount()),
+            )
+        ),
         "cashFlow" to nullable(
             obj(
                 "operatingCashFlow" to amount(),
@@ -45,6 +56,11 @@ object ExtractionSchema {
                 "revenuePrevYear" to nullable(amount()),
             ),
         ),
+    )
+
+    private fun forecastAmount(): Map<String, Any> = obj(
+        "low" to amount(),
+        "high" to nullable(amount()),
     )
 
     private fun amount(): Map<String, Any> = obj(

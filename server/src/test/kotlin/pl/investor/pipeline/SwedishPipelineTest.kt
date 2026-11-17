@@ -83,6 +83,7 @@ import kotlin.test.assertTrue
 
 class SwedishPipelineTest : PostgresTestBase() {
 
+    @Autowired lateinit var forecasts: pl.investor.history.CompanyForecastRepository
     @Autowired lateinit var consensusNoteFinder: ConsensusNoteFinder
     @Autowired lateinit var jdbc: JdbcClient
     @Autowired lateinit var companies: CompanyRepository
@@ -158,7 +159,7 @@ class SwedishPipelineTest : PostgresTestBase() {
             companies, reports, CompanyResolver(companies, biznesRadar), contentClient, budget,
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
-            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies), consensusNoteFinder, clock,
+            NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies), consensusNoteFinder, clock, forecasts,
         )
     }
 

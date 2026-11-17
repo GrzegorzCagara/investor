@@ -102,10 +102,12 @@ private fun Double.atMostNeutralWhen(capped: Boolean, neutral: Double): Double =
 object ScoreCalculator {
     fun score(raw: ScoringInput): Score {
         val input = raw.finiteOnly()
-        val consensusSurprise = input.consensusSurprisePoints()
-        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage || input.revenueAlreadyKnown || input.cyclical, NEUTRAL_SURPRISE)
+        val analystsSurprise = input.surpriseAgainst(input.consensus)
+        val forecastSurprise = input.surpriseAgainst(input.forecast).takeIf { analystsSurprise == null }
+        val expectedSurprise = analystsSurprise ?: forecastSurprise
+        val ownTrendSurprise = surprisePoints(input.sur).atMostNeutralWhen(input.earlyStage || input.revenueAlreadyKnown || input.cyclical || input.acquisition, NEUTRAL_SURPRISE)
         val components = ScoreComponents(
-            surprise = consensusSurprise?.let { oneOffSurprisePoints(it, input.oneOff && !input.hasAdjustedProfitConsensus()) }
+            surprise = expectedSurprise?.let { oneOffSurprisePoints(it, input.oneOff && !input.hasAdjustedProfitConsensus()) }
                 ?: oneOffSurprisePoints(ownTrendSurprise, input.oneOff),
             growth = growthPoints(input.revenueYoyPct, input.previousYoyPcts, input.trendReversal).atMostNeutralWhen(input.earlyStage, NEUTRAL_GROWTH),
             quality = qualityPoints(input.revenueYoyPct, input.operatingProfitYoyPct, input.marginChangePp, input.revenueOnly)
@@ -119,18 +121,18 @@ object ScoreCalculator {
             total = (components.sum - penalty).coerceIn(0.0, 100.0),
             components = components,
             penalty = penalty,
-            warnings = warnings(input, hasConsensus = consensusSurprise != null),
+            warnings = warnings(input, hasConsensus = expectedSurprise != null, againstForecast = forecastSurprise != null),
             signals = signals(input),
-            context = ScoreContext(input.ytdChangePct, input.ordersYoyPct, input.pastReactions, input.consensus),
+            context = ScoreContext(input.ytdChangePct, input.ordersYoyPct, input.pastReactions, if (forecastSurprise != null) input.forecast else input.consensus),
         )
     }
 
     private fun ScoringInput.hasAdjustedProfitConsensus(): Boolean =
         consensus.firstOrNull { it.metric == ConsensusMetric.EBIT }?.takeIf { ebitSurprisePct(it) != null }?.adjustedForOneOffs == true
 
-    private fun ScoringInput.consensusSurprisePoints(): Double? {
-        val ebit = ebitSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.EBIT })
-        val revenue = revenueSurprisePct(consensus.firstOrNull { it.metric == ConsensusMetric.REVENUE }).takeUnless { cyclical }
+    private fun ScoringInput.surpriseAgainst(expectations: List<ConsensusComparison>): Double? {
+        val ebit = ebitSurprisePct(expectations.firstOrNull { it.metric == ConsensusMetric.EBIT })
+        val revenue = revenueSurprisePct(expectations.firstOrNull { it.metric == ConsensusMetric.REVENUE }).takeUnless { cyclical }
         return if (ebit == null && revenue == null) null else consensusSurprisePoints(ebit, revenue)
     }
 
@@ -157,8 +159,9 @@ object ScoreCalculator {
         !qualityIsKnown(input) ||
         !(hasPeg(input.pe, input.ttmNetProfitGrowthPct) || hasPsRatio(input.ps, input.psMedian20q))
 
-    private fun warnings(input: ScoringInput, hasConsensus: Boolean): Set<Warning> = buildSet {
+    private fun warnings(input: ScoringInput, hasConsensus: Boolean, againstForecast: Boolean): Set<Warning> = buildSet {
         if (!hasConsensus) add(Warning.NO_CONSENSUS)
+        if (againstForecast) add(Warning.COMPANY_FORECAST)
         if (input.oneOff) add(Warning.ONE_OFF_QUARTER)
         if (input.cyclical) add(Warning.CYCLICAL_INDUSTRY)
         if (input.lowLiquidity) add(Warning.LOW_LIQUIDITY)
@@ -170,5 +173,6 @@ object ScoreCalculator {
         if (input.pennyStock) add(Warning.PENNY_STOCK)
         if (input.revenueAlreadyKnown && !hasConsensus) add(Warning.REVENUE_ALREADY_KNOWN)
         if (input.profitWithoutCash) add(Warning.PROFIT_WITHOUT_CASH)
+        if (input.acquisition) add(Warning.ACQUIRED_GROWTH)
     }
 }

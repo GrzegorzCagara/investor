@@ -90,6 +90,7 @@ import kotlin.test.assertTrue
 
 class ReportPipelineTest : PostgresTestBase() {
 
+    @Autowired lateinit var forecasts: pl.investor.history.CompanyForecastRepository
     @Autowired lateinit var jdbc: JdbcClient
     @Autowired lateinit var companies: CompanyRepository
     @Autowired lateinit var reports: ReportRepository
@@ -161,7 +162,7 @@ class ReportPipelineTest : PostgresTestBase() {
             ClaudeExtractor(budget, anthropic), QuoteVerifier(), extractions, revenuePeriods, quarterResults,
             refresher, assembler, reasonWriter, scores, settings, PushThreshold(settings), AlertFilters(settings), pushLog, notifier, PushMessageFactory(),
             NewsAssessor(budget, anthropic, QuoteVerifier()), newsAssessments, newsContext, XtbFilter("DE,GPW,NC,SE", XtbAvailability(xtb, biznesRadar, companies, clock), refresher, companies),
-            ConsensusNoteFinder(consensusNotes, companies, consensusClient, clock), clock,
+            ConsensusNoteFinder(consensusNotes, companies, consensusClient, clock), clock, forecasts,
         )
     }
 
@@ -1603,5 +1604,40 @@ class ReportPipelineTest : PostgresTestBase() {
         assertEquals(15.0, quarterly.components.surprise, 0.001)
         assertEquals(preliminary.total - 15.0, quarterly.total, 0.001)
         verify(exactly = 1) { notifier.send(match { it.title.startsWith("ASBIS (GPW) · WYNIKI") }) }
+    }
+
+    private fun enqueueForecastOnly(revenue: Int) = server.enqueue(
+        json(
+            """{"id":"m","type":"message","role":"assistant","model":"claude-haiku-5-5","content":[{"type":"text","text":"{\"category\":\"OTHER\",\"periods\":[],\"outlook\":{\"tone\":\"NONE\",\"quote\":null},\"oneOffQuarter\":false,\"oneOffQuote\":null,\"cyclicalIndustry\":false,\"forecast\":{\"periodEnd\":\"2026-12-31\",\"currency\":\"PLN\",\"revenue\":{\"low\":${amountJson(revenue)},\"high\":null},\"operatingProfit\":null,\"netProfit\":null}}"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":10}}"""
+        )
+    )
+
+    @Test
+    fun `annual forecast from an earlier report becomes the yardstick of the quarterly report`() {
+        asbis()
+        every { biznesRadar.quarterly("ASBISC") } returns yanosikLikeQuarters
+        every { biznesRadar.valuation("ASBISC") } returns emptyList()
+        every { consensusClient.hasNewsPage(any()) } returns false
+        every { contentClient.fetch(match { it.sourceRef == "142" }, any()) } returns
+            ReportContent("Zarząd prognozuje, że w 2026 roku Grupa osiągnie przychody na poziomie 80 000 tys. zł.", emptyList(), emptyList())
+        val thirdQuarter = listOf(23534, 15206, 5568, 2572, 4492, 2100)
+        givenContent("143", thirdQuarter)
+        enqueueForecastOnly(80000)
+        enqueueNews(category = NewsCategory.GUIDANCE, impact = 40)
+        enqueueResults(PeriodKind.QUARTER, thirdQuarter)
+
+        now = Instant.parse("2026-09-15T12:00:00Z")
+        pipeline.process(entry("142", "Prognoza wyników finansowych na 2026 rok").copy(publishedAt = Instant.parse("2026-09-15T11:53:00Z")))
+        now = Instant.parse("2026-11-16T21:35:00Z")
+        pipeline.process(entry("143", "SA-Q 3/2026", ReportKind.QUARTERLY).copy(publishedAt = Instant.parse("2026-11-16T21:31:50Z")))
+
+        assertEquals("NEWS", eventTypeOf("142"))
+        val score = checkNotNull(scores.find(reportId("143"))).score
+        assertTrue(Warning.COMPANY_FORECAST in score.warnings)
+        assertFalse(Warning.NO_CONSENSUS in score.warnings)
+        val revenue = score.context.consensus.single()
+        assertEquals(80000.0, revenue.consensus.toDouble(), 0.001)
+        assertEquals(6.7, revenue.differencePct(), 0.1)
+        assertEquals(30 * (0.4 + revenue.differencePct() / 25), score.components.surprise, 0.001)
     }
 }

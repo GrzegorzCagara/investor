@@ -41,6 +41,21 @@ data class Extraction(
     val oneOffQuote: String?,
     val cyclicalIndustry: Boolean,
     val cashFlow: CashFlow? = null,
+    val acquisitionInPeriod: Boolean = false,
+    val acquisitionQuote: String? = null,
+    val forecast: Forecast? = null,
+)
+
+data class ForecastAmount(val low: Amount, val high: Amount?) {
+    fun midpoint(): BigDecimal = high?.let { (low.valueInThousands + it.valueInThousands).divide(BigDecimal.TWO) } ?: low.valueInThousands
+}
+
+data class Forecast(
+    val periodEnd: LocalDate,
+    val currency: String,
+    val revenue: ForecastAmount?,
+    val operatingProfit: ForecastAmount?,
+    val netProfit: ForecastAmount?,
 )
 
 data class VerifiedExtraction(val extraction: Extraction, val uncertainFields: Set<String>)

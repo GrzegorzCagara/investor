@@ -506,6 +506,15 @@ class ScoringInputAssemblerTest : PostgresTestBase() {
         assertFalse(assembler.assemble(company, quarterlyReport(company), q3).profitWithoutCash)
     }
 
+    @Test
+    fun `acquisition flag of the extraction reaches the scoring input`() {
+        val company = synthetic()
+        val acquired = q3.copy(extraction = q3.extraction.copy(acquisitionInPeriod = true, acquisitionQuote = "przejęcie"))
+
+        assertTrue(assembler.assemble(company, quarterlyReport(company), acquired).acquisition)
+        assertFalse(assembler.assemble(company, quarterlyReport(company), q3).acquisition)
+    }
+
     private fun savedReportWithNote(company: Company, vararg rows: ConsensusRow): Report {
         val report = checkNotNull(reports.saveIfNew(quarterlyReport(company).copy(id = null)))
         consensusNotes.save(checkNotNull(report.id), ConsensusNote("https://www.bankier.pl/wiadomosc/x-1.html", report.publishedAt, rows.toList()), report.publishedAt)

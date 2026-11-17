@@ -30,5 +30,7 @@ data class ScoringInput(
     val earlyStage: Boolean = false,
     val pennyStock: Boolean = false,
     val revenueAlreadyKnown: Boolean = false,
+    val acquisition: Boolean = false,
+    val forecast: List<ConsensusComparison> = emptyList(),
     val profitWithoutCash: Boolean = false,
 )

@@ -12,6 +12,7 @@ data class ConsensusComparison(
     val source: String,
     val analysts: Int?,
     val adjustedForOneOffs: Boolean = false,
+    val companyForecast: Boolean = false,
 ) {
     fun differencePct(): Double = (actual - consensus).toDouble() / consensus.abs().toDouble() * 100
 }

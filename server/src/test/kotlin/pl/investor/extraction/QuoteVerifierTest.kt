@@ -234,6 +234,39 @@ class QuoteVerifierTest {
     }
 
     @Test
+    fun `acquisition flag is kept only with its quote found in the report`() {
+        val text = "W 3Q 2026 widoczne są pierwsze efekty synergii kosztowych związanych z przejęciem Digitall Concept Sp. z o.o."
+
+        val quoted = verifier.verify(extraction().copy(acquisitionInPeriod = true, acquisitionQuote = "związanych z przejęciem Digitall Concept Sp. z o.o."), text)
+        val unquoted = verifier.verify(extraction().copy(acquisitionInPeriod = true, acquisitionQuote = "przejęcie spółki Delta"), text)
+
+        assertTrue(quoted.extraction.acquisitionInPeriod)
+        assertFalse(unquoted.extraction.acquisitionInPeriod)
+        assertNull(unquoted.extraction.acquisitionQuote)
+    }
+
+    @Test
+    fun `forecast keeps only amounts found in the report and disappears without any`() {
+        val text = "Zarząd prognozuje, że w całym 2026 roku Grupa Kapitałowa IMS osiągnie przychody na poziomie 80 mln zł oraz skorygowaną EBITDA 23 mln zł."
+        val forecast = Forecast(
+            periodEnd = LocalDate.parse("2026-12-31"),
+            currency = "PLN",
+            revenue = ForecastAmount(Amount(BigDecimal("80000"), "80 mln zł"), Amount(BigDecimal("85000"), "85 mln zł")),
+            operatingProfit = ForecastAmount(Amount(BigDecimal("15000"), "15 mln zł"), null),
+            netProfit = null,
+        )
+
+        val kept = verifier.verify(extraction().copy(forecast = forecast), text).extraction.forecast
+        val invented = verifier.verify(extraction().copy(forecast = forecast.copy(revenue = ForecastAmount(Amount(BigDecimal("90000"), "90 mln zł"), null))), text)
+
+        assertEquals(BigDecimal("80000"), kept?.revenue?.low?.valueInThousands)
+        assertNull(kept?.revenue?.high)
+        assertNull(kept?.operatingProfit)
+        assertNull(invented.extraction.forecast)
+        assertEquals(emptySet(), invented.uncertainFields)
+    }
+
+    @Test
     fun `one-off with a quote present in the text is kept`() {
         val verified = verifier.verify(
             extraction().copy(oneOffQuarter = true, oneOffQuote = "debiut gry"),

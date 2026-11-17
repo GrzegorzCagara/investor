@@ -15,6 +15,8 @@ import pl.investor.extraction.ExtractionRepository
 import pl.investor.extraction.QuoteVerifier
 import pl.investor.extraction.ReportCategory
 import pl.investor.extraction.VerifiedExtraction
+import pl.investor.history.CompanyForecast
+import pl.investor.history.CompanyForecastRepository
 import pl.investor.history.PeriodKind
 import pl.investor.history.QuarterResultRepository
 import pl.investor.history.RevenuePeriod
@@ -92,6 +94,7 @@ class ReportPipeline(
     private val xtbFilter: XtbFilter,
     private val consensusNotes: ConsensusNoteFinder,
     private val clock: Clock,
+    private val forecasts: CompanyForecastRepository,
 ) {
 
     private val log = LoggerFactory.getLogger(ReportPipeline::class.java)
@@ -292,6 +295,7 @@ class ReportPipeline(
             return
         }
         val extracted = extractWithBodyFirst(report, company, entry, allowWithoutAttachments) ?: return
+        saveForecast(report, company, extracted.verified)
         val category = extracted.verified.extraction.category
         when {
             !report.kind.isPeriodic && category != ReportCategory.RESULTS -> newsUnlessCorporate(report, company, entry, extracted.content)
@@ -302,6 +306,22 @@ class ReportPipeline(
                 afterExtraction(report, company, entry, verified, extracted.content)
             }
         }
+    }
+
+    private fun saveForecast(report: Report, company: Company, verified: VerifiedExtraction) {
+        val forecast = verified.extraction.forecast ?: return
+        forecasts.save(
+            CompanyForecast(
+                companyId = checkNotNull(company.id),
+                periodEnd = forecast.periodEnd,
+                currency = forecast.currency,
+                revenue = forecast.revenue?.midpoint(),
+                operatingProfit = forecast.operatingProfit?.midpoint(),
+                netProfit = forecast.netProfit?.midpoint(),
+                publishedAt = report.publishedAt,
+                reportId = report.id,
+            )
+        )
     }
 
     private fun withQuarterFromNineMonths(report: Report, company: Company, verified: VerifiedExtraction): VerifiedExtraction {

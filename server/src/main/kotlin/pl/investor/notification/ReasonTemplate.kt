@@ -19,7 +19,8 @@ class ReasonTemplate {
         val fragments = listOfNotNull(
             input.revenueYoyPct?.let { "przychody ${it.signedWhole()}% r/r" },
             *input.consensus.map { it.consensusDescription() }.toTypedArray(),
-            input.sur?.takeIf { input.consensus.isEmpty() }?.surpriseDescription(),
+            *input.forecast.takeIf { input.consensus.isEmpty() }.orEmpty().map { it.forecastDescription() }.toTypedArray(),
+            input.sur?.takeIf { input.consensus.isEmpty() && input.forecast.isEmpty() }?.surpriseDescription(),
             input.consecutiveStrongBefore.takeIf { it >= MIN_SERIES }?.let { "${it + 1}. mocny raport z rzędu" },
             input.operatingProfitYoyPct?.let { "zysk operacyjny ${it.signedWhole()}% r/r" },
             input.outlook?.outlookDescription(),
@@ -39,6 +40,11 @@ class ReasonTemplate {
     private fun ConsensusComparison.consensusDescription() = when (metric) {
         ConsensusMetric.REVENUE -> "przychody ${differencePct().signedWhole()}% vs konsensus"
         ConsensusMetric.EBIT -> "zysk operacyjny ${differencePct().signedWhole()}% vs konsensus"
+    }
+
+    private fun ConsensusComparison.forecastDescription() = when (metric) {
+        ConsensusMetric.REVENUE -> "przychody w tempie ${differencePct().signedWhole()}% vs roczna prognoza spółki"
+        ConsensusMetric.EBIT -> "zysk w tempie ${differencePct().signedWhole()}% vs roczna prognoza spółki"
     }
 
     private fun OutlookTone.outlookDescription() = when (this) {
